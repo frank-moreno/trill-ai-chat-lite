@@ -1,0 +1,102 @@
+/**
+ * GSPLTD Chat Lite — Upgrade CTA Styles
+ *
+ * @package GspltdChatLite
+ * @since 1.0.0
+ * @license GPL-2.0-or-later
+ */
+
+/* ========================================
+   Admin Notice
+   ======================================== */
+
+.gcl-upgrade-notice {
+    border-left-color: #2563eb;
+}
+
+.gcl-upgrade-notice p {
+    font-size: 13px;
+}
+
+.gcl-upgrade-notice a {
+    font-weight: 600;
+}
+
+/* ========================================
+   Upgrade Card
+   ======================================== */
+
+.gcl-upgrade-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 24px;
+    margin: 20px 0;
+}
+
+.gcl-upgrade-card h2 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #1d2327;
+}
+
+.gcl-upgrade-card table {
+    width: 100%;
+}
+
+.gcl-upgrade-card th {
+    text-align: center;
+    padding: 10px;
+}
+
+.gcl-upgrade-card td {
+    text-align: center;
+    padding: 8px 10px;
+}
+
+.gcl-upgrade-card .button-hero {
+    font-size: 15px;
+    padding: 8px 24px;
+}
+
+/* ========================================
+   Dashboard Upgrade CTA
+   ======================================== */
+
+.gcl-dashboard-upgrade {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.gcl-dashboard-upgrade h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: #fff;
+}
+
+.gcl-dashboard-upgrade p {
+    margin: 0 0 16px;
+    opacity: 0.9;
+    font-size: 14px;
+}
+
+.gcl-dashboard-upgrade .button {
+    background: #fff;
+    color: #2563eb;
+    border: none;
+    font-weight: 600;
+    padding: 8px 24px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    transition: opacity 0.2s;
+}
+
+.gcl-dashboard-upgrade .button:hover {
+    opacity: 0.9;
+    color: #1d4ed8;
+}

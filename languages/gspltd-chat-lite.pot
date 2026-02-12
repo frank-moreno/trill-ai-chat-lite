@@ -1,0 +1,159 @@
+# Copyright (C) 2026 Greensolutions Ltd
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: GSPLTD Chat Lite 1.0.0\n"
+"Report-Msgid-Bugs-To: https://trillai.io/support/\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-02-12T00:00:00+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.10.0\n"
+"X-Domain: gspltd-chat-lite\n"
+
+#. Plugin Name of the plugin
+msgid "GSPLTD AI Chat — Lite"
+msgstr ""
+
+#. Description of the plugin
+msgid "AI-powered customer service chat for WooCommerce. Answer product questions, recommend items, and boost conversions — automatically."
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Type your message..."
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Send"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Chat with us!"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Sorry, I encountered an error. Please try again."
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Connection error. Please check your internet and try again."
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Robin"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "AI Assistant"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Online"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Robin is typing..."
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Close chat"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Monthly Limit Reached"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Upgrade Now"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?"
+msgstr ""
+
+#: includes/Frontend/Frontend.php
+msgid "JavaScript is required for the chat widget."
+msgstr ""
+
+#: includes/Admin/Admin.php
+msgid "GSPLTD Chat"
+msgstr ""
+
+#: includes/Admin/Admin.php
+msgid "Dashboard"
+msgstr ""
+
+#: includes/Admin/Admin.php
+msgid "Settings"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php
+msgid "Chat Status"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php
+msgid "Monthly Usage"
+msgstr ""
+
+#: includes/Admin/views/settings.php
+msgid "Enable Chat Widget"
+msgstr ""
+
+#: includes/Admin/views/settings.php
+msgid "Widget Position"
+msgstr ""
+
+#: includes/Admin/views/settings.php
+msgid "Widget Colour"
+msgstr ""
+
+#: includes/Admin/views/settings.php
+msgid "Welcome Message"
+msgstr ""
+
+#: includes/Lite/UpgradeNotices.php
+msgid "GSPLTD AI Chat:"
+msgstr ""
+
+#: includes/Lite/UpgradeNotices.php
+msgid "You've used %1$d of %2$d free conversations this month."
+msgstr ""
+
+#: includes/Lite/UpgradeNotices.php
+msgid "Upgrade for unlimited conversations →"
+msgstr ""
+
+#: includes/Admin/views/upgrade-card.php
+msgid "Unlock More with GSPLTD AI Chat"
+msgstr ""
+
+#: includes/Admin/views/upgrade-card.php
+msgid "Compare Plans & Upgrade"
+msgstr ""
+
+#: includes/AI/RestController.php
+msgid "Message cannot be empty."
+msgstr ""
+
+#: includes/AI/RestController.php
+msgid "Monthly conversation limit reached. Upgrade for unlimited conversations."
+msgstr ""
+
+#: includes/AI/RestController.php
+msgid "Invalid security token. Please refresh the page."
+msgstr ""
+
+#: includes/AI/RestController.php
+msgid "Too many requests. Please try again later."
+msgstr ""
+
+#: includes/AI/ProxyClient.php
+msgid "Unable to connect to AI service. Please try again later."
+msgstr ""
+
+#: includes/AI/ProxyClient.php
+msgid "AI service is temporarily unavailable. Please try again later."
+msgstr ""
