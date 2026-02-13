@@ -41,24 +41,16 @@ function trill_chat_lite_log( $message, string $level = 'info', array $context =
     }
 
     $prefix = '[Trill Chat Lite] ';
+    $label  = strtoupper( $level === 'warning' || $level === 'error' || $level === 'debug' ? $level : 'INFO' );
+    $entry  = $prefix . $label . ': ' . $message;
 
-    switch ( $level ) {
-        case 'error':
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging
-            error_log( $prefix . 'ERROR: ' . $message );
-            break;
-        case 'warning':
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging
-            error_log( $prefix . 'WARNING: ' . $message );
-            break;
-        case 'debug':
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging
-            error_log( $prefix . 'DEBUG: ' . $message );
-            break;
-        default:
-            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging
-            error_log( $prefix . 'INFO: ' . $message );
+    if ( ! empty( $context ) ) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r -- Intentional debug context
+        $entry .= ' | ' . wp_json_encode( $context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
     }
+
+    // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging
+    error_log( $entry );
 }
 
 /**
