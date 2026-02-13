@@ -1,8 +1,8 @@
 <?php
 /**
- * Global helper functions for GSPLTD Chat Lite
+ * Global helper functions for Trill Chat Lite
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
@@ -15,10 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get the plugin instance.
  *
- * @return \GspltdChatLite\Plugin
+ * @return \TrillChatLite\Plugin
  */
-function gcl_get_plugin() {
-    return \GspltdChatLite\Plugin::get_instance();
+function tcl_get_plugin() {
+    return \TrillChatLite\Plugin::get_instance();
 }
 
 /**
@@ -30,7 +30,7 @@ function gcl_get_plugin() {
  * @param string $level   Log level (info, warning, error, debug).
  * @param array  $context Optional context data.
  */
-function gcl_log( $message, string $level = 'info', array $context = [] ): void {
+function tcl_log( $message, string $level = 'info', array $context = [] ): void {
     if ( ! WP_DEBUG ) {
         return;
     }
@@ -40,7 +40,7 @@ function gcl_log( $message, string $level = 'info', array $context = [] ): void 
         $message = print_r( $message, true );
     }
 
-    $prefix = '[GSPLTD Chat Lite] ';
+    $prefix = '[Trill Chat Lite] ';
 
     switch ( $level ) {
         case 'error':
@@ -66,24 +66,24 @@ function gcl_log( $message, string $level = 'info', array $context = [] ): void 
  *
  * @return bool
  */
-function gcl_should_display_widget(): bool {
+function tcl_should_display_widget(): bool {
     // Don't show in admin.
     if ( is_admin() ) {
         return false;
     }
 
     // Don't show if disabled.
-    if ( get_option( 'gcl_chat_enabled', '1' ) !== '1' ) {
+    if ( get_option( 'tcl_chat_enabled', '1' ) !== '1' ) {
         return false;
     }
 
     // Don't show on checkout page by default.
     if ( function_exists( 'is_checkout' ) && is_checkout() ) {
-        return apply_filters( 'gcl_display_on_checkout', false );
+        return apply_filters( 'tcl_display_on_checkout', false );
     }
 
     // Allow filtering.
-    return apply_filters( 'gcl_display_widget', true );
+    return apply_filters( 'tcl_display_widget', true );
 }
 
 /**
@@ -91,15 +91,15 @@ function gcl_should_display_widget(): bool {
  *
  * @return array
  */
-function gcl_get_widget_config(): array {
+function tcl_get_widget_config(): array {
     return [
-        'position'        => get_option( 'gcl_widget_position', 'bottom-right' ),
-        'color'           => get_option( 'gcl_widget_color', '#10B981' ),
+        'position'        => get_option( 'tcl_widget_position', 'bottom-right' ),
+        'color'           => get_option( 'tcl_widget_color', '#10B981' ),
         'welcome_message' => get_option(
-            'gcl_welcome_message',
-            __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'gspltd-chat-lite' )
+            'tcl_welcome_message',
+            __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-chat-lite' )
         ),
-        'api_endpoint'    => rest_url( 'gcl/v1/message' ),
+        'api_endpoint'    => rest_url( 'tcl/v1/message' ),
         'nonce'           => wp_create_nonce( 'wp_rest' ),
     ];
 }
@@ -110,7 +110,7 @@ function gcl_get_widget_config(): array {
  * @param string $message Raw message.
  * @return string Sanitized message.
  */
-function gcl_sanitize_message( string $message ): string {
+function tcl_sanitize_message( string $message ): string {
     $message = wp_kses( $message, [
         'br'     => [],
         'p'      => [],
@@ -129,7 +129,7 @@ function gcl_sanitize_message( string $message ): string {
  * @param float $price Price value.
  * @return string Formatted price.
  */
-function gcl_format_price( float $price ): string {
+function tcl_format_price( float $price ): string {
     if ( function_exists( 'wc_price' ) ) {
         return wc_price( $price );
     }
@@ -143,7 +143,7 @@ function gcl_format_price( float $price ): string {
  * @param int $product_id Product ID.
  * @return array Product data.
  */
-function gcl_get_product_context( int $product_id ): array {
+function tcl_get_product_context( int $product_id ): array {
     if ( ! function_exists( 'wc_get_product' ) ) {
         return [];
     }
@@ -169,8 +169,8 @@ function gcl_get_product_context( int $product_id ): array {
  *
  * @return string
  */
-function gcl_get_version(): string {
-    return defined( 'GCL_VERSION' ) ? GCL_VERSION : '1.0.0';
+function tcl_get_version(): string {
+    return defined( 'TCL_VERSION' ) ? TCL_VERSION : '1.0.0';
 }
 
 /**
@@ -178,6 +178,6 @@ function gcl_get_version(): string {
  *
  * @return bool
  */
-function gcl_is_development(): bool {
+function tcl_is_development(): bool {
     return defined( 'WP_DEBUG' ) && WP_DEBUG;
 }

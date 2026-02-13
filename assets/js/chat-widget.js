@@ -1,22 +1,22 @@
 /**
- * GSPLTD Chat Lite — Chat Widget
+ * Trill Chat Lite — Chat Widget
  *
  * Handles the frontend chat widget: message sending, UI rendering,
  * product cards, quick replies, and session management.
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-/* global jQuery, gcl_ajax */
+/* global jQuery, tcl_ajax */
 (function ($) {
     'use strict';
 
     /**
      * Chat Widget module.
      */
-    window.GCLChatWidget = {
+    window.TCLChatWidget = {
 
         /** State */
         sessionId: null,
@@ -28,7 +28,7 @@
          * Initialise the chat widget.
          */
         init: function () {
-            if (gcl_ajax.enabled !== '1') {
+            if (tcl_ajax.enabled !== '1') {
                 return;
             }
 
@@ -43,47 +43,47 @@
          */
         render: function () {
             var html = '' +
-                '<div class="gcl-chat-widget" id="gcl-chat-widget">' +
+                '<div class="tcl-chat-widget" id="tcl-chat-widget">' +
                     '<!-- Toggle Button -->' +
-                    '<button class="gcl-chat-toggle" id="gcl-chat-toggle" aria-label="' + this.str('chat_with_us') + '">' +
+                    '<button class="tcl-chat-toggle" id="tcl-chat-toggle" aria-label="' + this.str('chat_with_us') + '">' +
                         '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
                             '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>' +
                         '</svg>' +
                     '</button>' +
                     '<!-- Chat Window -->' +
-                    '<div class="gcl-chat-window" id="gcl-chat-window">' +
+                    '<div class="tcl-chat-window" id="tcl-chat-window">' +
                         '<!-- Header -->' +
-                        '<div class="gcl-chat-header">' +
-                            '<div class="gcl-chat-avatar">R</div>' +
-                            '<div class="gcl-chat-header-info">' +
-                                '<div class="gcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
-                                '<div class="gcl-chat-header-status">' +
-                                    '<span class="gcl-status-dot"></span> ' + this.str('online') +
+                        '<div class="tcl-chat-header">' +
+                            '<div class="tcl-chat-avatar">R</div>' +
+                            '<div class="tcl-chat-header-info">' +
+                                '<div class="tcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
+                                '<div class="tcl-chat-header-status">' +
+                                    '<span class="tcl-status-dot"></span> ' + this.str('online') +
                                 '</div>' +
                             '</div>' +
-                            '<button class="gcl-chat-close" id="gcl-chat-close" aria-label="' + this.str('close_chat') + '">' +
+                            '<button class="tcl-chat-close" id="tcl-chat-close" aria-label="' + this.str('close_chat') + '">' +
                                 '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
                                     '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>' +
                                 '</svg>' +
                             '</button>' +
                         '</div>' +
                         '<!-- Messages -->' +
-                        '<div class="gcl-chat-messages" id="gcl-chat-messages"></div>' +
+                        '<div class="tcl-chat-messages" id="tcl-chat-messages"></div>' +
                         '<!-- Quick Replies -->' +
-                        '<div class="gcl-quick-replies" id="gcl-quick-replies"></div>' +
+                        '<div class="tcl-quick-replies" id="tcl-quick-replies"></div>' +
                         '<!-- Input -->' +
-                        '<div class="gcl-chat-input-area">' +
-                            '<input type="text" class="gcl-chat-input" id="gcl-chat-input" placeholder="' + this.str('type_message') + '" maxlength="500" />' +
-                            '<button class="gcl-chat-send" id="gcl-chat-send" aria-label="' + this.str('send') + '">' +
+                        '<div class="tcl-chat-input-area">' +
+                            '<input type="text" class="tcl-chat-input" id="tcl-chat-input" placeholder="' + this.str('type_message') + '" maxlength="500" />' +
+                            '<button class="tcl-chat-send" id="tcl-chat-send" aria-label="' + this.str('send') + '">' +
                                 '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
                                     '<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>' +
                                 '</svg>' +
                             '</button>' +
                         '</div>' +
                         '<!-- Powered By -->' +
-                        (gcl_ajax.branding && gcl_ajax.branding.show_powered_by ?
-                            '<a href="' + gcl_ajax.branding.powered_by_url + '" target="_blank" rel="noopener" class="gcl-powered-by">' +
-                                gcl_ajax.branding.powered_by_text +
+                        (tcl_ajax.branding && tcl_ajax.branding.show_powered_by ?
+                            '<a href="' + tcl_ajax.branding.powered_by_url + '" target="_blank" rel="noopener" class="tcl-powered-by">' +
+                                tcl_ajax.branding.powered_by_text +
                             '</a>' : '') +
                     '</div>' +
                 '</div>';
@@ -98,22 +98,22 @@
             var self = this;
 
             // Toggle chat.
-            $(document).on('click', '#gcl-chat-toggle', function () {
+            $(document).on('click', '#tcl-chat-toggle', function () {
                 self.toggleWidget();
             });
 
             // Close chat.
-            $(document).on('click', '#gcl-chat-close', function () {
+            $(document).on('click', '#tcl-chat-close', function () {
                 self.closeWidget();
             });
 
             // Send message.
-            $(document).on('click', '#gcl-chat-send', function () {
+            $(document).on('click', '#tcl-chat-send', function () {
                 self.sendMessage();
             });
 
             // Enter key.
-            $(document).on('keypress', '#gcl-chat-input', function (e) {
+            $(document).on('keypress', '#tcl-chat-input', function (e) {
                 if (e.which === 13 && !e.shiftKey) {
                     e.preventDefault();
                     self.sendMessage();
@@ -121,16 +121,16 @@
             });
 
             // Quick reply click.
-            $(document).on('click', '.gcl-quick-reply', function () {
+            $(document).on('click', '.tcl-quick-reply', function () {
                 var value = $(this).data('value');
                 if (value) {
-                    $('#gcl-chat-input').val(value);
+                    $('#tcl-chat-input').val(value);
                     self.sendMessage();
                 }
             });
 
             // Product card add-to-cart.
-            $(document).on('click', '.gcl-product-card-action', function (e) {
+            $(document).on('click', '.tcl-product-card-action', function (e) {
                 e.preventDefault();
                 var productId = $(this).data('product-id');
                 if (productId) {
@@ -154,18 +154,18 @@
          * Open the widget.
          */
         openWidget: function () {
-            $('#gcl-chat-window').addClass('gcl-chat-window--open');
-            $('#gcl-chat-toggle').hide();
+            $('#tcl-chat-window').addClass('tcl-chat-window--open');
+            $('#tcl-chat-toggle').hide();
             this.isOpen = true;
 
             // Show welcome message if no messages.
-            if ($('#gcl-chat-messages').children().length === 0) {
+            if ($('#tcl-chat-messages').children().length === 0) {
                 this.addMessage('assistant', this.str('welcome_message'));
             }
 
             // Focus input.
             setTimeout(function () {
-                $('#gcl-chat-input').focus();
+                $('#tcl-chat-input').focus();
             }, 100);
         },
 
@@ -173,8 +173,8 @@
          * Close the widget.
          */
         closeWidget: function () {
-            $('#gcl-chat-window').removeClass('gcl-chat-window--open');
-            $('#gcl-chat-toggle').show();
+            $('#tcl-chat-window').removeClass('tcl-chat-window--open');
+            $('#tcl-chat-toggle').show();
             this.isOpen = false;
         },
 
@@ -183,7 +183,7 @@
          */
         sendMessage: function () {
             var self = this;
-            var $input = $('#gcl-chat-input');
+            var $input = $('#tcl-chat-input');
             var message = $.trim($input.val());
 
             if (!message || this.isLoading || this.limitReached) {
@@ -197,14 +197,14 @@
             // Show typing indicator.
             this.showTyping();
             this.isLoading = true;
-            $('#gcl-chat-send').prop('disabled', true);
+            $('#tcl-chat-send').prop('disabled', true);
 
             // Clear quick replies.
-            $('#gcl-quick-replies').empty();
+            $('#tcl-quick-replies').empty();
 
             // Send API request.
             $.ajax({
-                url: gcl_ajax.rest_url + 'message',
+                url: tcl_ajax.rest_url + 'message',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
@@ -216,7 +216,7 @@
                     }
                 }),
                 beforeSend: function (xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', gcl_ajax.nonce);
+                    xhr.setRequestHeader('X-WP-Nonce', tcl_ajax.nonce);
                 },
                 success: function (response) {
                     self.hideTyping();
@@ -270,7 +270,7 @@
                 },
                 complete: function () {
                     self.isLoading = false;
-                    $('#gcl-chat-send').prop('disabled', false);
+                    $('#tcl-chat-send').prop('disabled', false);
                 }
             });
         },
@@ -282,14 +282,14 @@
          * @param {string} content Message content.
          */
         addMessage: function (role, content) {
-            var $messages = $('#gcl-chat-messages');
+            var $messages = $('#tcl-chat-messages');
             var sanitised = $('<div>').text(content).html();
 
             // Basic markdown-like formatting.
             sanitised = sanitised.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             sanitised = sanitised.replace(/\n/g, '<br>');
 
-            var $msg = $('<div class="gcl-message gcl-message--' + role + '">' + sanitised + '</div>');
+            var $msg = $('<div class="tcl-message tcl-message--' + role + '">' + sanitised + '</div>');
             $messages.append($msg);
             $messages.scrollTop($messages[0].scrollHeight);
         },
@@ -298,12 +298,12 @@
          * Show typing indicator.
          */
         showTyping: function () {
-            var $messages = $('#gcl-chat-messages');
+            var $messages = $('#tcl-chat-messages');
             $messages.append(
-                '<div class="gcl-typing" id="gcl-typing">' +
-                    '<span class="gcl-typing-dot"></span>' +
-                    '<span class="gcl-typing-dot"></span>' +
-                    '<span class="gcl-typing-dot"></span>' +
+                '<div class="tcl-typing" id="tcl-typing">' +
+                    '<span class="tcl-typing-dot"></span>' +
+                    '<span class="tcl-typing-dot"></span>' +
+                    '<span class="tcl-typing-dot"></span>' +
                 '</div>'
             );
             $messages.scrollTop($messages[0].scrollHeight);
@@ -313,7 +313,7 @@
          * Hide typing indicator.
          */
         hideTyping: function () {
-            $('#gcl-typing').remove();
+            $('#tcl-typing').remove();
         },
 
         /**
@@ -322,26 +322,26 @@
          * @param {Array} products Product data.
          */
         renderProductCards: function (products) {
-            var $container = $('<div class="gcl-product-cards"></div>');
+            var $container = $('<div class="tcl-product-cards"></div>');
 
             products.forEach(function (product) {
                 var $card = $(
-                    '<div class="gcl-product-card">' +
-                        (product.image ? '<img class="gcl-product-card-image" src="' + product.image + '" alt="" />' : '') +
-                        '<div class="gcl-product-card-body">' +
-                            '<p class="gcl-product-card-name">' + $('<span>').text(product.name).html() + '</p>' +
-                            '<span class="gcl-product-card-price">' + (product.price_html || product.price) + '</span>' +
+                    '<div class="tcl-product-card">' +
+                        (product.image ? '<img class="tcl-product-card-image" src="' + product.image + '" alt="" />' : '') +
+                        '<div class="tcl-product-card-body">' +
+                            '<p class="tcl-product-card-name">' + $('<span>').text(product.name).html() + '</p>' +
+                            '<span class="tcl-product-card-price">' + (product.price_html || product.price) + '</span>' +
                         '</div>' +
                         (product.add_to_cart ?
-                            '<button class="gcl-product-card-action" data-product-id="' + product.id + '">Add to Cart</button>' :
-                            '<a href="' + product.url + '" class="gcl-product-card-action" target="_blank">View</a>') +
+                            '<button class="tcl-product-card-action" data-product-id="' + product.id + '">Add to Cart</button>' :
+                            '<a href="' + product.url + '" class="tcl-product-card-action" target="_blank">View</a>') +
                     '</div>'
                 );
                 $container.append($card);
             });
 
-            $('#gcl-chat-messages').append($container);
-            $('#gcl-chat-messages').scrollTop($('#gcl-chat-messages')[0].scrollHeight);
+            $('#tcl-chat-messages').append($container);
+            $('#tcl-chat-messages').scrollTop($('#tcl-chat-messages')[0].scrollHeight);
         },
 
         /**
@@ -350,12 +350,12 @@
          * @param {Array} replies Quick reply data.
          */
         renderQuickReplies: function (replies) {
-            var $container = $('#gcl-quick-replies');
+            var $container = $('#tcl-quick-replies');
             $container.empty();
 
             replies.forEach(function (reply) {
                 $container.append(
-                    '<button class="gcl-quick-reply" data-value="' + $('<span>').text(reply.value).html() + '">' +
+                    '<button class="tcl-quick-reply" data-value="' + $('<span>').text(reply.value).html() + '">' +
                         $('<span>').text(reply.label).html() +
                     '</button>'
                 );
@@ -373,7 +373,7 @@
             $button.text('Adding...').prop('disabled', true);
 
             $.ajax({
-                url: gcl_ajax.ajax_url,
+                url: tcl_ajax.ajax_url,
                 type: 'POST',
                 data: {
                     action: 'woocommerce_add_to_cart',
@@ -404,7 +404,7 @@
          */
         checkUsageLimit: function (usage) {
             if (usage.remaining <= 0) {
-                this.showLimitReached(gcl_ajax.upgrade_url);
+                this.showLimitReached(tcl_ajax.upgrade_url);
             }
         },
 
@@ -415,19 +415,19 @@
          */
         showLimitReached: function (upgradeUrl) {
             this.limitReached = true;
-            $('#gcl-chat-input').prop('disabled', true).attr('placeholder', this.str('limit_reached'));
-            $('#gcl-chat-send').prop('disabled', true);
+            $('#tcl-chat-input').prop('disabled', true).attr('placeholder', this.str('limit_reached'));
+            $('#tcl-chat-send').prop('disabled', true);
 
             var $banner = $(
-                '<div class="gcl-limit-banner">' +
+                '<div class="tcl-limit-banner">' +
                     '<p>' + this.str('limit_reached') + '</p>' +
-                    '<a href="' + (upgradeUrl || gcl_ajax.upgrade_url) + '" target="_blank">' +
+                    '<a href="' + (upgradeUrl || tcl_ajax.upgrade_url) + '" target="_blank">' +
                         this.str('upgrade_now') +
                     '</a>' +
                 '</div>'
             );
 
-            $('.gcl-chat-input-area').before($banner);
+            $('.tcl-chat-input-area').before($banner);
         },
 
         /**
@@ -437,7 +437,7 @@
             // Subtle message, not blocking.
             this.addMessage('assistant',
                 'You\'re approaching your monthly limit. ' +
-                '<a href="' + gcl_ajax.upgrade_url + '" target="_blank">Upgrade for unlimited conversations</a>.'
+                '<a href="' + tcl_ajax.upgrade_url + '" target="_blank">Upgrade for unlimited conversations</a>.'
             );
         },
 
@@ -450,7 +450,7 @@
             var errorMsg = response.error || this.str('error_message');
 
             if (response.error_code === 'LIMIT_REACHED') {
-                this.showLimitReached(response.upgrade_url || gcl_ajax.upgrade_url);
+                this.showLimitReached(response.upgrade_url || tcl_ajax.upgrade_url);
                 this.addMessage('assistant', errorMsg);
             } else {
                 this.addMessage('assistant', errorMsg);
@@ -461,7 +461,7 @@
          * Apply theme colour from settings.
          */
         applyThemeColour: function () {
-            var $widget = $('#gcl-chat-widget');
+            var $widget = $('#tcl-chat-widget');
             if ($widget.length) {
                 // The colour is applied via CSS custom property, set in wp_head if customised.
                 // Default falls back to #10B981 in CSS.
@@ -474,7 +474,7 @@
         saveSession: function () {
             try {
                 if (this.sessionId) {
-                    localStorage.setItem('gcl_session_id', this.sessionId);
+                    localStorage.setItem('tcl_session_id', this.sessionId);
                 }
             } catch (e) {
                 // localStorage not available.
@@ -486,7 +486,7 @@
          */
         loadSession: function () {
             try {
-                this.sessionId = localStorage.getItem('gcl_session_id') || null;
+                this.sessionId = localStorage.getItem('tcl_session_id') || null;
             } catch (e) {
                 this.sessionId = null;
             }
@@ -499,14 +499,14 @@
          * @return {string} Translated string.
          */
         str: function (key) {
-            return (gcl_ajax.strings && gcl_ajax.strings[key]) || key;
+            return (tcl_ajax.strings && tcl_ajax.strings[key]) || key;
         }
     };
 
     // Initialise on DOM ready.
     $(document).ready(function () {
-        if (typeof gcl_ajax !== 'undefined') {
-            GCLChatWidget.init();
+        if (typeof tcl_ajax !== 'undefined') {
+            TCLChatWidget.init();
         }
     });
 

@@ -3,14 +3,14 @@
  * Database Migrations.
  *
  * Creates and manages database schema for the Lite plugin.
- * Tables: gcl_conversations, gcl_messages, gcl_feedback.
+ * Tables: tcl_conversations, tcl_messages, tcl_feedback.
  *
- * @package GspltdChatLite\Database
+ * @package TrillChatLite\Database
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\Database;
+namespace TrillChatLite\Database;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -36,7 +36,7 @@ class Migrations {
     public static function run(): void {
         global $wpdb;
 
-        $installed_version = \get_option( 'gcl_db_version', '0.0.0' );
+        $installed_version = \get_option( 'tcl_db_version', '0.0.0' );
 
         if ( version_compare( $installed_version, self::SCHEMA_VERSION, '>=' ) ) {
             return;
@@ -50,9 +50,9 @@ class Migrations {
         self::create_messages_table( $wpdb, $charset_collate );
         self::create_feedback_table( $wpdb, $charset_collate );
 
-        \update_option( 'gcl_db_version', self::SCHEMA_VERSION );
+        \update_option( 'tcl_db_version', self::SCHEMA_VERSION );
 
-        gcl_log( 'Database migrations completed', 'info', [
+        tcl_log( 'Database migrations completed', 'info', [
             'version' => self::SCHEMA_VERSION,
         ] );
     }
@@ -64,7 +64,7 @@ class Migrations {
      * @param string $charset_collate Charset and collation.
      */
     private static function create_conversations_table( \wpdb $wpdb, string $charset_collate ): void {
-        $table_name = $wpdb->prefix . 'gcl_conversations';
+        $table_name = $wpdb->prefix . 'tcl_conversations';
 
         $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -93,8 +93,8 @@ class Migrations {
      * @param string $charset_collate Charset and collation.
      */
     private static function create_messages_table( \wpdb $wpdb, string $charset_collate ): void {
-        $table_name     = $wpdb->prefix . 'gcl_messages';
-        $conversations  = $wpdb->prefix . 'gcl_conversations';
+        $table_name     = $wpdb->prefix . 'tcl_messages';
+        $conversations  = $wpdb->prefix . 'tcl_conversations';
 
         $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -120,7 +120,7 @@ class Migrations {
      * @param string $charset_collate Charset and collation.
      */
     private static function create_feedback_table( \wpdb $wpdb, string $charset_collate ): void {
-        $table_name = $wpdb->prefix . 'gcl_feedback';
+        $table_name = $wpdb->prefix . 'tcl_feedback';
 
         $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -146,9 +146,9 @@ class Migrations {
         global $wpdb;
 
         $tables = [
-            $wpdb->prefix . 'gcl_feedback',
-            $wpdb->prefix . 'gcl_messages',
-            $wpdb->prefix . 'gcl_conversations',
+            $wpdb->prefix . 'tcl_feedback',
+            $wpdb->prefix . 'tcl_messages',
+            $wpdb->prefix . 'tcl_conversations',
         ];
 
         foreach ( $tables as $table ) {
@@ -156,9 +156,9 @@ class Migrations {
             $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
         }
 
-        \delete_option( 'gcl_db_version' );
+        \delete_option( 'tcl_db_version' );
 
-        gcl_log( 'All plugin tables dropped', 'info' );
+        tcl_log( 'All plugin tables dropped', 'info' );
     }
 
     /**

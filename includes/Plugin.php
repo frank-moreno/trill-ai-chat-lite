@@ -5,24 +5,24 @@
  * Implements Singleton pattern. Coordinates all plugin components.
  * Simplified for Lite tier: no engines, no tiers, no licensing.
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite;
+namespace TrillChatLite;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-use GspltdChatLite\Admin\Admin;
-use GspltdChatLite\Admin\Settings;
-use GspltdChatLite\Frontend\Frontend;
-use GspltdChatLite\Database\DbManager;
-use GspltdChatLite\Lite\UpgradeNotices;
-use GspltdChatLite\Lite\UsageLimiter;
-use GspltdChatLite\AI\ProxyClient;
+use TrillChatLite\Admin\Admin;
+use TrillChatLite\Admin\Settings;
+use TrillChatLite\Frontend\Frontend;
+use TrillChatLite\Database\DbManager;
+use TrillChatLite\Lite\UpgradeNotices;
+use TrillChatLite\Lite\UsageLimiter;
+use TrillChatLite\AI\ProxyClient;
 
 /**
  * Class Plugin
@@ -76,7 +76,7 @@ final class Plugin {
      * Private constructor.
      */
     private function __construct() {
-        $this->version = defined( 'GCL_VERSION' ) ? GCL_VERSION : '1.0.0';
+        $this->version = defined( 'TCL_VERSION' ) ? TCL_VERSION : '1.0.0';
         $this->loader  = new Loader();
 
         $this->init_components();
@@ -103,7 +103,7 @@ final class Plugin {
         $this->set_locale();
         $this->loader->run();
 
-        gcl_log( 'GSPLTD Chat Lite initialised successfully', 'info' );
+        tcl_log( 'Trill Chat Lite initialised successfully', 'info' );
     }
 
     /**
@@ -143,14 +143,14 @@ final class Plugin {
         // 7. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 
-        gcl_log( 'All plugin components initialised', 'debug' );
+        tcl_log( 'All plugin components initialised', 'debug' );
     }
 
     /**
      * Register REST API routes.
      */
     public function register_rest_routes(): void {
-        $controller = new \GspltdChatLite\AI\RestController(
+        $controller = new \TrillChatLite\AI\RestController(
             $this->components['db_manager'],
             $this->components['usage_limiter']
         );

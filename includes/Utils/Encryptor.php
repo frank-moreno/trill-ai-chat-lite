@@ -5,12 +5,12 @@
  * Provides simple encryption/decryption for sensitive data
  * using WordPress salts and OpenSSL.
  *
- * @package GspltdChatLite\Utils
+ * @package TrillChatLite\Utils
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\Utils;
+namespace TrillChatLite\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -34,7 +34,7 @@ class Encryptor {
      * @return string Encryption key.
      */
     private static function get_key(): string {
-        $salt = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'gcl-default-encryption-key';
+        $salt = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'tcl-default-encryption-key';
         return hash( 'sha256', $salt, true );
     }
 
@@ -46,7 +46,7 @@ class Encryptor {
      */
     public static function encrypt( string $value ) {
         if ( ! extension_loaded( 'openssl' ) ) {
-            gcl_log( 'OpenSSL extension not loaded, returning raw value', 'warning' );
+            tcl_log( 'OpenSSL extension not loaded, returning raw value', 'warning' );
             return base64_encode( $value ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
         }
 

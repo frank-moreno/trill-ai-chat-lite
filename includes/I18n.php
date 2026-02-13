@@ -2,12 +2,12 @@
 /**
  * Internationalisation functionality
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite;
+namespace TrillChatLite;
 
 /**
  * Loads and defines the internationalisation files for this plugin.
@@ -19,7 +19,7 @@ class I18n {
      */
     public function load_plugin_textdomain(): void {
         \load_plugin_textdomain(
-            'gspltd-chat-lite',
+            'trill-chat-lite',
             false,
             dirname( dirname( plugin_basename( __FILE__ ) ) ) . '/languages/'
         );

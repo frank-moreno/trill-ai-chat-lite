@@ -1,5 +1,5 @@
-=== GSPLTD AI Chat — Lite ===
-Contributors: gspltd
+=== Trill AI AI Chat — Lite ===
+Contributors: trillai
 Tags: woocommerce, ai, chat, customer service, chatbot
 Requires at least: 6.0
 Tested up to: 6.7
@@ -13,7 +13,7 @@ recommend items, and boost conversions — automatically.
 
 == Description ==
 
-GSPLTD AI Chat adds an intelligent customer service chatbot to your WooCommerce
+Trill AI AI Chat adds an intelligent customer service chatbot to your WooCommerce
 store. It understands your products, answers customer questions, and helps
 shoppers find what they're looking for.
 
@@ -34,14 +34,14 @@ shoppers find what they're looking for.
 
 **Need more?**
 
-[Upgrade to GSPLTD AI Chat Pro](https://trillai.io/pricing/) for unlimited
+[Upgrade to Trill AI AI Chat Pro](https://trillai.io/pricing/) for unlimited
 conversations, order tracking, analytics, and priority support.
 
 == Installation ==
 
-1. Upload `gspltd-chat-lite` to `/wp-content/plugins/`
+1. Upload `trill-chat-lite` to `/wp-content/plugins/`
 2. Activate through 'Plugins' menu
-3. Go to GSPLTD Chat > Dashboard to see your chat status
+3. Go to Trill AI Chat > Dashboard to see your chat status
 4. The chat widget appears automatically on your store
 
 == Frequently Asked Questions ==
@@ -61,7 +61,7 @@ Yes. Messages are processed securely via encrypted HTTPS connections. We do not
 store or use your data for AI training. See our Privacy Policy at
 https://trillai.io/privacy/.
 
-= Can I remove the "Powered by GSPLTD" badge? =
+= Can I remove the "Powered by Trill AI" badge? =
 
 The badge is included in the Lite version. Paid plans do not include the badge.
 
@@ -80,11 +80,11 @@ The badge is included in the Lite version. Paid plans do not include the badge.
 == Upgrade Notice ==
 
 = 1.0.0 =
-Initial release of GSPLTD Chat Lite.
+Initial release of Trill Chat Lite.
 
 == External Services ==
 
-This plugin connects to the GSPLTD API (https://api.trillai.io) to process
+This plugin connects to the Trill AI API (https://api.trillai.io) to process
 chat messages using artificial intelligence. When a visitor sends a message
 through the chat widget, the message content and relevant product context are
 sent to this external service for AI processing.

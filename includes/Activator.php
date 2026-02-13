@@ -5,12 +5,12 @@
  * Handles database creation, default options, roles, and cron scheduling.
  * Simplified for Lite: no trial registration, no engine migration.
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite;
+namespace TrillChatLite;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -44,20 +44,20 @@ class Activator {
             \flush_rewrite_rules();
 
             // 6. Set activation flag.
-            \update_option( 'gcl_activated', true );
-            \update_option( 'gcl_activation_time', \current_time( 'mysql' ) );
+            \update_option( 'tcl_activated', true );
+            \update_option( 'tcl_activation_time', \current_time( 'mysql' ) );
 
-            if ( function_exists( 'gcl_log' ) ) {
-                gcl_log( 'Plugin activated successfully' );
+            if ( function_exists( 'tcl_log' ) ) {
+                tcl_log( 'Plugin activated successfully' );
             }
 
         } catch ( \Exception $e ) {
-            if ( function_exists( 'gcl_log' ) ) {
-                gcl_log( 'Activation failed: ' . $e->getMessage(), 'error' );
+            if ( function_exists( 'tcl_log' ) ) {
+                tcl_log( 'Activation failed: ' . $e->getMessage(), 'error' );
             }
 
             \wp_die(
-                esc_html__( 'GSPLTD Chat Lite activation failed: ', 'gspltd-chat-lite' ) .
+                esc_html__( 'Trill Chat Lite activation failed: ', 'trill-chat-lite' ) .
                 esc_html( $e->getMessage() )
             );
         }
@@ -76,12 +76,12 @@ class Activator {
      */
     private static function set_default_options(): void {
         $defaults = [
-            'gcl_version'          => defined( 'GCL_VERSION' ) ? GCL_VERSION : '1.0.0',
-            'gcl_chat_enabled'     => '1',
-            'gcl_widget_position'  => 'bottom-right',
-            'gcl_widget_color'     => '#10B981',
-            'gcl_conversations_used'       => 0,
-            'gcl_conversations_reset_date' => gmdate( 'Y-m-01' ),
+            'tcl_version'          => defined( 'TCL_VERSION' ) ? TCL_VERSION : '1.0.0',
+            'tcl_chat_enabled'     => '1',
+            'tcl_widget_position'  => 'bottom-right',
+            'tcl_widget_color'     => '#10B981',
+            'tcl_conversations_used'       => 0,
+            'tcl_conversations_reset_date' => gmdate( 'Y-m-01' ),
         ];
 
         foreach ( $defaults as $option => $value ) {
@@ -90,8 +90,8 @@ class Activator {
             }
         }
 
-        if ( function_exists( 'gcl_log' ) ) {
-            gcl_log( 'Default options set', 'debug' );
+        if ( function_exists( 'tcl_log' ) ) {
+            tcl_log( 'Default options set', 'debug' );
         }
     }
 
@@ -100,8 +100,8 @@ class Activator {
      */
     private static function create_roles(): void {
         $capabilities = [
-            'manage_gcl_chat'    => true,
-            'view_gcl_analytics' => true,
+            'manage_tcl_chat'    => true,
+            'view_tcl_analytics' => true,
         ];
 
         // Add capabilities to administrator.
@@ -117,15 +117,15 @@ class Activator {
         // Add limited capabilities to shop_manager.
         $shop_manager = \get_role( 'shop_manager' );
         if ( $shop_manager ) {
-            if ( ! $shop_manager->has_cap( 'manage_gcl_chat' ) ) {
-                $shop_manager->add_cap( 'manage_gcl_chat' );
+            if ( ! $shop_manager->has_cap( 'manage_tcl_chat' ) ) {
+                $shop_manager->add_cap( 'manage_tcl_chat' );
             }
         }
 
-        \update_option( 'gcl_capabilities', array_keys( $capabilities ) );
+        \update_option( 'tcl_capabilities', array_keys( $capabilities ) );
 
-        if ( function_exists( 'gcl_log' ) ) {
-            gcl_log( 'Roles and capabilities created', 'debug' );
+        if ( function_exists( 'tcl_log' ) ) {
+            tcl_log( 'Roles and capabilities created', 'debug' );
         }
     }
 
@@ -134,17 +134,17 @@ class Activator {
      */
     private static function schedule_cron_jobs(): void {
         // Daily cleanup of old conversations.
-        if ( ! \wp_next_scheduled( 'gcl_cleanup_conversations' ) ) {
-            \wp_schedule_event( time(), 'daily', 'gcl_cleanup_conversations' );
+        if ( ! \wp_next_scheduled( 'tcl_cleanup_conversations' ) ) {
+            \wp_schedule_event( time(), 'daily', 'tcl_cleanup_conversations' );
         }
 
         // Hourly product indexing.
-        if ( ! \wp_next_scheduled( 'gcl_index_products' ) ) {
-            \wp_schedule_event( time(), 'hourly', 'gcl_index_products' );
+        if ( ! \wp_next_scheduled( 'tcl_index_products' ) ) {
+            \wp_schedule_event( time(), 'hourly', 'tcl_index_products' );
         }
 
-        if ( function_exists( 'gcl_log' ) ) {
-            gcl_log( 'Cron jobs scheduled', 'debug' );
+        if ( function_exists( 'tcl_log' ) ) {
+            tcl_log( 'Cron jobs scheduled', 'debug' );
         }
     }
 }

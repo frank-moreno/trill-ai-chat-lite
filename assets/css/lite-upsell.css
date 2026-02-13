@@ -1,7 +1,7 @@
 /**
- * GSPLTD Chat Lite — Upgrade CTA Styles
+ * Trill Chat Lite — Upgrade CTA Styles
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
@@ -10,15 +10,15 @@
    Admin Notice
    ======================================== */
 
-.gcl-upgrade-notice {
+.tcl-upgrade-notice {
     border-left-color: #2563eb;
 }
 
-.gcl-upgrade-notice p {
+.tcl-upgrade-notice p {
     font-size: 13px;
 }
 
-.gcl-upgrade-notice a {
+.tcl-upgrade-notice a {
     font-weight: 600;
 }
 
@@ -26,7 +26,7 @@
    Upgrade Card
    ======================================== */
 
-.gcl-upgrade-card {
+.tcl-upgrade-card {
     background: #fff;
     border: 1px solid #c3c4c7;
     border-radius: 4px;
@@ -34,27 +34,27 @@
     margin: 20px 0;
 }
 
-.gcl-upgrade-card h2 {
+.tcl-upgrade-card h2 {
     margin-top: 0;
     font-size: 18px;
     color: #1d2327;
 }
 
-.gcl-upgrade-card table {
+.tcl-upgrade-card table {
     width: 100%;
 }
 
-.gcl-upgrade-card th {
+.tcl-upgrade-card th {
     text-align: center;
     padding: 10px;
 }
 
-.gcl-upgrade-card td {
+.tcl-upgrade-card td {
     text-align: center;
     padding: 8px 10px;
 }
 
-.gcl-upgrade-card .button-hero {
+.tcl-upgrade-card .button-hero {
     font-size: 15px;
     padding: 8px 24px;
 }
@@ -63,7 +63,7 @@
    Dashboard Upgrade CTA
    ======================================== */
 
-.gcl-dashboard-upgrade {
+.tcl-dashboard-upgrade {
     background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
     color: #fff;
     border-radius: 8px;
@@ -72,19 +72,19 @@
     text-align: center;
 }
 
-.gcl-dashboard-upgrade h3 {
+.tcl-dashboard-upgrade h3 {
     margin: 0 0 8px;
     font-size: 18px;
     color: #fff;
 }
 
-.gcl-dashboard-upgrade p {
+.tcl-dashboard-upgrade p {
     margin: 0 0 16px;
     opacity: 0.9;
     font-size: 14px;
 }
 
-.gcl-dashboard-upgrade .button {
+.tcl-dashboard-upgrade .button {
     background: #fff;
     color: #2563eb;
     border: none;
@@ -96,7 +96,7 @@
     transition: opacity 0.2s;
 }
 
-.gcl-dashboard-upgrade .button:hover {
+.tcl-dashboard-upgrade .button:hover {
     opacity: 0.9;
     color: #1d4ed8;
 }

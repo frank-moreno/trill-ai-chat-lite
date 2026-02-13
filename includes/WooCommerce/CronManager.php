@@ -5,18 +5,18 @@
  * Manages scheduled tasks: product indexing refresh and conversation cleanup.
  * Simplified for Lite: fewer tasks, longer intervals.
  *
- * @package GspltdChatLite\WooCommerce
+ * @package TrillChatLite\WooCommerce
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\WooCommerce;
+namespace TrillChatLite\WooCommerce;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-use GspltdChatLite\Database\DbManager;
+use TrillChatLite\Database\DbManager;
 
 /**
  * Class CronManager
@@ -28,8 +28,8 @@ class CronManager {
     /**
      * Cron hook names.
      */
-    private const HOOK_INDEX_PRODUCTS = 'gcl_index_products';
-    private const HOOK_CLEANUP        = 'gcl_cleanup_conversations';
+    private const HOOK_INDEX_PRODUCTS = 'tcl_index_products';
+    private const HOOK_CLEANUP        = 'tcl_cleanup_conversations';
 
     /**
      * Initialise cron hooks.
@@ -53,7 +53,7 @@ class CronManager {
             \wp_schedule_event( time(), 'daily', self::HOOK_CLEANUP );
         }
 
-        gcl_log( 'Cron events scheduled', 'info' );
+        tcl_log( 'Cron events scheduled', 'info' );
     }
 
     /**
@@ -74,31 +74,31 @@ class CronManager {
             }
         }
 
-        gcl_log( 'Cron events unscheduled', 'info' );
+        tcl_log( 'Cron events unscheduled', 'info' );
     }
 
     /**
      * Run product index refresh.
      */
     public function run_product_index(): void {
-        gcl_log( 'Cron: starting product index refresh', 'info' );
+        tcl_log( 'Cron: starting product index refresh', 'info' );
 
         $indexer = new ProductIndexer();
         $result  = $indexer->index_products();
 
-        gcl_log( 'Cron: product index complete', 'info', $result );
+        tcl_log( 'Cron: product index complete', 'info', $result );
     }
 
     /**
      * Run conversation cleanup.
      */
     public function run_cleanup(): void {
-        gcl_log( 'Cron: starting conversation cleanup', 'info' );
+        tcl_log( 'Cron: starting conversation cleanup', 'info' );
 
         $db      = new DbManager();
         $deleted = $db->cleanup_old_conversations( 30 );
 
-        gcl_log( 'Cron: cleanup complete', 'info', [
+        tcl_log( 'Cron: cleanup complete', 'info', [
             'deleted' => $deleted,
         ] );
     }

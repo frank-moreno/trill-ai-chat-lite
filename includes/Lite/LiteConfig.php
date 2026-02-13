@@ -4,12 +4,12 @@
  *
  * No JSON configs, no feature flags, no tier system.
  *
- * @package GspltdChatLite\Lite
+ * @package TrillChatLite\Lite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\Lite;
+namespace TrillChatLite\Lite;
 
 /**
  * Hardcoded Lite configuration.
@@ -41,7 +41,7 @@ class LiteConfig {
      * Widget branding.
      */
     public const SHOW_POWERED_BY = true;
-    public const POWERED_BY_TEXT = 'Powered by GSPLTD';
+    public const POWERED_BY_TEXT = 'Powered by Trill AI';
     public const POWERED_BY_URL  = 'https://trillai.io/?utm_source=widget&utm_medium=badge';
 
     /**

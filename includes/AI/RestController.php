@@ -5,20 +5,20 @@
  * Handles registration and processing of all REST API endpoints.
  * Simplified for Lite: managed proxy only, no BYOK, no topic enforcement.
  *
- * @package GspltdChatLite\AI
+ * @package TrillChatLite\AI
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\AI;
+namespace TrillChatLite\AI;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-use GspltdChatLite\Database\DbManager;
-use GspltdChatLite\Lite\LiteConfig;
-use GspltdChatLite\Lite\UsageLimiter;
+use TrillChatLite\Database\DbManager;
+use TrillChatLite\Lite\LiteConfig;
+use TrillChatLite\Lite\UsageLimiter;
 
 /**
  * REST Controller — Lite API endpoints.
@@ -33,7 +33,7 @@ class RestController {
      *
      * @var string
      */
-    private const API_NAMESPACE = 'gcl/v1';
+    private const API_NAMESPACE = 'tcl/v1';
 
     /**
      * UUID validation pattern.
@@ -98,7 +98,7 @@ class RestController {
      * Register all REST API routes.
      */
     public function register_routes(): void {
-        // POST /wp-json/gcl/v1/message
+        // POST /wp-json/tcl/v1/message
         \register_rest_route(
             self::API_NAMESPACE,
             '/message',
@@ -110,7 +110,7 @@ class RestController {
             ]
         );
 
-        // GET /wp-json/gcl/v1/conversation/{session_id}
+        // GET /wp-json/tcl/v1/conversation/{session_id}
         \register_rest_route(
             self::API_NAMESPACE,
             '/conversation/(?P<session_id>[\w-]+)',
@@ -129,7 +129,7 @@ class RestController {
             ]
         );
 
-        // POST /wp-json/gcl/v1/feedback
+        // POST /wp-json/tcl/v1/feedback
         \register_rest_route(
             self::API_NAMESPACE,
             '/feedback',
@@ -141,7 +141,7 @@ class RestController {
             ]
         );
 
-        gcl_log( 'REST API routes registered', 'debug', [
+        tcl_log( 'REST API routes registered', 'debug', [
             'namespace' => self::API_NAMESPACE,
         ] );
     }
@@ -164,7 +164,7 @@ class RestController {
             // 2. Validate message.
             if ( empty( trim( $message ) ) ) {
                 return $this->formatter->format_error(
-                    __( 'Message cannot be empty.', 'gspltd-chat-lite' ),
+                    __( 'Message cannot be empty.', 'trill-chat-lite' ),
                     'EMPTY_MESSAGE',
                     400
                 );
@@ -174,7 +174,7 @@ class RestController {
                 return $this->formatter->format_error(
                     sprintf(
                         /* translators: %d: maximum character length */
-                        __( 'Message exceeds maximum length of %d characters.', 'gspltd-chat-lite' ),
+                        __( 'Message exceeds maximum length of %d characters.', 'trill-chat-lite' ),
                         self::MAX_MESSAGE_LENGTH
                     ),
                     'MESSAGE_TOO_LONG',
@@ -186,7 +186,7 @@ class RestController {
             if ( ! $this->usage_limiter->canStartConversation() && empty( $session_id ) ) {
                 return new \WP_REST_Response( [
                     'success'     => false,
-                    'error'       => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'gspltd-chat-lite' ),
+                    'error'       => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-chat-lite' ),
                     'error_code'  => 'LIMIT_REACHED',
                     'upgrade_url' => LiteConfig::getUpgradeUrl( 'api_limit' ),
                     'usage'       => $this->usage_limiter->getUsageStats(),
@@ -201,9 +201,9 @@ class RestController {
                 $session_id = $this->db->create_conversation( $user_id );
 
                 if ( empty( $session_id ) ) {
-                    gcl_log( 'Failed to create conversation', 'error' );
+                    tcl_log( 'Failed to create conversation', 'error' );
                     return $this->formatter->format_error(
-                        __( 'Failed to create conversation.', 'gspltd-chat-lite' ),
+                        __( 'Failed to create conversation.', 'trill-chat-lite' ),
                         'DB_ERROR',
                         500
                     );
@@ -216,7 +216,7 @@ class RestController {
                 // Validate existing session.
                 if ( ! preg_match( self::UUID_PATTERN, $session_id ) ) {
                     return $this->formatter->format_error(
-                        __( 'Invalid session ID format.', 'gspltd-chat-lite' ),
+                        __( 'Invalid session ID format.', 'trill-chat-lite' ),
                         'INVALID_SESSION',
                         400
                     );
@@ -224,7 +224,7 @@ class RestController {
 
                 if ( ! $this->db->conversation_exists( $session_id ) ) {
                     return $this->formatter->format_error(
-                        __( 'Session not found. Please start a new conversation.', 'gspltd-chat-lite' ),
+                        __( 'Session not found. Please start a new conversation.', 'trill-chat-lite' ),
                         'SESSION_NOT_FOUND',
                         404
                     );
@@ -235,9 +235,9 @@ class RestController {
             $user_message_id = $this->db->create_message( $session_id, 'user', $message );
 
             if ( ! $user_message_id ) {
-                gcl_log( 'Failed to store user message', 'error', [ 'session_id' => $session_id ] );
+                tcl_log( 'Failed to store user message', 'error', [ 'session_id' => $session_id ] );
                 return $this->formatter->format_error(
-                    __( 'Failed to store message.', 'gspltd-chat-lite' ),
+                    __( 'Failed to store message.', 'trill-chat-lite' ),
                     'DB_ERROR',
                     500
                 );
@@ -263,7 +263,7 @@ class RestController {
             $ai_response = $this->proxy->send_message( $message, $session_id, $proxy_context );
 
             if ( ! $ai_response['success'] ) {
-                gcl_log( 'Proxy request failed', 'error', [
+                tcl_log( 'Proxy request failed', 'error', [
                     'error_code' => $ai_response['error_code'] ?? 'UNKNOWN',
                     'session_id' => $session_id,
                 ] );
@@ -272,7 +272,7 @@ class RestController {
                 $status     = $error_code === 'LIMIT_REACHED' ? 429 : 502;
 
                 return $this->formatter->format_error(
-                    $ai_response['error'] ?? __( 'AI service temporarily unavailable.', 'gspltd-chat-lite' ),
+                    $ai_response['error'] ?? __( 'AI service temporarily unavailable.', 'trill-chat-lite' ),
                     $error_code,
                     $status
                 );
@@ -283,7 +283,7 @@ class RestController {
             $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content );
 
             if ( ! $ai_message_id ) {
-                gcl_log( 'Failed to store AI message (response still returned)', 'warning', [
+                tcl_log( 'Failed to store AI message (response still returned)', 'warning', [
                     'session_id' => $session_id,
                 ] );
                 $ai_message_id = 0;
@@ -292,7 +292,7 @@ class RestController {
             // 10. Format and return response.
             $processing_time = microtime( true ) - $start_time;
 
-            gcl_log( 'Message processed successfully', 'info', [
+            tcl_log( 'Message processed successfully', 'info', [
                 'session_id'       => $session_id,
                 'processing_time'  => round( $processing_time, 3 ),
                 'is_new'           => $is_new_conversation,
@@ -318,14 +318,14 @@ class RestController {
             return new \WP_REST_Response( $response_data, 200 );
 
         } catch ( \Exception $e ) {
-            gcl_log( 'Message endpoint exception', 'error', [
+            tcl_log( 'Message endpoint exception', 'error', [
                 'error' => $e->getMessage(),
                 'file'  => $e->getFile(),
                 'line'  => $e->getLine(),
             ] );
 
             return $this->formatter->format_error(
-                __( 'An unexpected error occurred. Please try again.', 'gspltd-chat-lite' ),
+                __( 'An unexpected error occurred. Please try again.', 'trill-chat-lite' ),
                 'INTERNAL_ERROR',
                 500
             );
@@ -344,7 +344,7 @@ class RestController {
 
             if ( ! $this->db->conversation_exists( $session_id ) ) {
                 return $this->formatter->format_error(
-                    __( 'Conversation not found.', 'gspltd-chat-lite' ),
+                    __( 'Conversation not found.', 'trill-chat-lite' ),
                     'NOT_FOUND',
                     404
                 );
@@ -368,10 +368,10 @@ class RestController {
             ], 200 );
 
         } catch ( \Exception $e ) {
-            gcl_log( 'Conversation endpoint error', 'error', [ 'error' => $e->getMessage() ] );
+            tcl_log( 'Conversation endpoint error', 'error', [ 'error' => $e->getMessage() ] );
 
             return $this->formatter->format_error(
-                __( 'Failed to retrieve conversation.', 'gspltd-chat-lite' ),
+                __( 'Failed to retrieve conversation.', 'trill-chat-lite' ),
                 'INTERNAL_ERROR',
                 500
             );
@@ -394,7 +394,7 @@ class RestController {
 
             if ( ! $saved ) {
                 return $this->formatter->format_error(
-                    __( 'Failed to save feedback.', 'gspltd-chat-lite' ),
+                    __( 'Failed to save feedback.', 'trill-chat-lite' ),
                     'DB_ERROR',
                     500
                 );
@@ -402,14 +402,14 @@ class RestController {
 
             return new \WP_REST_Response( [
                 'success' => true,
-                'message' => __( 'Thank you for your feedback!', 'gspltd-chat-lite' ),
+                'message' => __( 'Thank you for your feedback!', 'trill-chat-lite' ),
             ], 200 );
 
         } catch ( \Exception $e ) {
-            gcl_log( 'Feedback endpoint error', 'error', [ 'error' => $e->getMessage() ] );
+            tcl_log( 'Feedback endpoint error', 'error', [ 'error' => $e->getMessage() ] );
 
             return $this->formatter->format_error(
-                __( 'Failed to save feedback.', 'gspltd-chat-lite' ),
+                __( 'Failed to save feedback.', 'trill-chat-lite' ),
                 'INTERNAL_ERROR',
                 500
             );
@@ -429,7 +429,7 @@ class RestController {
         if ( ! empty( $nonce ) && ! \wp_verify_nonce( $nonce, 'wp_rest' ) ) {
             return new \WP_Error(
                 'rest_forbidden',
-                __( 'Invalid security token. Please refresh the page.', 'gspltd-chat-lite' ),
+                __( 'Invalid security token. Please refresh the page.', 'trill-chat-lite' ),
                 [ 'status' => 403 ]
             );
         }
@@ -437,13 +437,13 @@ class RestController {
         // Basic rate limiting via transient.
         $ip      = $this->get_client_ip();
         $ip_hash = md5( $ip );
-        $key     = 'gcl_rate_' . $ip_hash;
+        $key     = 'tcl_rate_' . $ip_hash;
         $count   = (int) \get_transient( $key );
 
         if ( $count >= 30 ) {
             return new \WP_Error(
                 'rest_rate_limited',
-                __( 'Too many requests. Please try again later.', 'gspltd-chat-lite' ),
+                __( 'Too many requests. Please try again later.', 'trill-chat-lite' ),
                 [ 'status' => 429 ]
             );
         }
@@ -559,7 +559,7 @@ class RestController {
                 $results[] = [
                     'product_id' => $product->get_id(),
                     'name'       => $product->get_name(),
-                    'price'      => gcl_format_price( $product->get_price() ),
+                    'price'      => tcl_format_price( $product->get_price() ),
                     'url'        => $product->get_permalink(),
                     'in_stock'   => $product->is_in_stock(),
                 ];
@@ -568,7 +568,7 @@ class RestController {
             return $results;
 
         } catch ( \Exception $e ) {
-            gcl_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
+            tcl_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
             return [];
         }
     }

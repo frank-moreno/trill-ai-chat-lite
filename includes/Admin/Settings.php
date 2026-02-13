@@ -5,12 +5,12 @@
  * Handles settings registration and validation.
  * Simplified for Lite: no BYOK, no fallback, no budget.
  *
- * @package GspltdChatLite\Admin
+ * @package TrillChatLite\Admin
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\Admin;
+namespace TrillChatLite\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -28,7 +28,7 @@ class Settings {
      *
      * @var string
      */
-    private const SETTINGS_GROUP = 'gcl_settings';
+    private const SETTINGS_GROUP = 'tcl_settings';
 
     /**
      * Register settings with WordPress Settings API.
@@ -37,7 +37,7 @@ class Settings {
         // Chat enabled toggle.
         \register_setting(
             self::SETTINGS_GROUP,
-            'gcl_chat_enabled',
+            'tcl_chat_enabled',
             [
                 'type'              => 'string',
                 'sanitize_callback' => function ( $value ) {
@@ -50,7 +50,7 @@ class Settings {
         // Widget position.
         \register_setting(
             self::SETTINGS_GROUP,
-            'gcl_widget_position',
+            'tcl_widget_position',
             [
                 'type'              => 'string',
                 'sanitize_callback' => [ $this, 'sanitize_position' ],
@@ -61,7 +61,7 @@ class Settings {
         // Widget primary colour.
         \register_setting(
             self::SETTINGS_GROUP,
-            'gcl_widget_color',
+            'tcl_widget_color',
             [
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_hex_color',
@@ -72,15 +72,15 @@ class Settings {
         // Welcome message.
         \register_setting(
             self::SETTINGS_GROUP,
-            'gcl_welcome_message',
+            'tcl_welcome_message',
             [
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_text_field',
-                'default'           => __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'gspltd-chat-lite' ),
+                'default'           => __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-chat-lite' ),
             ]
         );
 
-        gcl_log( 'Settings registered with WordPress', 'debug' );
+        tcl_log( 'Settings registered with WordPress', 'debug' );
     }
 
     /**
@@ -104,10 +104,10 @@ class Settings {
      */
     public function get_current_config(): array {
         return [
-            'chat_enabled'     => \get_option( 'gcl_chat_enabled', '1' ),
-            'widget_position'  => \get_option( 'gcl_widget_position', 'bottom-right' ),
-            'widget_color'     => \get_option( 'gcl_widget_color', '#10B981' ),
-            'welcome_message'  => \get_option( 'gcl_welcome_message', '' ),
+            'chat_enabled'     => \get_option( 'tcl_chat_enabled', '1' ),
+            'widget_position'  => \get_option( 'tcl_widget_position', 'bottom-right' ),
+            'widget_color'     => \get_option( 'tcl_widget_color', '#10B981' ),
+            'welcome_message'  => \get_option( 'tcl_welcome_message', '' ),
         ];
     }
 

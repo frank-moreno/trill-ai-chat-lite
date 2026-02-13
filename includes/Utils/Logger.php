@@ -5,12 +5,12 @@
  * Provides structured logging for debugging and error tracking.
  * Writes to WordPress debug.log when WP_DEBUG_LOG is enabled.
  *
- * @package GspltdChatLite\Utils
+ * @package TrillChatLite\Utils
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\Utils;
+namespace TrillChatLite\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -105,7 +105,7 @@ class Logger {
             return;
         }
 
-        $min_level = defined( 'GCL_LOG_LEVEL' ) ? GCL_LOG_LEVEL : 'info';
+        $min_level = defined( 'TCL_LOG_LEVEL' ) ? TCL_LOG_LEVEL : 'info';
 
         if ( ( self::LEVELS[ $level ] ?? 0 ) < ( self::LEVELS[ $min_level ] ?? 0 ) ) {
             return;

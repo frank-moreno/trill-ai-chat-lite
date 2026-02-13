@@ -5,12 +5,12 @@
  * Transforms WooCommerce product objects into standardised arrays
  * for the AI context and frontend display.
  *
- * @package GspltdChatLite\WooCommerce
+ * @package TrillChatLite\WooCommerce
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\WooCommerce;
+namespace TrillChatLite\WooCommerce;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -55,7 +55,7 @@ class ProductTransformer {
         return [
             'id'          => $product->get_id(),
             'name'        => $product->get_name(),
-            'price'       => gcl_format_price( $product->get_price() ),
+            'price'       => tcl_format_price( $product->get_price() ),
             'description' => wp_trim_words( $product->get_short_description(), 20, '...' ),
             'url'         => $product->get_permalink(),
             'in_stock'    => $product->is_in_stock(),

@@ -3,13 +3,13 @@
  * Fired when the plugin is uninstalled.
  *
  * Removes ALL plugin data from the database:
- * - Custom database tables (gcl_*)
- * - WordPress options (gcl_*)
- * - Transients (gcl_*)
+ * - Custom database tables (tcl_*)
+ * - WordPress options (tcl_*)
+ * - Transients (tcl_*)
  * - Custom roles and capabilities
  * - Cron jobs
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
@@ -25,10 +25,10 @@ global $wpdb;
 // 1. DROP CUSTOM TABLES
 // =========================================================================
 $tables = [
-    $wpdb->prefix . 'gcl_conversations',
-    $wpdb->prefix . 'gcl_messages',
-    $wpdb->prefix . 'gcl_feedback',
-    $wpdb->prefix . 'gcl_product_index',
+    $wpdb->prefix . 'tcl_conversations',
+    $wpdb->prefix . 'tcl_messages',
+    $wpdb->prefix . 'tcl_feedback',
+    $wpdb->prefix . 'tcl_product_index',
 ];
 
 foreach ( $tables as $table ) {
@@ -37,34 +37,34 @@ foreach ( $tables as $table ) {
 }
 
 // =========================================================================
-// 2. DELETE ALL OPTIONS WITH gcl_ PREFIX
+// 2. DELETE ALL OPTIONS WITH tcl_ PREFIX
 // =========================================================================
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
-    "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'gcl_%'"
+    "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'tcl_%'"
 );
 
 // =========================================================================
-// 3. DELETE ALL TRANSIENTS WITH gcl_ PREFIX
+// 3. DELETE ALL TRANSIENTS WITH tcl_ PREFIX
 // =========================================================================
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
     "DELETE FROM {$wpdb->options}
-     WHERE option_name LIKE '_transient_gcl_%'
-     OR option_name LIKE '_transient_timeout_gcl_%'"
+     WHERE option_name LIKE '_transient_tcl_%'
+     OR option_name LIKE '_transient_timeout_tcl_%'"
 );
 
 // =========================================================================
 // 4. REMOVE CUSTOM ROLES AND CAPABILITIES
 // =========================================================================
 $capabilities = [
-    'manage_gcl_chat',
-    'view_gcl_analytics',
+    'manage_tcl_chat',
+    'view_tcl_analytics',
 ];
 
 // Remove custom role
-if ( get_role( 'gcl_chat_operator' ) ) {
-    remove_role( 'gcl_chat_operator' );
+if ( get_role( 'tcl_chat_operator' ) ) {
+    remove_role( 'tcl_chat_operator' );
 }
 
 // Remove capabilities from standard roles
@@ -82,8 +82,8 @@ foreach ( $roles as $role_name ) {
 // 5. CLEAR CRON JOBS
 // =========================================================================
 $cron_hooks = [
-    'gcl_cleanup_conversations',
-    'gcl_index_products',
+    'tcl_cleanup_conversations',
+    'tcl_index_products',
 ];
 
 foreach ( $cron_hooks as $hook ) {

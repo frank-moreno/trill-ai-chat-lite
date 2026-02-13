@@ -5,12 +5,12 @@
  * Handles all database operations for conversations, messages, and feedback.
  * Simplified for Lite: no analytics table, no tool executions.
  *
- * @package GspltdChatLite\Database
+ * @package TrillChatLite\Database
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\Database;
+namespace TrillChatLite\Database;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -46,9 +46,9 @@ class DbManager {
         global $wpdb;
         $this->wpdb = $wpdb;
 
-        $this->conversations_table = $wpdb->prefix . 'gcl_conversations';
-        $this->messages_table      = $wpdb->prefix . 'gcl_messages';
-        $this->feedback_table      = $wpdb->prefix . 'gcl_feedback';
+        $this->conversations_table = $wpdb->prefix . 'tcl_conversations';
+        $this->messages_table      = $wpdb->prefix . 'tcl_messages';
+        $this->feedback_table      = $wpdb->prefix . 'tcl_feedback';
     }
 
     /**
@@ -85,13 +85,13 @@ class DbManager {
         );
 
         if ( false === $result ) {
-            gcl_log( 'Failed to create conversation: ' . $this->wpdb->last_error, 'error', [
+            tcl_log( 'Failed to create conversation: ' . $this->wpdb->last_error, 'error', [
                 'session_id' => $session_id,
             ] );
             return '';
         }
 
-        gcl_log( 'Conversation created', 'info', [
+        tcl_log( 'Conversation created', 'info', [
             'session_id' => $session_id,
         ] );
 
@@ -173,7 +173,7 @@ class DbManager {
         $conversation_id = $this->get_conversation_id( $session_id );
 
         if ( ! $conversation_id ) {
-            gcl_log( 'Cannot create message: conversation not found', 'error', [
+            tcl_log( 'Cannot create message: conversation not found', 'error', [
                 'session_id' => $session_id,
             ] );
             return false;
@@ -201,7 +201,7 @@ class DbManager {
         );
 
         if ( false === $result ) {
-            gcl_log( 'Failed to create message: ' . $this->wpdb->last_error, 'error', [
+            tcl_log( 'Failed to create message: ' . $this->wpdb->last_error, 'error', [
                 'session_id' => $session_id,
             ] );
             return false;
@@ -365,7 +365,7 @@ class DbManager {
             )
         );
 
-        gcl_log( "Cleaned up {$deleted} old conversations", 'info' );
+        tcl_log( "Cleaned up {$deleted} old conversations", 'info' );
 
         return (int) $deleted;
     }

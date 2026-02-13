@@ -2,21 +2,21 @@
 /**
  * Managed Proxy Client for Lite tier.
  *
- * Sends chat requests to the GSPLTD proxy endpoint.
+ * Sends chat requests to the Trill AI proxy endpoint.
  * Uses site-based authentication (no licence key required).
  *
- * @package GspltdChatLite\AI
+ * @package TrillChatLite\AI
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\AI;
+namespace TrillChatLite\AI;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-use GspltdChatLite\Lite\LiteConfig;
+use TrillChatLite\Lite\LiteConfig;
 
 /**
  * Proxy Client — Lite managed proxy.
@@ -38,7 +38,7 @@ class ProxyClient {
      */
     private function generate_site_hash(): string {
         $site_url = \get_site_url();
-        $salt     = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'gcl-default-salt';
+        $salt     = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'tcl-default-salt';
         return hash( 'sha256', $site_url . $salt );
     }
 
@@ -51,7 +51,7 @@ class ProxyClient {
         return [
             'Content-Type'       => 'application/json',
             'X-GCL-Site-URL'     => \get_site_url(),
-            'X-GCL-Plugin-Version' => defined( 'GCL_VERSION' ) ? GCL_VERSION : '1.0.0',
+            'X-GCL-Plugin-Version' => defined( 'TCL_VERSION' ) ? TCL_VERSION : '1.0.0',
             'X-GCL-Site-Hash'    => $this->generate_site_hash(),
         ];
     }
@@ -73,7 +73,7 @@ class ProxyClient {
             'context'         => $context,
         ];
 
-        gcl_log( 'ProxyClient: sending request', 'debug', [
+        tcl_log( 'ProxyClient: sending request', 'debug', [
             'url'             => $url,
             'conversation_id' => $conversation_id,
             'message_length'  => mb_strlen( $message ),
@@ -88,13 +88,13 @@ class ProxyClient {
         // Handle connection errors.
         if ( \is_wp_error( $response ) ) {
             $error_message = $response->get_error_message();
-            gcl_log( 'ProxyClient: connection error', 'error', [
+            tcl_log( 'ProxyClient: connection error', 'error', [
                 'error' => $error_message,
             ] );
 
             return [
                 'success'    => false,
-                'error'      => __( 'Unable to connect to AI service. Please try again later.', 'gspltd-chat-lite' ),
+                'error'      => __( 'Unable to connect to AI service. Please try again later.', 'trill-chat-lite' ),
                 'error_code' => 'CONNECTION_ERROR',
             ];
         }
@@ -105,7 +105,7 @@ class ProxyClient {
 
         // Handle HTTP errors.
         if ( $status_code !== 200 ) {
-            gcl_log( 'ProxyClient: HTTP error', 'error', [
+            tcl_log( 'ProxyClient: HTTP error', 'error', [
                 'status_code' => $status_code,
                 'body'        => mb_substr( $response_body, 0, 500 ),
             ] );
@@ -115,18 +115,18 @@ class ProxyClient {
 
         // Handle malformed response.
         if ( ! is_array( $decoded ) || empty( $decoded['response'] ) ) {
-            gcl_log( 'ProxyClient: malformed response', 'error', [
+            tcl_log( 'ProxyClient: malformed response', 'error', [
                 'body_preview' => mb_substr( $response_body, 0, 200 ),
             ] );
 
             return [
                 'success'    => false,
-                'error'      => __( 'Received invalid response from AI service.', 'gspltd-chat-lite' ),
+                'error'      => __( 'Received invalid response from AI service.', 'trill-chat-lite' ),
                 'error_code' => 'MALFORMED_RESPONSE',
             ];
         }
 
-        gcl_log( 'ProxyClient: response received', 'info', [
+        tcl_log( 'ProxyClient: response received', 'info', [
             'conversation_id'         => $conversation_id,
             'response_length'         => mb_strlen( $decoded['response'] ),
             'conversations_remaining' => $decoded['meta']['conversations_remaining'] ?? null,
@@ -156,14 +156,14 @@ class ProxyClient {
             case 429:
                 return [
                     'success'    => false,
-                    'error'      => __( 'Too many requests. Please wait a moment and try again.', 'gspltd-chat-lite' ),
+                    'error'      => __( 'Too many requests. Please wait a moment and try again.', 'trill-chat-lite' ),
                     'error_code' => 'RATE_LIMITED',
                 ];
 
             case 402:
                 return [
                     'success'    => false,
-                    'error'      => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'gspltd-chat-lite' ),
+                    'error'      => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-chat-lite' ),
                     'error_code' => 'LIMIT_REACHED',
                     'meta'       => [
                         'upgrade_url' => LiteConfig::getUpgradeUrl( 'limit_reached' ),
@@ -173,7 +173,7 @@ class ProxyClient {
             case 403:
                 return [
                     'success'    => false,
-                    'error'      => __( 'Access denied. Please check your site configuration.', 'gspltd-chat-lite' ),
+                    'error'      => __( 'Access denied. Please check your site configuration.', 'trill-chat-lite' ),
                     'error_code' => 'FORBIDDEN',
                 ];
 
@@ -182,7 +182,7 @@ class ProxyClient {
             case 503:
                 return [
                     'success'    => false,
-                    'error'      => __( 'AI service is temporarily unavailable. Please try again later.', 'gspltd-chat-lite' ),
+                    'error'      => __( 'AI service is temporarily unavailable. Please try again later.', 'trill-chat-lite' ),
                     'error_code' => 'SERVICE_UNAVAILABLE',
                 ];
 
@@ -191,7 +191,7 @@ class ProxyClient {
                     'success'    => false,
                     'error'      => sprintf(
                         /* translators: %d: HTTP status code */
-                        __( 'Unexpected error (HTTP %d). Please try again.', 'gspltd-chat-lite' ),
+                        __( 'Unexpected error (HTTP %d). Please try again.', 'trill-chat-lite' ),
                         $status_code
                     ),
                     'error_code' => 'HTTP_ERROR',

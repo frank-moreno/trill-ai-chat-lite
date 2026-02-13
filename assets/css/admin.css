@@ -1,7 +1,7 @@
 /**
- * GSPLTD Chat Lite — Admin Styles
+ * Trill Chat Lite — Admin Styles
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
@@ -10,11 +10,11 @@
    Dashboard
    ======================================== */
 
-.gcl-dashboard-wrap {
+.tcl-dashboard-wrap {
     max-width: 800px;
 }
 
-.gcl-dashboard-wrap h1 {
+.tcl-dashboard-wrap h1 {
     font-size: 23px;
     font-weight: 400;
     margin: 0;
@@ -23,7 +23,7 @@
 }
 
 /* Status Card */
-.gcl-status-card {
+.tcl-status-card {
     background: #fff;
     border: 1px solid #c3c4c7;
     border-radius: 4px;
@@ -31,12 +31,12 @@
     margin: 20px 0;
 }
 
-.gcl-status-card h2 {
+.tcl-status-card h2 {
     margin-top: 0;
     font-size: 18px;
 }
 
-.gcl-status-row {
+.tcl-status-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -44,20 +44,20 @@
     border-bottom: 1px solid #f0f0f1;
 }
 
-.gcl-status-row:last-child {
+.tcl-status-row:last-child {
     border-bottom: none;
 }
 
-.gcl-status-label {
+.tcl-status-label {
     font-weight: 600;
     color: #1d2327;
 }
 
-.gcl-status-value {
+.tcl-status-value {
     color: #50575e;
 }
 
-.gcl-status-badge {
+.tcl-status-badge {
     display: inline-block;
     padding: 2px 8px;
     border-radius: 3px;
@@ -65,22 +65,22 @@
     font-weight: 600;
 }
 
-.gcl-status-badge--active {
+.tcl-status-badge--active {
     background: #d1fae5;
     color: #065f46;
 }
 
-.gcl-status-badge--inactive {
+.tcl-status-badge--inactive {
     background: #fee2e2;
     color: #991b1b;
 }
 
 /* Usage Bar */
-.gcl-usage-bar-container {
+.tcl-usage-bar-container {
     margin: 16px 0;
 }
 
-.gcl-usage-bar {
+.tcl-usage-bar {
     background: #f0f0f1;
     border-radius: 4px;
     height: 24px;
@@ -88,7 +88,7 @@
     position: relative;
 }
 
-.gcl-usage-bar-fill {
+.tcl-usage-bar-fill {
     background: #10b981;
     height: 100%;
     border-radius: 4px;
@@ -96,15 +96,15 @@
     min-width: 2px;
 }
 
-.gcl-usage-bar-fill--warning {
+.tcl-usage-bar-fill--warning {
     background: #f59e0b;
 }
 
-.gcl-usage-bar-fill--danger {
+.tcl-usage-bar-fill--danger {
     background: #ef4444;
 }
 
-.gcl-usage-text {
+.tcl-usage-text {
     display: flex;
     justify-content: space-between;
     margin-top: 8px;
@@ -116,11 +116,11 @@
    Settings
    ======================================== */
 
-.gcl-settings-wrap {
+.tcl-settings-wrap {
     max-width: 800px;
 }
 
-.gcl-settings-section {
+.tcl-settings-section {
     background: #fff;
     border: 1px solid #c3c4c7;
     border-radius: 4px;
@@ -128,22 +128,22 @@
     margin: 20px 0;
 }
 
-.gcl-settings-section h2 {
+.tcl-settings-section h2 {
     margin-top: 0;
     padding-top: 0;
     font-size: 16px;
 }
 
-.gcl-form-table td {
+.tcl-form-table td {
     padding: 15px 10px;
 }
 
-.gcl-form-table th {
+.tcl-form-table th {
     padding: 20px 10px 20px 0;
     width: 200px;
 }
 
-.gcl-colour-preview {
+.tcl-colour-preview {
     display: inline-block;
     width: 24px;
     height: 24px;
@@ -153,7 +153,7 @@
     border: 1px solid #c3c4c7;
 }
 
-.gcl-lite-notice {
+.tcl-lite-notice {
     background: #f0f6fc;
     border: 1px solid #72aee6;
     border-radius: 4px;
@@ -161,11 +161,11 @@
     margin: 20px 0;
 }
 
-.gcl-lite-notice p {
+.tcl-lite-notice p {
     margin: 0 0 8px;
 }
 
-.gcl-lite-notice p:last-child {
+.tcl-lite-notice p:last-child {
     margin-bottom: 0;
 }
 
@@ -173,7 +173,7 @@
    General Admin
    ======================================== */
 
-.gcl-admin-footer {
+.tcl-admin-footer {
     margin-top: 24px;
     padding-top: 16px;
     border-top: 1px solid #f0f0f1;

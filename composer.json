@@ -1,11 +1,11 @@
 {
-    "name": "gspltd/gspltd-chat-lite",
+    "name": "trillai/trill-chat-lite",
     "description": "AI-powered customer service chat for WooCommerce — Lite edition",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "authors": [
         {
-            "name": "GSPLTD",
+            "name": "Trill AI",
             "homepage": "https://trillai.io"
         }
     ],
@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "GspltdChatLite\\": "includes/"
+            "TrillChatLite\\": "includes/"
         }
     },
     "config": {

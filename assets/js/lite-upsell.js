@@ -1,9 +1,9 @@
 /**
- * GSPLTD Chat Lite — Upgrade CTA Scripts
+ * Trill Chat Lite — Upgrade CTA Scripts
  *
  * Handles dismiss notice AJAX and upgrade CTA interactions.
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
@@ -30,8 +30,8 @@
          * When the WordPress dismissible notice is closed, send AJAX to record dismissal.
          */
         bindDismissNotice: function () {
-            $(document).on('click', '.gcl-upgrade-notice .notice-dismiss', function () {
-                var $notice = $(this).closest('.gcl-upgrade-notice');
+            $(document).on('click', '.tcl-upgrade-notice .notice-dismiss', function () {
+                var $notice = $(this).closest('.tcl-upgrade-notice');
                 var nonce = $notice.data('nonce');
 
                 if (!nonce || typeof tclAdmin === 'undefined') {
@@ -42,7 +42,7 @@
                     url: tclAdmin.ajax_url,
                     type: 'POST',
                     data: {
-                        action: 'gcl_dismiss_notice',
+                        action: 'tcl_dismiss_notice',
                         nonce: nonce
                     }
                 });

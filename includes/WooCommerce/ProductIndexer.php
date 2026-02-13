@@ -5,12 +5,12 @@
  * Simplified for Lite: basic product indexing using WooCommerce native search.
  * No vector embeddings, no external API calls for indexing.
  *
- * @package GspltdChatLite\WooCommerce
+ * @package TrillChatLite\WooCommerce
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\WooCommerce;
+namespace TrillChatLite\WooCommerce;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -49,10 +49,10 @@ class ProductIndexer {
         $total         = (int) ( $product_count->publish ?? 0 );
 
         // Store product count for dashboard display.
-        \update_option( 'gcl_indexed_products', $total );
-        \update_option( 'gcl_last_index_time', \current_time( 'mysql' ) );
+        \update_option( 'tcl_indexed_products', $total );
+        \update_option( 'tcl_last_index_time', \current_time( 'mysql' ) );
 
-        gcl_log( 'Product index refreshed', 'info', [
+        tcl_log( 'Product index refreshed', 'info', [
             'total' => $total,
         ] );
 
@@ -70,8 +70,8 @@ class ProductIndexer {
      */
     public function get_status(): array {
         return [
-            'indexed'      => (int) \get_option( 'gcl_indexed_products', 0 ),
-            'last_indexed' => \get_option( 'gcl_last_index_time', '' ),
+            'indexed'      => (int) \get_option( 'tcl_indexed_products', 0 ),
+            'last_indexed' => \get_option( 'tcl_last_index_time', '' ),
         ];
     }
 

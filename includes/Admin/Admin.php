@@ -5,18 +5,18 @@
  * Handles admin-side UI: menus, pages, asset enqueueing, AJAX.
  * Simplified for Lite: no licensing, no modes, no BYOK.
  *
- * @package GspltdChatLite\Admin
+ * @package TrillChatLite\Admin
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\Admin;
+namespace TrillChatLite\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-use GspltdChatLite\Loader;
+use TrillChatLite\Loader;
 
 /**
  * Admin class.
@@ -58,7 +58,7 @@ class Admin {
         $this->version  = $version;
         $this->settings = $settings;
 
-        gcl_log( 'Admin class initialised', 'debug' );
+        tcl_log( 'Admin class initialised', 'debug' );
     }
 
     /**
@@ -70,8 +70,8 @@ class Admin {
         $this->loader->add_action( 'admin_init', $this, 'register_settings' );
 
         // AJAX handlers.
-        \add_action( 'wp_ajax_gcl_save_settings', [ $this, 'ajax_save_settings' ] );
-        \add_action( 'wp_ajax_gcl_dismiss_notice', [ $this, 'ajax_dismiss_notice' ] );
+        \add_action( 'wp_ajax_tcl_save_settings', [ $this, 'ajax_save_settings' ] );
+        \add_action( 'wp_ajax_tcl_dismiss_notice', [ $this, 'ajax_dismiss_notice' ] );
     }
 
     /**
@@ -80,10 +80,10 @@ class Admin {
     public function add_admin_menu(): void {
         // Main menu page (Dashboard).
         \add_menu_page(
-            __( 'GSPLTD Chat', 'gspltd-chat-lite' ),
-            __( 'GSPLTD Chat', 'gspltd-chat-lite' ),
-            'manage_gcl_chat',
-            'gcl-chat',
+            __( 'Trill Chat', 'trill-chat-lite' ),
+            __( 'Trill Chat', 'trill-chat-lite' ),
+            'manage_tcl_chat',
+            'tcl-chat',
             [ $this, 'render_dashboard' ],
             'dashicons-format-chat',
             58
@@ -91,21 +91,21 @@ class Admin {
 
         // Dashboard submenu.
         \add_submenu_page(
-            'gcl-chat',
-            __( 'Dashboard', 'gspltd-chat-lite' ),
-            __( 'Dashboard', 'gspltd-chat-lite' ),
-            'manage_gcl_chat',
-            'gcl-chat',
+            'tcl-chat',
+            __( 'Dashboard', 'trill-chat-lite' ),
+            __( 'Dashboard', 'trill-chat-lite' ),
+            'manage_tcl_chat',
+            'tcl-chat',
             [ $this, 'render_dashboard' ]
         );
 
         // Settings submenu.
         \add_submenu_page(
-            'gcl-chat',
-            __( 'Settings', 'gspltd-chat-lite' ),
-            __( 'Settings', 'gspltd-chat-lite' ),
-            'manage_gcl_chat',
-            'gcl-settings',
+            'tcl-chat',
+            __( 'Settings', 'trill-chat-lite' ),
+            __( 'Settings', 'trill-chat-lite' ),
+            'manage_tcl_chat',
+            'tcl-settings',
             [ $this, 'render_settings' ]
         );
     }
@@ -124,22 +124,22 @@ class Admin {
      */
     public function enqueue_admin_assets( string $hook ): void {
         // Only load on our plugin pages.
-        if ( strpos( $hook, 'gcl-chat' ) === false && strpos( $hook, 'gcl-settings' ) === false ) {
+        if ( strpos( $hook, 'tcl-chat' ) === false && strpos( $hook, 'tcl-settings' ) === false ) {
             return;
         }
 
         // Admin CSS.
         \wp_enqueue_style(
-            'gcl-admin',
-            GCL_PLUGIN_URL . 'assets/css/admin.css',
+            'tcl-admin',
+            TCL_PLUGIN_URL . 'assets/css/admin.css',
             [],
             $this->version
         );
 
         // Admin JavaScript.
         \wp_enqueue_script(
-            'gcl-admin',
-            GCL_PLUGIN_URL . 'assets/js/admin.js',
+            'tcl-admin',
+            TCL_PLUGIN_URL . 'assets/js/admin.js',
             [ 'jquery' ],
             $this->version,
             true
@@ -147,28 +147,28 @@ class Admin {
 
         // Lite upsell assets.
         \wp_enqueue_style(
-            'gcl-lite-upsell',
-            GCL_PLUGIN_URL . 'assets/css/lite-upsell.css',
-            [ 'gcl-admin' ],
+            'tcl-lite-upsell',
+            TCL_PLUGIN_URL . 'assets/css/lite-upsell.css',
+            [ 'tcl-admin' ],
             $this->version
         );
 
         \wp_enqueue_script(
-            'gcl-lite-upsell',
-            GCL_PLUGIN_URL . 'assets/js/lite-upsell.js',
+            'tcl-lite-upsell',
+            TCL_PLUGIN_URL . 'assets/js/lite-upsell.js',
             [ 'jquery' ],
             $this->version,
             true
         );
 
         // Localise script for AJAX.
-        \wp_localize_script( 'gcl-admin', 'tclAdmin', [
+        \wp_localize_script( 'tcl-admin', 'tclAdmin', [
             'ajaxurl' => \admin_url( 'admin-ajax.php' ),
-            'nonce'   => \wp_create_nonce( 'gcl_admin_nonce' ),
+            'nonce'   => \wp_create_nonce( 'tcl_admin_nonce' ),
             'strings' => [
-                'saving' => __( 'Saving...', 'gspltd-chat-lite' ),
-                'saved'  => __( 'Settings saved successfully!', 'gspltd-chat-lite' ),
-                'error'  => __( 'An error occurred. Please try again.', 'gspltd-chat-lite' ),
+                'saving' => __( 'Saving...', 'trill-chat-lite' ),
+                'saved'  => __( 'Settings saved successfully!', 'trill-chat-lite' ),
+                'error'  => __( 'An error occurred. Please try again.', 'trill-chat-lite' ),
             ],
         ] );
     }
@@ -181,22 +181,22 @@ class Admin {
      * Render Dashboard page.
      */
     public function render_dashboard(): void {
-        if ( ! \current_user_can( 'manage_gcl_chat' ) ) {
-            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'gspltd-chat-lite' ) );
+        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
         }
 
-        include GCL_PLUGIN_DIR . 'includes/Admin/views/dashboard.php';
+        include TCL_PLUGIN_DIR . 'includes/Admin/views/dashboard.php';
     }
 
     /**
      * Render Settings page.
      */
     public function render_settings(): void {
-        if ( ! \current_user_can( 'manage_gcl_chat' ) ) {
-            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'gspltd-chat-lite' ) );
+        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
         }
 
-        include GCL_PLUGIN_DIR . 'includes/Admin/views/settings.php';
+        include TCL_PLUGIN_DIR . 'includes/Admin/views/settings.php';
     }
 
     // =========================================================================
@@ -207,10 +207,10 @@ class Admin {
      * AJAX: Save settings.
      */
     public function ajax_save_settings(): void {
-        \check_ajax_referer( 'gcl_admin_nonce', 'nonce' );
+        \check_ajax_referer( 'tcl_admin_nonce', 'nonce' );
 
-        if ( ! \current_user_can( 'manage_gcl_chat' ) ) {
-            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'gspltd-chat-lite' ) ], 403 );
+        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-chat-lite' ) ], 403 );
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above
@@ -220,20 +220,20 @@ class Admin {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $widget_color = isset( $_POST['widget_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['widget_color'] ) ) : '#10B981';
 
-        \update_option( 'gcl_chat_enabled', $chat_enabled );
-        \update_option( 'gcl_widget_position', $widget_position );
-        \update_option( 'gcl_widget_color', $widget_color ?: '#10B981' );
+        \update_option( 'tcl_chat_enabled', $chat_enabled );
+        \update_option( 'tcl_widget_position', $widget_position );
+        \update_option( 'tcl_widget_color', $widget_color ?: '#10B981' );
 
-        \wp_send_json_success( [ 'message' => __( 'Settings saved.', 'gspltd-chat-lite' ) ] );
+        \wp_send_json_success( [ 'message' => __( 'Settings saved.', 'trill-chat-lite' ) ] );
     }
 
     /**
      * AJAX: Dismiss upgrade notice.
      */
     public function ajax_dismiss_notice(): void {
-        \check_ajax_referer( 'gcl_dismiss_notice', 'nonce' );
+        \check_ajax_referer( 'tcl_dismiss_notice', 'nonce' );
 
-        \update_option( 'gcl_upgrade_notice_dismissed', time() );
+        \update_option( 'tcl_upgrade_notice_dismissed', time() );
 
         \wp_send_json_success();
     }

@@ -1,9 +1,9 @@
 /**
- * GSPLTD Chat Lite — Admin Scripts
+ * Trill Chat Lite — Admin Scripts
  *
  * Handles admin UI interactions: settings save, colour preview, etc.
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
@@ -30,10 +30,10 @@
          */
         bindEvents: function () {
             // Settings form AJAX save.
-            $(document).on('submit', '#gcl-settings-form', this.handleSettingsSave.bind(this));
+            $(document).on('submit', '#tcl-settings-form', this.handleSettingsSave.bind(this));
 
             // Colour picker change.
-            $(document).on('input change', '#gcl_widget_color', this.updateColourPreview.bind(this));
+            $(document).on('input change', '#tcl_widget_color', this.updateColourPreview.bind(this));
         },
 
         /**
@@ -74,7 +74,7 @@
          * Initialise colour preview.
          */
         initColourPreview: function () {
-            var $input = $('#gcl_widget_color');
+            var $input = $('#tcl_widget_color');
             if ($input.length) {
                 this.updateColourPreview({ currentTarget: $input[0] });
             }
@@ -87,7 +87,7 @@
          */
         updateColourPreview: function (e) {
             var colour = $(e.currentTarget).val();
-            var $preview = $('.gcl-colour-preview');
+            var $preview = $('.tcl-colour-preview');
 
             if ($preview.length && colour) {
                 $preview.css('background-color', colour);
@@ -111,7 +111,7 @@
             );
 
             // Remove existing notices.
-            $('.gcl-settings-wrap .notice, .gcl-dashboard-wrap .notice').remove();
+            $('.tcl-settings-wrap .notice, .tcl-dashboard-wrap .notice').remove();
 
             // Insert notice.
             var $heading = $('h1').first();

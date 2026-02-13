@@ -4,12 +4,12 @@
  *
  * Registers all actions, filters, and shortcodes for the plugin.
  *
- * @package GspltdChatLite
+ * @package TrillChatLite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite;
+namespace TrillChatLite;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -130,7 +130,7 @@ class Loader {
             );
         }
 
-        gcl_log(
+        tcl_log(
             'Loader registered ' . count( $this->actions ) . ' actions, ' .
             count( $this->filters ) . ' filters, and ' .
             count( $this->shortcodes ) . ' shortcodes',

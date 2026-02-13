@@ -5,12 +5,12 @@
  * Replaces the complex UsageTracker from the main plugin.
  * Uses wp_options for counting.
  *
- * @package GspltdChatLite\Lite
+ * @package TrillChatLite\Lite
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\Lite;
+namespace TrillChatLite\Lite;
 
 /**
  * Usage Limiter — 50 conversations/month enforcement.
@@ -19,8 +19,8 @@ namespace GspltdChatLite\Lite;
  */
 class UsageLimiter {
 
-    private const OPTION_USED       = 'gcl_conversations_used';
-    private const OPTION_RESET_DATE = 'gcl_conversations_reset_date';
+    private const OPTION_USED       = 'tcl_conversations_used';
+    private const OPTION_RESET_DATE = 'tcl_conversations_reset_date';
 
     /**
      * Can a new conversation be started?

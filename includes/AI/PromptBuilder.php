@@ -5,12 +5,12 @@
  * Builds the system prompt with store context, product context,
  * and conversation guidelines for the AI assistant.
  *
- * @package GspltdChatLite\AI
+ * @package TrillChatLite\AI
  * @since 1.0.0
  * @license GPL-2.0-or-later
  */
 
-namespace GspltdChatLite\AI;
+namespace TrillChatLite\AI;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
