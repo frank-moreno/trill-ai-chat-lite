@@ -51,7 +51,7 @@ class ProxyClient {
         return [
             'Content-Type'       => 'application/json',
             'X-GCL-Site-URL'     => \get_site_url(),
-            'X-GCL-Plugin-Version' => defined( 'TCL_VERSION' ) ? TCL_VERSION : '1.0.0',
+            'X-GCL-Plugin-Version' => defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0',
             'X-GCL-Site-Hash'    => $this->generate_site_hash(),
         ];
     }
@@ -73,7 +73,7 @@ class ProxyClient {
             'context'         => $context,
         ];
 
-        tcl_log( 'ProxyClient: sending request', 'debug', [
+        trill_chat_lite_log( 'ProxyClient: sending request', 'debug', [
             'url'             => $url,
             'conversation_id' => $conversation_id,
             'message_length'  => mb_strlen( $message ),
@@ -88,7 +88,7 @@ class ProxyClient {
         // Handle connection errors.
         if ( \is_wp_error( $response ) ) {
             $error_message = $response->get_error_message();
-            tcl_log( 'ProxyClient: connection error', 'error', [
+            trill_chat_lite_log( 'ProxyClient: connection error', 'error', [
                 'error' => $error_message,
             ] );
 
@@ -105,7 +105,7 @@ class ProxyClient {
 
         // Handle HTTP errors.
         if ( $status_code !== 200 ) {
-            tcl_log( 'ProxyClient: HTTP error', 'error', [
+            trill_chat_lite_log( 'ProxyClient: HTTP error', 'error', [
                 'status_code' => $status_code,
                 'body'        => mb_substr( $response_body, 0, 500 ),
             ] );
@@ -115,7 +115,7 @@ class ProxyClient {
 
         // Handle malformed response.
         if ( ! is_array( $decoded ) || empty( $decoded['response'] ) ) {
-            tcl_log( 'ProxyClient: malformed response', 'error', [
+            trill_chat_lite_log( 'ProxyClient: malformed response', 'error', [
                 'body_preview' => mb_substr( $response_body, 0, 200 ),
             ] );
 
@@ -126,7 +126,7 @@ class ProxyClient {
             ];
         }
 
-        tcl_log( 'ProxyClient: response received', 'info', [
+        trill_chat_lite_log( 'ProxyClient: response received', 'info', [
             'conversation_id'         => $conversation_id,
             'response_length'         => mb_strlen( $decoded['response'] ),
             'conversations_remaining' => $decoded['meta']['conversations_remaining'] ?? null,

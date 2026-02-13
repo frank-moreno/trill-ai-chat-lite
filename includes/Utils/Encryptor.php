@@ -46,7 +46,7 @@ class Encryptor {
      */
     public static function encrypt( string $value ) {
         if ( ! extension_loaded( 'openssl' ) ) {
-            tcl_log( 'OpenSSL extension not loaded, returning raw value', 'warning' );
+            trill_chat_lite_log( 'OpenSSL extension not loaded, returning raw value', 'warning' );
             return base64_encode( $value ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
         }
 

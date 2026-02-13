@@ -11,10 +11,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$usage_limiter = new \TrillChatLite\Lite\UsageLimiter();
-$stats         = $usage_limiter->getUsageStats();
-$usage_percent = ( $stats['limit'] > 0 ) ? round( ( $stats['used'] / $stats['limit'] ) * 100 ) : 0;
-$chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
+$trill_chat_lite_usage_limiter = new \TrillChatLite\Lite\UsageLimiter();
+$trill_chat_lite_stats         = $trill_chat_lite_usage_limiter->getUsageStats();
+$trill_chat_lite_usage_percent = ( $trill_chat_lite_stats['limit'] > 0 ) ? round( ( $trill_chat_lite_stats['used'] / $trill_chat_lite_stats['limit'] ) * 100 ) : 0;
+$trill_chat_lite_chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
 ?>
 
 <div class="wrap tcl-dashboard">
@@ -24,7 +24,7 @@ $chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
     <div class="tcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">
         <h2 style="margin-top: 0;"><?php esc_html_e( 'Chat Status', 'trill-chat-lite' ); ?></h2>
         <p>
-            <?php if ( $chat_enabled ) : ?>
+            <?php if ( $trill_chat_lite_chat_enabled ) : ?>
                 <span style="color: #00a32a; font-weight: 600;">&#9679; <?php esc_html_e( 'Active', 'trill-chat-lite' ); ?></span>
                 — <?php esc_html_e( 'The chat widget is visible on your store.', 'trill-chat-lite' ); ?>
             <?php else : ?>
@@ -41,7 +41,7 @@ $chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
         <div style="display: flex; gap: 40px; align-items: center; margin: 16px 0;">
             <div>
                 <div style="font-size: 36px; font-weight: 700; color: #1d2327;">
-                    <?php echo esc_html( $stats['used'] ); ?> / <?php echo esc_html( $stats['limit'] ); ?>
+                    <?php echo esc_html( $trill_chat_lite_stats['used'] ); ?> / <?php echo esc_html( $trill_chat_lite_stats['limit'] ); ?>
                 </div>
                 <div style="color: #50575e; font-size: 13px;">
                     <?php esc_html_e( 'conversations this month', 'trill-chat-lite' ); ?>
@@ -49,15 +49,15 @@ $chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
             </div>
             <div style="flex: 1; max-width: 300px;">
                 <div style="background: #e5e7eb; border-radius: 9999px; height: 12px; overflow: hidden;">
-                    <div style="background: <?php echo $usage_percent >= 80 ? '#d63638' : '#10B981'; ?>; width: <?php echo esc_attr( min( 100, $usage_percent ) ); ?>%; height: 100%; border-radius: 9999px; transition: width 0.3s;"></div>
+                    <div style="background: <?php echo $trill_chat_lite_usage_percent >= 80 ? '#d63638' : '#10B981'; ?>; width: <?php echo esc_attr( min( 100, $trill_chat_lite_usage_percent ) ); ?>%; height: 100%; border-radius: 9999px; transition: width 0.3s;"></div>
                 </div>
                 <div style="color: #50575e; font-size: 12px; margin-top: 4px;">
-                    <?php echo esc_html( $stats['remaining'] ); ?> <?php esc_html_e( 'remaining', 'trill-chat-lite' ); ?>
+                    <?php echo esc_html( $trill_chat_lite_stats['remaining'] ); ?> <?php esc_html_e( 'remaining', 'trill-chat-lite' ); ?>
                 </div>
             </div>
         </div>
 
-        <?php if ( $usage_percent >= 80 ) : ?>
+        <?php if ( $trill_chat_lite_usage_percent >= 80 ) : ?>
             <p style="background: #fef3cd; border: 1px solid #ffc107; padding: 10px 14px; border-radius: 4px; margin-top: 12px;">
                 <?php esc_html_e( 'You are running low on free conversations.', 'trill-chat-lite' ); ?>
                 <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'dashboard_usage' ) ); ?>" target="_blank" style="font-weight: 600;">
@@ -69,12 +69,12 @@ $chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
 
     <?php
     /**
-     * Hook: tcl_after_dashboard_stats
+     * Hook: trill_chat_lite_after_dashboard_stats
      *
      * Fires after the dashboard stats cards.
      * Used by UpgradeNotices to render the upgrade comparison card.
      */
-    do_action( 'tcl_after_dashboard_stats' );
+    do_action( 'trill_chat_lite_after_dashboard_stats' );
     ?>
 
 </div>

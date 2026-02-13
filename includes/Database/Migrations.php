@@ -52,7 +52,7 @@ class Migrations {
 
         \update_option( 'tcl_db_version', self::SCHEMA_VERSION );
 
-        tcl_log( 'Database migrations completed', 'info', [
+        trill_chat_lite_log( 'Database migrations completed', 'info', [
             'version' => self::SCHEMA_VERSION,
         ] );
     }
@@ -158,7 +158,7 @@ class Migrations {
 
         \delete_option( 'tcl_db_version' );
 
-        tcl_log( 'All plugin tables dropped', 'info' );
+        trill_chat_lite_log( 'All plugin tables dropped', 'info' );
     }
 
     /**

@@ -58,7 +58,7 @@ class Admin {
         $this->version  = $version;
         $this->settings = $settings;
 
-        tcl_log( 'Admin class initialised', 'debug' );
+        trill_chat_lite_log( 'Admin class initialised', 'debug' );
     }
 
     /**
@@ -131,7 +131,7 @@ class Admin {
         // Admin CSS.
         \wp_enqueue_style(
             'tcl-admin',
-            TCL_PLUGIN_URL . 'assets/css/admin.css',
+            TRILL_CHAT_LITE_PLUGIN_URL . 'assets/css/admin.css',
             [],
             $this->version
         );
@@ -139,7 +139,7 @@ class Admin {
         // Admin JavaScript.
         \wp_enqueue_script(
             'tcl-admin',
-            TCL_PLUGIN_URL . 'assets/js/admin.js',
+            TRILL_CHAT_LITE_PLUGIN_URL . 'assets/js/admin.js',
             [ 'jquery' ],
             $this->version,
             true
@@ -148,14 +148,14 @@ class Admin {
         // Lite upsell assets.
         \wp_enqueue_style(
             'tcl-lite-upsell',
-            TCL_PLUGIN_URL . 'assets/css/lite-upsell.css',
+            TRILL_CHAT_LITE_PLUGIN_URL . 'assets/css/lite-upsell.css',
             [ 'tcl-admin' ],
             $this->version
         );
 
         \wp_enqueue_script(
             'tcl-lite-upsell',
-            TCL_PLUGIN_URL . 'assets/js/lite-upsell.js',
+            TRILL_CHAT_LITE_PLUGIN_URL . 'assets/js/lite-upsell.js',
             [ 'jquery' ],
             $this->version,
             true
@@ -185,7 +185,7 @@ class Admin {
             \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
         }
 
-        include TCL_PLUGIN_DIR . 'includes/Admin/views/dashboard.php';
+        include TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Admin/views/dashboard.php';
     }
 
     /**
@@ -196,7 +196,7 @@ class Admin {
             \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
         }
 
-        include TCL_PLUGIN_DIR . 'includes/Admin/views/settings.php';
+        include TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Admin/views/settings.php';
     }
 
     // =========================================================================

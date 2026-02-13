@@ -47,13 +47,13 @@ class Activator {
             \update_option( 'tcl_activated', true );
             \update_option( 'tcl_activation_time', \current_time( 'mysql' ) );
 
-            if ( function_exists( 'tcl_log' ) ) {
-                tcl_log( 'Plugin activated successfully' );
+            if ( function_exists( 'trill_chat_lite_log' ) ) {
+                trill_chat_lite_log( 'Plugin activated successfully' );
             }
 
         } catch ( \Exception $e ) {
-            if ( function_exists( 'tcl_log' ) ) {
-                tcl_log( 'Activation failed: ' . $e->getMessage(), 'error' );
+            if ( function_exists( 'trill_chat_lite_log' ) ) {
+                trill_chat_lite_log( 'Activation failed: ' . $e->getMessage(), 'error' );
             }
 
             \wp_die(
@@ -76,7 +76,7 @@ class Activator {
      */
     private static function set_default_options(): void {
         $defaults = [
-            'tcl_version'          => defined( 'TCL_VERSION' ) ? TCL_VERSION : '1.0.0',
+            'tcl_version'          => defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0',
             'tcl_chat_enabled'     => '1',
             'tcl_widget_position'  => 'bottom-right',
             'tcl_widget_color'     => '#10B981',
@@ -90,8 +90,8 @@ class Activator {
             }
         }
 
-        if ( function_exists( 'tcl_log' ) ) {
-            tcl_log( 'Default options set', 'debug' );
+        if ( function_exists( 'trill_chat_lite_log' ) ) {
+            trill_chat_lite_log( 'Default options set', 'debug' );
         }
     }
 
@@ -124,8 +124,8 @@ class Activator {
 
         \update_option( 'tcl_capabilities', array_keys( $capabilities ) );
 
-        if ( function_exists( 'tcl_log' ) ) {
-            tcl_log( 'Roles and capabilities created', 'debug' );
+        if ( function_exists( 'trill_chat_lite_log' ) ) {
+            trill_chat_lite_log( 'Roles and capabilities created', 'debug' );
         }
     }
 
@@ -143,8 +143,8 @@ class Activator {
             \wp_schedule_event( time(), 'hourly', 'tcl_index_products' );
         }
 
-        if ( function_exists( 'tcl_log' ) ) {
-            tcl_log( 'Cron jobs scheduled', 'debug' );
+        if ( function_exists( 'trill_chat_lite_log' ) ) {
+            trill_chat_lite_log( 'Cron jobs scheduled', 'debug' );
         }
     }
 }

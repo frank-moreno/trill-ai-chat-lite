@@ -80,7 +80,7 @@ class Settings {
             ]
         );
 
-        tcl_log( 'Settings registered with WordPress', 'debug' );
+        trill_chat_lite_log( 'Settings registered with WordPress', 'debug' );
     }
 
     /**

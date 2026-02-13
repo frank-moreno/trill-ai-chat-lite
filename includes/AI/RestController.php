@@ -141,7 +141,7 @@ class RestController {
             ]
         );
 
-        tcl_log( 'REST API routes registered', 'debug', [
+        trill_chat_lite_log( 'REST API routes registered', 'debug', [
             'namespace' => self::API_NAMESPACE,
         ] );
     }
@@ -201,7 +201,7 @@ class RestController {
                 $session_id = $this->db->create_conversation( $user_id );
 
                 if ( empty( $session_id ) ) {
-                    tcl_log( 'Failed to create conversation', 'error' );
+                    trill_chat_lite_log( 'Failed to create conversation', 'error' );
                     return $this->formatter->format_error(
                         __( 'Failed to create conversation.', 'trill-chat-lite' ),
                         'DB_ERROR',
@@ -235,7 +235,7 @@ class RestController {
             $user_message_id = $this->db->create_message( $session_id, 'user', $message );
 
             if ( ! $user_message_id ) {
-                tcl_log( 'Failed to store user message', 'error', [ 'session_id' => $session_id ] );
+                trill_chat_lite_log( 'Failed to store user message', 'error', [ 'session_id' => $session_id ] );
                 return $this->formatter->format_error(
                     __( 'Failed to store message.', 'trill-chat-lite' ),
                     'DB_ERROR',
@@ -263,7 +263,7 @@ class RestController {
             $ai_response = $this->proxy->send_message( $message, $session_id, $proxy_context );
 
             if ( ! $ai_response['success'] ) {
-                tcl_log( 'Proxy request failed', 'error', [
+                trill_chat_lite_log( 'Proxy request failed', 'error', [
                     'error_code' => $ai_response['error_code'] ?? 'UNKNOWN',
                     'session_id' => $session_id,
                 ] );
@@ -283,7 +283,7 @@ class RestController {
             $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content );
 
             if ( ! $ai_message_id ) {
-                tcl_log( 'Failed to store AI message (response still returned)', 'warning', [
+                trill_chat_lite_log( 'Failed to store AI message (response still returned)', 'warning', [
                     'session_id' => $session_id,
                 ] );
                 $ai_message_id = 0;
@@ -292,7 +292,7 @@ class RestController {
             // 10. Format and return response.
             $processing_time = microtime( true ) - $start_time;
 
-            tcl_log( 'Message processed successfully', 'info', [
+            trill_chat_lite_log( 'Message processed successfully', 'info', [
                 'session_id'       => $session_id,
                 'processing_time'  => round( $processing_time, 3 ),
                 'is_new'           => $is_new_conversation,
@@ -318,7 +318,7 @@ class RestController {
             return new \WP_REST_Response( $response_data, 200 );
 
         } catch ( \Exception $e ) {
-            tcl_log( 'Message endpoint exception', 'error', [
+            trill_chat_lite_log( 'Message endpoint exception', 'error', [
                 'error' => $e->getMessage(),
                 'file'  => $e->getFile(),
                 'line'  => $e->getLine(),
@@ -368,7 +368,7 @@ class RestController {
             ], 200 );
 
         } catch ( \Exception $e ) {
-            tcl_log( 'Conversation endpoint error', 'error', [ 'error' => $e->getMessage() ] );
+            trill_chat_lite_log( 'Conversation endpoint error', 'error', [ 'error' => $e->getMessage() ] );
 
             return $this->formatter->format_error(
                 __( 'Failed to retrieve conversation.', 'trill-chat-lite' ),
@@ -406,7 +406,7 @@ class RestController {
             ], 200 );
 
         } catch ( \Exception $e ) {
-            tcl_log( 'Feedback endpoint error', 'error', [ 'error' => $e->getMessage() ] );
+            trill_chat_lite_log( 'Feedback endpoint error', 'error', [ 'error' => $e->getMessage() ] );
 
             return $this->formatter->format_error(
                 __( 'Failed to save feedback.', 'trill-chat-lite' ),
@@ -559,7 +559,7 @@ class RestController {
                 $results[] = [
                     'product_id' => $product->get_id(),
                     'name'       => $product->get_name(),
-                    'price'      => tcl_format_price( $product->get_price() ),
+                    'price'      => trill_chat_lite_format_price( $product->get_price() ),
                     'url'        => $product->get_permalink(),
                     'in_stock'   => $product->is_in_stock(),
                 ];
@@ -568,7 +568,7 @@ class RestController {
             return $results;
 
         } catch ( \Exception $e ) {
-            tcl_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
+            trill_chat_lite_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
             return [];
         }
     }

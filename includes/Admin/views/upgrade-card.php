@@ -2,7 +2,7 @@
 /**
  * Upgrade comparison card view.
  *
- * Rendered by UpgradeNotices::renderUpgradeCard() via tcl_after_dashboard_stats hook.
+ * Rendered by UpgradeNotices::renderUpgradeCard() via trill_chat_lite_after_dashboard_stats hook.
  *
  * @package TrillChatLite\Admin
  * @since 1.0.0

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @return \TrillChatLite\Plugin
  */
-function tcl_get_plugin() {
+function trill_chat_lite_get_plugin() {
     return \TrillChatLite\Plugin::get_instance();
 }
 
@@ -30,7 +30,7 @@ function tcl_get_plugin() {
  * @param string $level   Log level (info, warning, error, debug).
  * @param array  $context Optional context data.
  */
-function tcl_log( $message, string $level = 'info', array $context = [] ): void {
+function trill_chat_lite_log( $message, string $level = 'info', array $context = [] ): void {
     if ( ! WP_DEBUG ) {
         return;
     }
@@ -66,7 +66,7 @@ function tcl_log( $message, string $level = 'info', array $context = [] ): void 
  *
  * @return bool
  */
-function tcl_should_display_widget(): bool {
+function trill_chat_lite_should_display_widget(): bool {
     // Don't show in admin.
     if ( is_admin() ) {
         return false;
@@ -79,11 +79,11 @@ function tcl_should_display_widget(): bool {
 
     // Don't show on checkout page by default.
     if ( function_exists( 'is_checkout' ) && is_checkout() ) {
-        return apply_filters( 'tcl_display_on_checkout', false );
+        return apply_filters( 'trill_chat_lite_display_on_checkout', false );
     }
 
     // Allow filtering.
-    return apply_filters( 'tcl_display_widget', true );
+    return apply_filters( 'trill_chat_lite_display_widget', true );
 }
 
 /**
@@ -91,7 +91,7 @@ function tcl_should_display_widget(): bool {
  *
  * @return array
  */
-function tcl_get_widget_config(): array {
+function trill_chat_lite_get_widget_config(): array {
     return [
         'position'        => get_option( 'tcl_widget_position', 'bottom-right' ),
         'color'           => get_option( 'tcl_widget_color', '#10B981' ),
@@ -110,7 +110,7 @@ function tcl_get_widget_config(): array {
  * @param string $message Raw message.
  * @return string Sanitized message.
  */
-function tcl_sanitize_message( string $message ): string {
+function trill_chat_lite_sanitize_message( string $message ): string {
     $message = wp_kses( $message, [
         'br'     => [],
         'p'      => [],
@@ -129,7 +129,7 @@ function tcl_sanitize_message( string $message ): string {
  * @param float $price Price value.
  * @return string Formatted price.
  */
-function tcl_format_price( float $price ): string {
+function trill_chat_lite_format_price( float $price ): string {
     if ( function_exists( 'wc_price' ) ) {
         return wc_price( $price );
     }
@@ -143,7 +143,7 @@ function tcl_format_price( float $price ): string {
  * @param int $product_id Product ID.
  * @return array Product data.
  */
-function tcl_get_product_context( int $product_id ): array {
+function trill_chat_lite_get_product_context( int $product_id ): array {
     if ( ! function_exists( 'wc_get_product' ) ) {
         return [];
     }
@@ -169,8 +169,8 @@ function tcl_get_product_context( int $product_id ): array {
  *
  * @return string
  */
-function tcl_get_version(): string {
-    return defined( 'TCL_VERSION' ) ? TCL_VERSION : '1.0.0';
+function trill_chat_lite_get_version(): string {
+    return defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0';
 }
 
 /**
@@ -178,6 +178,6 @@ function tcl_get_version(): string {
  *
  * @return bool
  */
-function tcl_is_development(): bool {
+function trill_chat_lite_is_development(): bool {
     return defined( 'WP_DEBUG' ) && WP_DEBUG;
 }

@@ -53,7 +53,7 @@ class CronManager {
             \wp_schedule_event( time(), 'daily', self::HOOK_CLEANUP );
         }
 
-        tcl_log( 'Cron events scheduled', 'info' );
+        trill_chat_lite_log( 'Cron events scheduled', 'info' );
     }
 
     /**
@@ -74,31 +74,31 @@ class CronManager {
             }
         }
 
-        tcl_log( 'Cron events unscheduled', 'info' );
+        trill_chat_lite_log( 'Cron events unscheduled', 'info' );
     }
 
     /**
      * Run product index refresh.
      */
     public function run_product_index(): void {
-        tcl_log( 'Cron: starting product index refresh', 'info' );
+        trill_chat_lite_log( 'Cron: starting product index refresh', 'info' );
 
         $indexer = new ProductIndexer();
         $result  = $indexer->index_products();
 
-        tcl_log( 'Cron: product index complete', 'info', $result );
+        trill_chat_lite_log( 'Cron: product index complete', 'info', $result );
     }
 
     /**
      * Run conversation cleanup.
      */
     public function run_cleanup(): void {
-        tcl_log( 'Cron: starting conversation cleanup', 'info' );
+        trill_chat_lite_log( 'Cron: starting conversation cleanup', 'info' );
 
         $db      = new DbManager();
         $deleted = $db->cleanup_old_conversations( 30 );
 
-        tcl_log( 'Cron: cleanup complete', 'info', [
+        trill_chat_lite_log( 'Cron: cleanup complete', 'info', [
             'deleted' => $deleted,
         ] );
     }

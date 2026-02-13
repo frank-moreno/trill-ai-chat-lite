@@ -15,6 +15,10 @@
 
 namespace TrillChatLite\Lite;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 /**
  * Upgrade Notices — Lite CTA system.
  *
@@ -27,8 +31,8 @@ class UpgradeNotices {
      */
     public function init(): void {
         \add_action( 'admin_notices', [ $this, 'renderDashboardNotice' ] );
-        \add_action( 'tcl_after_dashboard_stats', [ $this, 'renderUpgradeCard' ] );
-        \add_action( 'tcl_chat_widget_footer', [ $this, 'renderPoweredByBadge' ] );
+        \add_action( 'trill_chat_lite_after_dashboard_stats', [ $this, 'renderUpgradeCard' ] );
+        \add_action( 'trill_chat_lite_chat_widget_footer', [ $this, 'renderPoweredByBadge' ] );
     }
 
     /**
@@ -62,8 +66,8 @@ class UpgradeNotices {
             sprintf(
                 /* translators: %1$d: conversations used, %2$d: total limit */
                 esc_html__( "You've used %1\$d of %2\$d free conversations this month.", 'trill-chat-lite' ),
-                $stats['used'],
-                $stats['limit']
+                absint( $stats['used'] ),
+                absint( $stats['limit'] )
             ),
             esc_url( LiteConfig::getUpgradeUrl( 'admin_notice' ) ),
             esc_html__( 'Upgrade for unlimited conversations &rarr;', 'trill-chat-lite' )
@@ -74,7 +78,7 @@ class UpgradeNotices {
      * Upgrade card on dashboard page.
      */
     public function renderUpgradeCard(): void {
-        include TCL_PLUGIN_DIR . 'includes/Admin/views/upgrade-card.php';
+        include TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Admin/views/upgrade-card.php';
     }
 
     /**

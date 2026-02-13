@@ -1,8 +1,8 @@
-=== Trill AI AI Chat — Lite ===
+=== Trill AI Chat — Lite ===
 Contributors: trillai
 Tags: woocommerce, ai, chat, customer service, chatbot
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 8.0
 Stable tag: 1.0.0
 License: GPLv2 or later
@@ -13,7 +13,7 @@ recommend items, and boost conversions — automatically.
 
 == Description ==
 
-Trill AI AI Chat adds an intelligent customer service chatbot to your WooCommerce
+Trill AI Chat adds an intelligent customer service chatbot to your WooCommerce
 store. It understands your products, answers customer questions, and helps
 shoppers find what they're looking for.
 
@@ -34,7 +34,7 @@ shoppers find what they're looking for.
 
 **Need more?**
 
-[Upgrade to Trill AI AI Chat Pro](https://trillai.io/pricing/) for unlimited
+[Upgrade to Trill AI Chat Pro](https://trillai.io/pricing/) for unlimited
 conversations, order tracking, analytics, and priority support.
 
 == Installation ==

@@ -52,7 +52,7 @@ class ProductIndexer {
         \update_option( 'tcl_indexed_products', $total );
         \update_option( 'tcl_last_index_time', \current_time( 'mysql' ) );
 
-        tcl_log( 'Product index refreshed', 'info', [
+        trill_chat_lite_log( 'Product index refreshed', 'info', [
             'total' => $total,
         ] );
 

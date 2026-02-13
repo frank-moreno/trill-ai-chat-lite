@@ -74,7 +74,7 @@ class Frontend {
         // Main widget CSS.
         \wp_enqueue_style(
             'tcl-chat-widget',
-            TCL_PLUGIN_URL . 'assets/css/chat-widget.css',
+            TRILL_CHAT_LITE_PLUGIN_URL . 'assets/css/chat-widget.css',
             [],
             $this->version
         );
@@ -82,7 +82,7 @@ class Frontend {
         // Main widget JavaScript.
         \wp_enqueue_script(
             'tcl-chat-widget',
-            TCL_PLUGIN_URL . 'assets/js/chat-widget.js',
+            TRILL_CHAT_LITE_PLUGIN_URL . 'assets/js/chat-widget.js',
             [ 'jquery' ],
             $this->version,
             true
@@ -135,7 +135,7 @@ class Frontend {
          *
          * @param array $localize_data Localised data.
          */
-        $localize_data = \apply_filters( 'tcl_localize_script_data', $localize_data );
+        $localize_data = \apply_filters( 'trill_chat_lite_localize_script_data', $localize_data );
 
         \wp_localize_script( 'tcl-chat-widget', 'tcl_ajax', $localize_data );
     }

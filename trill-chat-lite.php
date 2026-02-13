@@ -25,18 +25,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 // =========================================================================
 // CONSTANTS
 // =========================================================================
-define( 'TCL_VERSION', '1.0.0' );
-define( 'TCL_PLUGIN_FILE', __FILE__ );
-define( 'TCL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'TCL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'TCL_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+define( 'TRILL_CHAT_LITE_VERSION', '1.0.0' );
+define( 'TRILL_CHAT_LITE_PLUGIN_FILE', __FILE__ );
+define( 'TRILL_CHAT_LITE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'TRILL_CHAT_LITE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'TRILL_CHAT_LITE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
 // Lite-specific constants
-define( 'TCL_MONTHLY_CONVERSATION_LIMIT', 50 );
-define( 'TCL_AI_MODEL', 'gpt-4o-mini' );
-define( 'TCL_PROXY_URL', 'https://api.trillai.io/v1/lite/chat' );
-define( 'TCL_UPGRADE_URL', 'https://trillai.io/pricing/?utm_source=plugin&utm_medium=lite&utm_campaign=upgrade' );
-define( 'TCL_IS_LITE', true );
+define( 'TRILL_CHAT_LITE_MONTHLY_CONVERSATION_LIMIT', 50 );
+define( 'TRILL_CHAT_LITE_AI_MODEL', 'gpt-4o-mini' );
+define( 'TRILL_CHAT_LITE_PROXY_URL', 'https://api.trillai.io/v1/lite/chat' );
+define( 'TRILL_CHAT_LITE_UPGRADE_URL', 'https://trillai.io/pricing/?utm_source=plugin&utm_medium=lite&utm_campaign=upgrade' );
+define( 'TRILL_CHAT_LITE_IS_LITE', true );
 
 // =========================================================================
 // PHP VERSION CHECK
@@ -54,14 +54,14 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
 // =========================================================================
 // AUTOLOADER
 // =========================================================================
-if ( file_exists( TCL_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
-    require_once TCL_PLUGIN_DIR . 'vendor/autoload.php';
+if ( file_exists( TRILL_CHAT_LITE_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
+    require_once TRILL_CHAT_LITE_PLUGIN_DIR . 'vendor/autoload.php';
 }
 
 // =========================================================================
 // GLOBAL HELPER FUNCTIONS (loaded before plugin boot)
 // =========================================================================
-require_once TCL_PLUGIN_DIR . 'includes/functions.php';
+require_once TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/functions.php';
 
 // =========================================================================
 // ACTIVATION / DEACTIVATION HOOKS
@@ -86,7 +86,7 @@ add_action( 'plugins_loaded', function () {
                 esc_html__( 'Manage plugins', 'trill-chat-lite' )
             );
         } );
-        deactivate_plugins( TCL_PLUGIN_BASENAME );
+        deactivate_plugins( TRILL_CHAT_LITE_PLUGIN_BASENAME );
         return;
     }
 
@@ -94,7 +94,7 @@ add_action( 'plugins_loaded', function () {
     if ( function_exists( 'is_plugin_active' ) ) {
         if ( is_plugin_active( 'woocommerce-ai-chat/gspltd-ai-chat.php' ) ||
              is_plugin_active( 'woocommerce-ai-chat/woocommerce-ai-chat.php' ) ) {
-            deactivate_plugins( TCL_PLUGIN_BASENAME );
+            deactivate_plugins( TRILL_CHAT_LITE_PLUGIN_BASENAME );
             return;
         }
     }

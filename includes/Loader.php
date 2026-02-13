@@ -130,7 +130,7 @@ class Loader {
             );
         }
 
-        tcl_log(
+        trill_chat_lite_log(
             'Loader registered ' . count( $this->actions ) . ' actions, ' .
             count( $this->filters ) . ' filters, and ' .
             count( $this->shortcodes ) . ' shortcodes',

@@ -76,7 +76,7 @@ final class Plugin {
      * Private constructor.
      */
     private function __construct() {
-        $this->version = defined( 'TCL_VERSION' ) ? TCL_VERSION : '1.0.0';
+        $this->version = defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0';
         $this->loader  = new Loader();
 
         $this->init_components();
@@ -103,7 +103,7 @@ final class Plugin {
         $this->set_locale();
         $this->loader->run();
 
-        tcl_log( 'Trill Chat Lite initialised successfully', 'info' );
+        trill_chat_lite_log( 'Trill Chat Lite initialised successfully', 'info' );
     }
 
     /**
@@ -143,7 +143,7 @@ final class Plugin {
         // 7. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 
-        tcl_log( 'All plugin components initialised', 'debug' );
+        trill_chat_lite_log( 'All plugin components initialised', 'debug' );
     }
 
     /**

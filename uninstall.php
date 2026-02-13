@@ -24,22 +24,22 @@ global $wpdb;
 // =========================================================================
 // 1. DROP CUSTOM TABLES
 // =========================================================================
-$tables = [
+$trill_chat_lite_tables = [
     $wpdb->prefix . 'tcl_conversations',
     $wpdb->prefix . 'tcl_messages',
     $wpdb->prefix . 'tcl_feedback',
     $wpdb->prefix . 'tcl_product_index',
 ];
 
-foreach ( $tables as $table ) {
-    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from $wpdb->prefix
-    $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+foreach ( $trill_chat_lite_tables as $trill_chat_lite_table ) {
+    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup, table name from $wpdb->prefix.
+    $wpdb->query( "DROP TABLE IF EXISTS {$trill_chat_lite_table}" );
 }
 
 // =========================================================================
 // 2. DELETE ALL OPTIONS WITH tcl_ PREFIX
 // =========================================================================
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup.
 $wpdb->query(
     "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'tcl_%'"
 );
@@ -47,7 +47,7 @@ $wpdb->query(
 // =========================================================================
 // 3. DELETE ALL TRANSIENTS WITH tcl_ PREFIX
 // =========================================================================
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup.
 $wpdb->query(
     "DELETE FROM {$wpdb->options}
      WHERE option_name LIKE '_transient_tcl_%'
@@ -57,23 +57,23 @@ $wpdb->query(
 // =========================================================================
 // 4. REMOVE CUSTOM ROLES AND CAPABILITIES
 // =========================================================================
-$capabilities = [
+$trill_chat_lite_capabilities = [
     'manage_tcl_chat',
     'view_tcl_analytics',
 ];
 
-// Remove custom role
+// Remove custom role.
 if ( get_role( 'tcl_chat_operator' ) ) {
     remove_role( 'tcl_chat_operator' );
 }
 
-// Remove capabilities from standard roles
-$roles = [ 'administrator', 'shop_manager' ];
-foreach ( $roles as $role_name ) {
-    $role = get_role( $role_name );
-    if ( $role ) {
-        foreach ( $capabilities as $cap ) {
-            $role->remove_cap( $cap );
+// Remove capabilities from standard roles.
+$trill_chat_lite_roles = [ 'administrator', 'shop_manager' ];
+foreach ( $trill_chat_lite_roles as $trill_chat_lite_role_name ) {
+    $trill_chat_lite_role = get_role( $trill_chat_lite_role_name );
+    if ( $trill_chat_lite_role ) {
+        foreach ( $trill_chat_lite_capabilities as $trill_chat_lite_cap ) {
+            $trill_chat_lite_role->remove_cap( $trill_chat_lite_cap );
         }
     }
 }
@@ -81,14 +81,14 @@ foreach ( $roles as $role_name ) {
 // =========================================================================
 // 5. CLEAR CRON JOBS
 // =========================================================================
-$cron_hooks = [
+$trill_chat_lite_cron_hooks = [
     'tcl_cleanup_conversations',
     'tcl_index_products',
 ];
 
-foreach ( $cron_hooks as $hook ) {
-    $timestamp = wp_next_scheduled( $hook );
-    if ( $timestamp ) {
-        wp_unschedule_event( $timestamp, $hook );
+foreach ( $trill_chat_lite_cron_hooks as $trill_chat_lite_hook ) {
+    $trill_chat_lite_timestamp = wp_next_scheduled( $trill_chat_lite_hook );
+    if ( $trill_chat_lite_timestamp ) {
+        wp_unschedule_event( $trill_chat_lite_timestamp, $trill_chat_lite_hook );
     }
 }

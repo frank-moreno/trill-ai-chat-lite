@@ -41,13 +41,13 @@ class Deactivator {
             \update_option( 'tcl_activated', false );
             \update_option( 'tcl_deactivation_time', \current_time( 'mysql' ) );
 
-            if ( function_exists( 'tcl_log' ) ) {
-                tcl_log( 'Plugin deactivated successfully' );
+            if ( function_exists( 'trill_chat_lite_log' ) ) {
+                trill_chat_lite_log( 'Plugin deactivated successfully' );
             }
 
         } catch ( \Exception $e ) {
-            if ( function_exists( 'tcl_log' ) ) {
-                tcl_log( 'Deactivation failed: ' . $e->getMessage(), 'error' );
+            if ( function_exists( 'trill_chat_lite_log' ) ) {
+                trill_chat_lite_log( 'Deactivation failed: ' . $e->getMessage(), 'error' );
             }
         }
     }

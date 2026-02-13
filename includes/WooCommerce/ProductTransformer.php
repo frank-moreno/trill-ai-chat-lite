@@ -55,7 +55,7 @@ class ProductTransformer {
         return [
             'id'          => $product->get_id(),
             'name'        => $product->get_name(),
-            'price'       => tcl_format_price( $product->get_price() ),
+            'price'       => trill_chat_lite_format_price( $product->get_price() ),
             'description' => wp_trim_words( $product->get_short_description(), 20, '...' ),
             'url'         => $product->get_permalink(),
             'in_stock'    => $product->is_in_stock(),
