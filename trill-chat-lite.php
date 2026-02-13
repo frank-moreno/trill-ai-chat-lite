@@ -52,11 +52,9 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
 }
 
 // =========================================================================
-// AUTOLOADER
+// AUTOLOADER (custom PSR-4, no Composer needed)
 // =========================================================================
-if ( file_exists( TRILL_CHAT_LITE_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
-    require_once TRILL_CHAT_LITE_PLUGIN_DIR . 'vendor/autoload.php';
-}
+require_once TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Autoloader.php';
 
 // =========================================================================
 // GLOBAL HELPER FUNCTIONS (loaded before plugin boot)
