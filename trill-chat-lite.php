@@ -39,6 +39,19 @@ define( 'TRILL_CHAT_LITE_UPGRADE_URL', 'https://trillai.io/pricing/?utm_source=p
 define( 'TRILL_CHAT_LITE_IS_LITE', true );
 
 // =========================================================================
+// WOOCOMMERCE HPOS COMPATIBILITY
+// =========================================================================
+add_action( 'before_woocommerce_init', function () {
+    if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+            'custom_order_tables',
+            __FILE__,
+            true
+        );
+    }
+} );
+
+// =========================================================================
 // PHP VERSION CHECK
 // =========================================================================
 if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
