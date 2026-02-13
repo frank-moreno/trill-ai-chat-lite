@@ -49,10 +49,10 @@ class ProxyClient {
      */
     private function build_headers(): array {
         return [
-            'Content-Type'       => 'application/json',
-            'X-GCL-Site-URL'     => \get_site_url(),
-            'X-GCL-Plugin-Version' => defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0',
-            'X-GCL-Site-Hash'    => $this->generate_site_hash(),
+            'Content-Type'         => 'application/json',
+            'X-TCL-Site-URL'       => \get_site_url(),
+            'X-TCL-Plugin-Version' => defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0',
+            'X-TCL-Site-Hash'      => $this->generate_site_hash(),
         ];
     }
 
@@ -114,7 +114,7 @@ class ProxyClient {
         }
 
         // Handle malformed response.
-        if ( ! is_array( $decoded ) || empty( $decoded['response'] ) ) {
+        if ( ! is_array( $decoded ) || empty( $decoded['success'] ) ) {
             trill_chat_lite_log( 'ProxyClient: malformed response', 'error', [
                 'body_preview' => mb_substr( $response_body, 0, 200 ),
             ] );
@@ -134,9 +134,9 @@ class ProxyClient {
 
         return [
             'success' => true,
-            'message' => [
+            'message' => $decoded['message'] ?? [
                 'role'    => 'assistant',
-                'content' => $decoded['response'],
+                'content' => '',
             ],
             'meta' => $decoded['meta'] ?? [],
         ];
