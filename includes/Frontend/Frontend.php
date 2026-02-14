@@ -94,6 +94,7 @@ class Frontend {
             'rest_url' => \rest_url( 'tcl/v1/' ),
             'nonce'    => \wp_create_nonce( 'wp_rest' ),
             'enabled'  => \get_option( 'tcl_chat_enabled', '1' ),
+            'plugin_url' => TRILL_CHAT_LITE_PLUGIN_URL,
             'strings'  => [
                 'type_message'    => __( 'Type your message...', 'trill-chat-lite' ),
                 'send'            => __( 'Send', 'trill-chat-lite' ),

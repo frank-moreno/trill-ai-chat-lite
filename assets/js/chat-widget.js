@@ -6,6 +6,7 @@
  *
  * @package TrillChatLite
  * @since 1.0.0
+ * @version 1.1.0 — Mobile responsive improvements
  * @license GPL-2.0-or-later
  */
 
@@ -23,6 +24,7 @@
         isOpen: false,
         isLoading: false,
         limitReached: false,
+        isMobile: false,
 
         /**
          * Initialise the chat widget.
@@ -32,6 +34,7 @@
                 return;
             }
 
+            this.isMobile = window.innerWidth <= 480;
             this.render();
             this.bindEvents();
             this.loadSession();
@@ -54,7 +57,7 @@
                     '<div class="tcl-chat-window" id="tcl-chat-window">' +
                         '<!-- Header -->' +
                         '<div class="tcl-chat-header">' +
-                            '<div class="tcl-chat-avatar">R</div>' +
+                            '<div class="tcl-chat-avatar"><img src="' + tcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + tcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="Robin" width="40" height="40" /></div>' +
                             '<div class="tcl-chat-header-info">' +
                                 '<div class="tcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
                                 '<div class="tcl-chat-header-status">' +
@@ -73,7 +76,7 @@
                         '<div class="tcl-quick-replies" id="tcl-quick-replies"></div>' +
                         '<!-- Input -->' +
                         '<div class="tcl-chat-input-area">' +
-                            '<input type="text" class="tcl-chat-input" id="tcl-chat-input" placeholder="' + this.str('type_message') + '" maxlength="500" />' +
+                            '<input type="text" class="tcl-chat-input" id="tcl-chat-input" placeholder="' + this.str('type_message') + '" maxlength="500" enterkeyhint="send" />' +
                             '<button class="tcl-chat-send" id="tcl-chat-send" aria-label="' + this.str('send') + '">' +
                                 '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
                                     '<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>' +
@@ -137,6 +140,37 @@
                     self.addToCart(productId, $(this));
                 }
             });
+
+            // Mobile: handle input focus (keyboard appearing).
+            $(document).on('focus', '#tcl-chat-input', function () {
+                if (self.isMobile) {
+                    self.handleMobileKeyboardOpen();
+                }
+            });
+
+            // Mobile: handle input blur (keyboard closing).
+            $(document).on('blur', '#tcl-chat-input', function () {
+                if (self.isMobile) {
+                    self.handleMobileKeyboardClose();
+                }
+            });
+
+            // Track viewport changes (orientation, resize).
+            window.addEventListener('resize', function () {
+                self.isMobile = window.innerWidth <= 480;
+                if (self.isOpen) {
+                    self.scrollToBottom();
+                }
+            });
+
+            // Handle visualViewport resize (keyboard open/close on modern mobile browsers).
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', function () {
+                    if (self.isOpen && self.isMobile) {
+                        self.handleViewportResize();
+                    }
+                });
+            }
         },
 
         /**
@@ -158,15 +192,20 @@
             $('#tcl-chat-toggle').hide();
             this.isOpen = true;
 
+            // On mobile, prevent body scroll when chat is open.
+            if (this.isMobile) {
+                $('body').css('overflow', 'hidden');
+            }
+
             // Show welcome message if no messages.
             if ($('#tcl-chat-messages').children().length === 0) {
                 this.addMessage('assistant', this.str('welcome_message'));
             }
 
-            // Focus input.
+            // Focus input (slight delay for animation).
             setTimeout(function () {
                 $('#tcl-chat-input').focus();
-            }, 100);
+            }, 300);
         },
 
         /**
@@ -176,6 +215,62 @@
             $('#tcl-chat-window').removeClass('tcl-chat-window--open');
             $('#tcl-chat-toggle').show();
             this.isOpen = false;
+
+            // Restore body scroll.
+            if (this.isMobile) {
+                $('body').css('overflow', '');
+            }
+
+            // Blur input to dismiss keyboard.
+            $('#tcl-chat-input').blur();
+        },
+
+        /**
+         * Handle mobile keyboard open.
+         * Scrolls messages to bottom when keyboard appears.
+         */
+        handleMobileKeyboardOpen: function () {
+            var self = this;
+            // Small delay to let the keyboard animation finish.
+            setTimeout(function () {
+                self.scrollToBottom();
+            }, 300);
+        },
+
+        /**
+         * Handle mobile keyboard close.
+         */
+        handleMobileKeyboardClose: function () {
+            // Scroll to ensure input area is visible.
+            this.scrollToBottom();
+        },
+
+        /**
+         * Handle visualViewport resize (keyboard open/close).
+         */
+        handleViewportResize: function () {
+            var viewport = window.visualViewport;
+            if (!viewport) {
+                return;
+            }
+
+            var $window = $('#tcl-chat-window');
+
+            // Adjust chat window height to match visual viewport.
+            // This prevents the keyboard from overlapping the input.
+            $window.css('height', viewport.height + 'px');
+
+            this.scrollToBottom();
+        },
+
+        /**
+         * Scroll messages to bottom.
+         */
+        scrollToBottom: function () {
+            var $messages = $('#tcl-chat-messages');
+            if ($messages.length && $messages[0].scrollHeight) {
+                $messages.scrollTop($messages[0].scrollHeight);
+            }
         },
 
         /**
@@ -271,6 +366,11 @@
                 complete: function () {
                     self.isLoading = false;
                     $('#tcl-chat-send').prop('disabled', false);
+
+                    // Keep focus on input for mobile continuity.
+                    if (!self.isMobile) {
+                        $('#tcl-chat-input').focus();
+                    }
                 }
             });
         },
@@ -291,7 +391,7 @@
 
             var $msg = $('<div class="tcl-message tcl-message--' + role + '">' + sanitised + '</div>');
             $messages.append($msg);
-            $messages.scrollTop($messages[0].scrollHeight);
+            this.scrollToBottom();
         },
 
         /**
@@ -306,7 +406,7 @@
                     '<span class="tcl-typing-dot"></span>' +
                 '</div>'
             );
-            $messages.scrollTop($messages[0].scrollHeight);
+            this.scrollToBottom();
         },
 
         /**
@@ -341,7 +441,7 @@
             });
 
             $('#tcl-chat-messages').append($container);
-            $('#tcl-chat-messages').scrollTop($('#tcl-chat-messages')[0].scrollHeight);
+            this.scrollToBottom();
         },
 
         /**
