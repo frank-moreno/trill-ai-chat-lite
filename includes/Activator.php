@@ -40,10 +40,13 @@ class Activator {
             // 4. Schedule cron jobs.
             self::schedule_cron_jobs();
 
-            // 5. Flush rewrite rules.
+            // 5. Run initial product index so the chat works immediately.
+            self::run_initial_index();
+
+            // 6. Flush rewrite rules.
             \flush_rewrite_rules();
 
-            // 6. Set activation flag.
+            // 7. Set activation flag.
             \update_option( 'tcl_activated', true );
             \update_option( 'tcl_activation_time', \current_time( 'mysql' ) );
 
@@ -126,6 +129,23 @@ class Activator {
 
         if ( function_exists( 'trill_chat_lite_log' ) ) {
             trill_chat_lite_log( 'Roles and capabilities created', 'debug' );
+        }
+    }
+
+    /**
+     * Run initial product index so the chat can answer product queries
+     * immediately after activation (without waiting for the first cron cycle).
+     */
+    private static function run_initial_index(): void {
+        if ( ! function_exists( 'wc_get_products' ) ) {
+            return;
+        }
+
+        $indexer = new WooCommerce\ProductIndexer();
+        $result  = $indexer->index_products();
+
+        if ( function_exists( 'trill_chat_lite_log' ) ) {
+            trill_chat_lite_log( 'Initial product index complete', 'info', $result );
         }
     }
 

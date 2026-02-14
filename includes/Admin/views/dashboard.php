@@ -40,7 +40,7 @@ $trill_chat_lite_chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
 
         <div style="display: flex; gap: 40px; align-items: center; margin: 16px 0;">
             <div>
-                <div style="font-size: 36px; font-weight: 700; color: #1d2327;">
+                <div style="font-size: 22px; font-weight: 700; color: #1d2327;">
                     <?php echo esc_html( $trill_chat_lite_stats['used'] ); ?> / <?php echo esc_html( $trill_chat_lite_stats['limit'] ); ?>
                 </div>
                 <div style="color: #50575e; font-size: 13px;">

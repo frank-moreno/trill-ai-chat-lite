@@ -72,6 +72,7 @@ class Admin {
         // AJAX handlers.
         \add_action( 'wp_ajax_tcl_save_settings', [ $this, 'ajax_save_settings' ] );
         \add_action( 'wp_ajax_tcl_dismiss_notice', [ $this, 'ajax_dismiss_notice' ] );
+        \add_action( 'wp_ajax_tcl_reindex_products', [ $this, 'ajax_reindex_products' ] );
     }
 
     /**
@@ -99,6 +100,16 @@ class Admin {
             [ $this, 'render_dashboard' ]
         );
 
+        // Products submenu.
+        \add_submenu_page(
+            'tcl-chat',
+            __( 'Products', 'trill-chat-lite' ),
+            __( 'Products', 'trill-chat-lite' ),
+            'manage_tcl_chat',
+            'tcl-products',
+            [ $this, 'render_products' ]
+        );
+
         // Settings submenu.
         \add_submenu_page(
             'tcl-chat',
@@ -124,7 +135,7 @@ class Admin {
      */
     public function enqueue_admin_assets( string $hook ): void {
         // Only load on our plugin pages.
-        if ( strpos( $hook, 'tcl-chat' ) === false && strpos( $hook, 'tcl-settings' ) === false ) {
+        if ( strpos( $hook, 'tcl-chat' ) === false && strpos( $hook, 'tcl-settings' ) === false && strpos( $hook, 'tcl-products' ) === false ) {
             return;
         }
 
@@ -189,6 +200,17 @@ class Admin {
     }
 
     /**
+     * Render Products page.
+     */
+    public function render_products(): void {
+        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
+        }
+
+        include TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Admin/views/products.php';
+    }
+
+    /**
      * Render Settings page.
      */
     public function render_settings(): void {
@@ -236,5 +258,33 @@ class Admin {
         \update_option( 'tcl_upgrade_notice_dismissed', time() );
 
         \wp_send_json_success();
+    }
+
+    /**
+     * AJAX: Reindex WooCommerce products.
+     */
+    public function ajax_reindex_products(): void {
+        \check_ajax_referer( 'tcl_admin_nonce', 'nonce' );
+
+        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-chat-lite' ) ], 403 );
+        }
+
+        if ( ! function_exists( 'wc_get_products' ) ) {
+            \wp_send_json_error( [ 'message' => __( 'WooCommerce is not active.', 'trill-chat-lite' ) ] );
+        }
+
+        $indexer = new \TrillChatLite\WooCommerce\ProductIndexer();
+        $result  = $indexer->index_products();
+
+        \wp_send_json_success( [
+            'message'      => sprintf(
+                /* translators: %d: number of products indexed */
+                __( '%d products indexed successfully.', 'trill-chat-lite' ),
+                $result['indexed']
+            ),
+            'indexed'      => $result['indexed'],
+            'last_indexed' => \current_time( 'Y-m-d H:i:s' ),
+        ] );
     }
 }

@@ -23,6 +23,7 @@ use TrillChatLite\Database\DbManager;
 use TrillChatLite\Lite\UpgradeNotices;
 use TrillChatLite\Lite\UsageLimiter;
 use TrillChatLite\AI\ProxyClient;
+use TrillChatLite\WooCommerce\CronManager;
 
 /**
  * Class Plugin
@@ -140,7 +141,11 @@ final class Plugin {
         $this->components['upgrade_notices'] = new UpgradeNotices();
         $this->components['upgrade_notices']->init();
 
-        // 7. REST API.
+        // 7. Cron Manager (product indexing + conversation cleanup).
+        $this->components['cron_manager'] = new CronManager();
+        $this->components['cron_manager']->init();
+
+        // 8. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 
         trill_chat_lite_log( 'All plugin components initialised', 'debug' );

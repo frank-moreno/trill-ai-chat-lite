@@ -90,11 +90,13 @@ class Frontend {
 
         // Build localisation data.
         $localize_data = [
-            'ajax_url' => \admin_url( 'admin-ajax.php' ),
-            'rest_url' => \rest_url( 'tcl/v1/' ),
-            'nonce'    => \wp_create_nonce( 'wp_rest' ),
-            'enabled'  => \get_option( 'tcl_chat_enabled', '1' ),
-            'plugin_url' => TRILL_CHAT_LITE_PLUGIN_URL,
+            'ajax_url'        => \admin_url( 'admin-ajax.php' ),
+            'rest_url'        => \rest_url( 'tcl/v1/' ),
+            'nonce'           => \wp_create_nonce( 'wp_rest' ),
+            'enabled'         => \get_option( 'tcl_chat_enabled', '1' ),
+            'widget_position' => \get_option( 'tcl_widget_position', 'bottom-right' ),
+            'widget_color'    => \get_option( 'tcl_widget_color', '#10B981' ),
+            'plugin_url'      => TRILL_CHAT_LITE_PLUGIN_URL,
             'strings'  => [
                 'type_message'    => __( 'Type your message...', 'trill-chat-lite' ),
                 'send'            => __( 'Send', 'trill-chat-lite' ),
@@ -148,7 +150,25 @@ class Frontend {
         if ( \get_option( 'tcl_chat_enabled', '1' ) !== '1' ) {
             return;
         }
+
+        $position = \get_option( 'tcl_widget_position', 'bottom-right' );
+        $color    = \get_option( 'tcl_widget_color', '#10B981' );
+
+        // Inject CSS custom properties so the widget CSS/JS can use them.
         ?>
+        <style id="tcl-widget-vars">
+            :root {
+                --tcl-primary: <?php echo esc_attr( $color ); ?>;
+            }
+            .tcl-chat-widget {
+                right: <?php echo $position === 'bottom-left' ? 'auto' : '20px'; ?>;
+                left: <?php echo $position === 'bottom-left' ? '20px' : 'auto'; ?>;
+            }
+            .tcl-chat-window {
+                right: <?php echo $position === 'bottom-left' ? 'auto' : '0'; ?>;
+                left: <?php echo $position === 'bottom-left' ? '0' : 'auto'; ?>;
+            }
+        </style>
         <noscript>
             <div class="tcl-noscript-message" style="position: fixed; bottom: 20px; right: 20px; background: #10B981; color: white; padding: 15px 20px; border-radius: 8px; font-family: sans-serif; font-size: 14px; z-index: 9999;">
                 <?php esc_html_e( 'JavaScript is required for the chat widget.', 'trill-chat-lite' ); ?>

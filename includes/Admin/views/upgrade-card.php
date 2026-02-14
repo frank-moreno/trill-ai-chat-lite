@@ -43,7 +43,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <td><?php esc_html_e( 'Conversations / month', 'trill-chat-lite' ); ?></td>
                 <td style="text-align: center;">50</td>
                 <td style="text-align: center; background: #f9fafb; font-weight: 600;">500</td>
-                <td style="text-align: center; font-weight: 600;"><?php esc_html_e( 'Unlimited', 'trill-chat-lite' ); ?></td>
+                <td style="text-align: center; font-weight: 600;">2,000</td>
             </tr>
             <tr>
                 <td><?php esc_html_e( 'Order Tracking', 'trill-chat-lite' ); ?></td>
