@@ -1,7 +1,6 @@
 <?php
 /**
  * Plugin Name: Trill AI Chat — Lite
- * Plugin URI: https://trillai.io
  * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically. Free for up to 50 conversations/month.
  * Version: 1.0.0
  * Requires at least: 6.0
