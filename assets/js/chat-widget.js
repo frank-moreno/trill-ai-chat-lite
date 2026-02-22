@@ -10,7 +10,7 @@
  * @license GPL-2.0-or-later
  */
 
-/* global jQuery, tcl_ajax */
+/* global jQuery, tclw_ajax */
 (function ($) {
     'use strict';
 
@@ -30,7 +30,7 @@
          * Initialise the chat widget.
          */
         init: function () {
-            if (tcl_ajax.enabled !== '1') {
+            if (tclw_ajax.enabled !== '1') {
                 return;
             }
 
@@ -57,7 +57,7 @@
                     '<div class="tcl-chat-window" id="tcl-chat-window">' +
                         '<!-- Header -->' +
                         '<div class="tcl-chat-header">' +
-                            '<div class="tcl-chat-avatar"><img src="' + tcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + tcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="Robin" width="40" height="40" /></div>' +
+                            '<div class="tcl-chat-avatar"><img src="' + tclw_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + tclw_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="Robin" width="40" height="40" /></div>' +
                             '<div class="tcl-chat-header-info">' +
                                 '<div class="tcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
                                 '<div class="tcl-chat-header-status">' +
@@ -84,9 +84,9 @@
                             '</button>' +
                         '</div>' +
                         '<!-- Powered By -->' +
-                        (tcl_ajax.branding && tcl_ajax.branding.show_powered_by ?
-                            '<a href="' + tcl_ajax.branding.powered_by_url + '" target="_blank" rel="noopener" class="tcl-powered-by">' +
-                                tcl_ajax.branding.powered_by_text +
+                        (tclw_ajax.branding && tclw_ajax.branding.show_powered_by ?
+                            '<a href="' + tclw_ajax.branding.powered_by_url + '" target="_blank" rel="noopener" class="tcl-powered-by">' +
+                                tclw_ajax.branding.powered_by_text +
                             '</a>' : '') +
                     '</div>' +
                 '</div>';
@@ -299,7 +299,7 @@
 
             // Send API request.
             $.ajax({
-                url: tcl_ajax.rest_url + 'message',
+                url: tclw_ajax.rest_url + 'message',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
@@ -311,7 +311,7 @@
                     }
                 }),
                 beforeSend: function (xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', tcl_ajax.nonce);
+                    xhr.setRequestHeader('X-WP-Nonce', tclw_ajax.nonce);
                 },
                 success: function (response) {
                     self.hideTyping();
@@ -473,7 +473,7 @@
             $button.text('Adding...').prop('disabled', true);
 
             $.ajax({
-                url: tcl_ajax.ajax_url,
+                url: tclw_ajax.ajax_url,
                 type: 'POST',
                 data: {
                     action: 'woocommerce_add_to_cart',
@@ -504,7 +504,7 @@
          */
         checkUsageLimit: function (usage) {
             if (usage.remaining <= 0) {
-                this.showLimitReached(tcl_ajax.upgrade_url);
+                this.showLimitReached(tclw_ajax.upgrade_url);
             }
         },
 
@@ -521,7 +521,7 @@
             var $banner = $(
                 '<div class="tcl-limit-banner">' +
                     '<p>' + this.str('limit_reached') + '</p>' +
-                    '<a href="' + (upgradeUrl || tcl_ajax.upgrade_url) + '" target="_blank">' +
+                    '<a href="' + (upgradeUrl || tclw_ajax.upgrade_url) + '" target="_blank">' +
                         this.str('upgrade_now') +
                     '</a>' +
                 '</div>'
@@ -537,7 +537,7 @@
             // Subtle message, not blocking.
             this.addMessage('assistant',
                 'You\'re approaching your monthly limit. ' +
-                '<a href="' + tcl_ajax.upgrade_url + '" target="_blank">Upgrade for unlimited conversations</a>.'
+                '<a href="' + tclw_ajax.upgrade_url + '" target="_blank">Upgrade for unlimited conversations</a>.'
             );
         },
 
@@ -550,7 +550,7 @@
             var errorMsg = response.error || this.str('error_message');
 
             if (response.error_code === 'LIMIT_REACHED') {
-                this.showLimitReached(response.upgrade_url || tcl_ajax.upgrade_url);
+                this.showLimitReached(response.upgrade_url || tclw_ajax.upgrade_url);
                 this.addMessage('assistant', errorMsg);
             } else {
                 this.addMessage('assistant', errorMsg);
@@ -599,13 +599,13 @@
          * @return {string} Translated string.
          */
         str: function (key) {
-            return (tcl_ajax.strings && tcl_ajax.strings[key]) || key;
+            return (tclw_ajax.strings && tclw_ajax.strings[key]) || key;
         }
     };
 
     // Initialise on DOM ready.
     $(document).ready(function () {
-        if (typeof tcl_ajax !== 'undefined') {
+        if (typeof tclw_ajax !== 'undefined') {
             TCLChatWidget.init();
         }
     });

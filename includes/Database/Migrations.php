@@ -36,7 +36,7 @@ class Migrations {
     public static function run(): void {
         global $wpdb;
 
-        $installed_version = \get_option( 'tcl_db_version', '0.0.0' );
+        $installed_version = \get_option( 'tclw_db_version', '0.0.0' );
 
         if ( version_compare( $installed_version, self::SCHEMA_VERSION, '>=' ) ) {
             return;
@@ -50,7 +50,7 @@ class Migrations {
         self::create_messages_table( $wpdb, $charset_collate );
         self::create_feedback_table( $wpdb, $charset_collate );
 
-        \update_option( 'tcl_db_version', self::SCHEMA_VERSION );
+        \update_option( 'tclw_db_version', self::SCHEMA_VERSION );
 
         trill_chat_lite_log( 'Database migrations completed', 'info', [
             'version' => self::SCHEMA_VERSION,
@@ -156,7 +156,7 @@ class Migrations {
             $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
         }
 
-        \delete_option( 'tcl_db_version' );
+        \delete_option( 'tclw_db_version' );
 
         trill_chat_lite_log( 'All plugin tables dropped', 'info' );
     }

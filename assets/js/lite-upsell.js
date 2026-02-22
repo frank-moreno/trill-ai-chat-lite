@@ -42,7 +42,7 @@
                     url: tclAdmin.ajax_url,
                     type: 'POST',
                     data: {
-                        action: 'tcl_dismiss_notice',
+                        action: 'tclw_dismiss_notice',
                         nonce: nonce
                     }
                 });

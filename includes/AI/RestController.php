@@ -33,7 +33,7 @@ class RestController {
      *
      * @var string
      */
-    private const API_NAMESPACE = 'tcl/v1';
+    private const API_NAMESPACE = 'tclw/v1';
 
     /**
      * UUID validation pattern.
@@ -437,7 +437,7 @@ class RestController {
         // Basic rate limiting via transient.
         $ip      = $this->get_client_ip();
         $ip_hash = md5( $ip );
-        $key     = 'tcl_rate_' . $ip_hash;
+        $key     = 'tclw_rate_' . $ip_hash;
         $count   = (int) \get_transient( $key );
 
         if ( $count >= 30 ) {

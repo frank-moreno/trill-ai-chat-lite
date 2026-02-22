@@ -65,7 +65,7 @@ function trill_chat_lite_should_display_widget(): bool {
     }
 
     // Don't show if disabled.
-    if ( get_option( 'tcl_chat_enabled', '1' ) !== '1' ) {
+    if ( get_option( 'tclw_chat_enabled', '1' ) !== '1' ) {
         return false;
     }
 
@@ -85,13 +85,13 @@ function trill_chat_lite_should_display_widget(): bool {
  */
 function trill_chat_lite_get_widget_config(): array {
     return [
-        'position'        => get_option( 'tcl_widget_position', 'bottom-right' ),
-        'color'           => get_option( 'tcl_widget_color', '#10B981' ),
+        'position'        => get_option( 'tclw_widget_position', 'bottom-right' ),
+        'color'           => get_option( 'tclw_widget_color', '#10B981' ),
         'welcome_message' => get_option(
-            'tcl_welcome_message',
+            'tclw_welcome_message',
             __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-chat-lite' )
         ),
-        'api_endpoint'    => rest_url( 'tcl/v1/message' ),
+        'api_endpoint'    => rest_url( 'tclw/v1/message' ),
         'nonce'           => wp_create_nonce( 'wp_rest' ),
     ];
 }

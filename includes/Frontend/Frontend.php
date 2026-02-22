@@ -67,13 +67,13 @@ class Frontend {
      * Enqueue frontend assets.
      */
     public function enqueue_frontend_assets(): void {
-        if ( \get_option( 'tcl_chat_enabled', '1' ) !== '1' ) {
+        if ( \get_option( 'tclw_chat_enabled', '1' ) !== '1' ) {
             return;
         }
 
         // Main widget CSS.
         \wp_enqueue_style(
-            'tcl-chat-widget',
+            'tclw-chat-widget',
             TRILL_CHAT_LITE_PLUGIN_URL . 'assets/css/chat-widget.css',
             [],
             $this->version
@@ -81,7 +81,7 @@ class Frontend {
 
         // Main widget JavaScript.
         \wp_enqueue_script(
-            'tcl-chat-widget',
+            'tclw-chat-widget',
             TRILL_CHAT_LITE_PLUGIN_URL . 'assets/js/chat-widget.js',
             [ 'jquery' ],
             $this->version,
@@ -91,11 +91,11 @@ class Frontend {
         // Build localisation data.
         $localize_data = [
             'ajax_url'        => \admin_url( 'admin-ajax.php' ),
-            'rest_url'        => \rest_url( 'tcl/v1/' ),
+            'rest_url'        => \rest_url( 'tclw/v1/' ),
             'nonce'           => \wp_create_nonce( 'wp_rest' ),
-            'enabled'         => \get_option( 'tcl_chat_enabled', '1' ),
-            'widget_position' => \get_option( 'tcl_widget_position', 'bottom-right' ),
-            'widget_color'    => \get_option( 'tcl_widget_color', '#10B981' ),
+            'enabled'         => \get_option( 'tclw_chat_enabled', '1' ),
+            'widget_position' => \get_option( 'tclw_widget_position', 'bottom-right' ),
+            'widget_color'    => \get_option( 'tclw_widget_color', '#10B981' ),
             'plugin_url'      => TRILL_CHAT_LITE_PLUGIN_URL,
             'strings'  => [
                 'type_message'    => __( 'Type your message...', 'trill-chat-lite' ),
@@ -140,19 +140,19 @@ class Frontend {
          */
         $localize_data = \apply_filters( 'trill_chat_lite_localize_script_data', $localize_data );
 
-        \wp_localize_script( 'tcl-chat-widget', 'tcl_ajax', $localize_data );
+        \wp_localize_script( 'tclw-chat-widget', 'tclw_ajax', $localize_data );
     }
 
     /**
      * Render chat widget in footer.
      */
     public function render_chat_widget(): void {
-        if ( \get_option( 'tcl_chat_enabled', '1' ) !== '1' ) {
+        if ( \get_option( 'tclw_chat_enabled', '1' ) !== '1' ) {
             return;
         }
 
-        $position = \get_option( 'tcl_widget_position', 'bottom-right' );
-        $color    = \get_option( 'tcl_widget_color', '#10B981' );
+        $position = \get_option( 'tclw_widget_position', 'bottom-right' );
+        $color    = \get_option( 'tclw_widget_color', '#10B981' );
 
         // Inject CSS custom properties so the widget CSS/JS can use them.
         ?>
@@ -192,7 +192,7 @@ class Frontend {
             'button_text' => __( 'Open Chat', 'trill-chat-lite' ),
         ], $atts, 'trill_chat' );
 
-        if ( \get_option( 'tcl_chat_enabled', '1' ) !== '1' ) {
+        if ( \get_option( 'tclw_chat_enabled', '1' ) !== '1' ) {
             return '';
         }
 
@@ -228,7 +228,7 @@ class Frontend {
      * @return string
      */
     private function get_welcome_message(): string {
-        $custom = \get_option( 'tcl_welcome_message', '' );
+        $custom = \get_option( 'tclw_welcome_message', '' );
 
         if ( ! empty( $custom ) ) {
             return $custom;

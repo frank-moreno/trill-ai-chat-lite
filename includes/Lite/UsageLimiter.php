@@ -19,8 +19,8 @@ namespace TrillChatLite\Lite;
  */
 class UsageLimiter {
 
-    private const OPTION_USED       = 'tcl_conversations_used';
-    private const OPTION_RESET_DATE = 'tcl_conversations_reset_date';
+    private const OPTION_USED       = 'tclw_conversations_used';
+    private const OPTION_RESET_DATE = 'tclw_conversations_reset_date';
 
     /**
      * Can a new conversation be started?

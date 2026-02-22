@@ -33,7 +33,7 @@
             $(document).on('submit', '#tcl-settings-form', this.handleSettingsSave.bind(this));
 
             // Colour picker change.
-            $(document).on('input change', '#tcl_widget_color', this.updateColourPreview.bind(this));
+            $(document).on('input change', '#tclw_widget_color', this.updateColourPreview.bind(this));
         },
 
         /**
@@ -74,7 +74,7 @@
          * Initialise colour preview.
          */
         initColourPreview: function () {
-            var $input = $('#tcl_widget_color');
+            var $input = $('#tclw_widget_color');
             if ($input.length) {
                 this.updateColourPreview({ currentTarget: $input[0] });
             }

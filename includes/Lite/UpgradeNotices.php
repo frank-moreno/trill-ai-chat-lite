@@ -40,11 +40,11 @@ class UpgradeNotices {
      */
     public function renderDashboardNotice(): void {
         $screen = \get_current_screen();
-        if ( ! $screen || strpos( $screen->id, 'tcl-chat' ) === false ) {
+        if ( ! $screen || strpos( $screen->id, 'tclw-chat' ) === false ) {
             return;
         }
 
-        $dismissed = \get_option( 'tcl_upgrade_notice_dismissed', 0 );
+        $dismissed = \get_option( 'tclw_upgrade_notice_dismissed', 0 );
         if ( $dismissed && ( time() - $dismissed ) < WEEK_IN_SECONDS ) {
             return;
         }
@@ -61,7 +61,7 @@ class UpgradeNotices {
             '<div class="notice notice-info is-dismissible tcl-upgrade-notice" data-nonce="%s">
                 <p><strong>%s</strong> %s <a href="%s" target="_blank">%s</a></p>
             </div>',
-            esc_attr( \wp_create_nonce( 'tcl_dismiss_notice' ) ),
+            esc_attr( \wp_create_nonce( 'tclw_dismiss_notice' ) ),
             esc_html__( 'Trill AI Chat:', 'trill-chat-lite' ),
             sprintf(
                 /* translators: %1$d: conversations used, %2$d: total limit */

@@ -70,9 +70,9 @@ class Admin {
         $this->loader->add_action( 'admin_init', $this, 'register_settings' );
 
         // AJAX handlers.
-        \add_action( 'wp_ajax_tcl_save_settings', [ $this, 'ajax_save_settings' ] );
-        \add_action( 'wp_ajax_tcl_dismiss_notice', [ $this, 'ajax_dismiss_notice' ] );
-        \add_action( 'wp_ajax_tcl_reindex_products', [ $this, 'ajax_reindex_products' ] );
+        \add_action( 'wp_ajax_tclw_save_settings', [ $this, 'ajax_save_settings' ] );
+        \add_action( 'wp_ajax_tclw_dismiss_notice', [ $this, 'ajax_dismiss_notice' ] );
+        \add_action( 'wp_ajax_tclw_reindex_products', [ $this, 'ajax_reindex_products' ] );
     }
 
     /**
@@ -83,8 +83,8 @@ class Admin {
         \add_menu_page(
             __( 'Trill Chat', 'trill-chat-lite' ),
             __( 'Trill Chat', 'trill-chat-lite' ),
-            'manage_tcl_chat',
-            'tcl-chat',
+            'manage_tclw_chat',
+            'tclw-chat',
             [ $this, 'render_dashboard' ],
             'dashicons-format-chat',
             58
@@ -92,31 +92,31 @@ class Admin {
 
         // Dashboard submenu.
         \add_submenu_page(
-            'tcl-chat',
+            'tclw-chat',
             __( 'Dashboard', 'trill-chat-lite' ),
             __( 'Dashboard', 'trill-chat-lite' ),
-            'manage_tcl_chat',
-            'tcl-chat',
+            'manage_tclw_chat',
+            'tclw-chat',
             [ $this, 'render_dashboard' ]
         );
 
         // Products submenu.
         \add_submenu_page(
-            'tcl-chat',
+            'tclw-chat',
             __( 'Products', 'trill-chat-lite' ),
             __( 'Products', 'trill-chat-lite' ),
-            'manage_tcl_chat',
-            'tcl-products',
+            'manage_tclw_chat',
+            'tclw-products',
             [ $this, 'render_products' ]
         );
 
         // Settings submenu.
         \add_submenu_page(
-            'tcl-chat',
+            'tclw-chat',
             __( 'Settings', 'trill-chat-lite' ),
             __( 'Settings', 'trill-chat-lite' ),
-            'manage_tcl_chat',
-            'tcl-settings',
+            'manage_tclw_chat',
+            'tclw-settings',
             [ $this, 'render_settings' ]
         );
     }
@@ -135,13 +135,13 @@ class Admin {
      */
     public function enqueue_admin_assets( string $hook ): void {
         // Only load on our plugin pages.
-        if ( strpos( $hook, 'tcl-chat' ) === false && strpos( $hook, 'tcl-settings' ) === false && strpos( $hook, 'tcl-products' ) === false ) {
+        if ( strpos( $hook, 'tclw-chat' ) === false && strpos( $hook, 'tclw-settings' ) === false && strpos( $hook, 'tclw-products' ) === false ) {
             return;
         }
 
         // Admin CSS.
         \wp_enqueue_style(
-            'tcl-admin',
+            'tclw-admin',
             TRILL_CHAT_LITE_PLUGIN_URL . 'assets/css/admin.css',
             [],
             $this->version
@@ -149,7 +149,7 @@ class Admin {
 
         // Admin JavaScript.
         \wp_enqueue_script(
-            'tcl-admin',
+            'tclw-admin',
             TRILL_CHAT_LITE_PLUGIN_URL . 'assets/js/admin.js',
             [ 'jquery' ],
             $this->version,
@@ -158,14 +158,14 @@ class Admin {
 
         // Lite upsell assets.
         \wp_enqueue_style(
-            'tcl-lite-upsell',
+            'tclw-lite-upsell',
             TRILL_CHAT_LITE_PLUGIN_URL . 'assets/css/lite-upsell.css',
-            [ 'tcl-admin' ],
+            [ 'tclw-admin' ],
             $this->version
         );
 
         \wp_enqueue_script(
-            'tcl-lite-upsell',
+            'tclw-lite-upsell',
             TRILL_CHAT_LITE_PLUGIN_URL . 'assets/js/lite-upsell.js',
             [ 'jquery' ],
             $this->version,
@@ -173,9 +173,9 @@ class Admin {
         );
 
         // Localise script for AJAX.
-        \wp_localize_script( 'tcl-admin', 'tclAdmin', [
+        \wp_localize_script( 'tclw-admin', 'tclAdmin', [
             'ajaxurl' => \admin_url( 'admin-ajax.php' ),
-            'nonce'   => \wp_create_nonce( 'tcl_admin_nonce' ),
+            'nonce'   => \wp_create_nonce( 'tclw_admin_nonce' ),
             'strings' => [
                 'saving' => __( 'Saving...', 'trill-chat-lite' ),
                 'saved'  => __( 'Settings saved successfully!', 'trill-chat-lite' ),
@@ -192,7 +192,7 @@ class Admin {
      * Render Dashboard page.
      */
     public function render_dashboard(): void {
-        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+        if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
             \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
         }
 
@@ -203,7 +203,7 @@ class Admin {
      * Render Products page.
      */
     public function render_products(): void {
-        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+        if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
             \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
         }
 
@@ -214,7 +214,7 @@ class Admin {
      * Render Settings page.
      */
     public function render_settings(): void {
-        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+        if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
             \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
         }
 
@@ -229,9 +229,9 @@ class Admin {
      * AJAX: Save settings.
      */
     public function ajax_save_settings(): void {
-        \check_ajax_referer( 'tcl_admin_nonce', 'nonce' );
+        \check_ajax_referer( 'tclw_admin_nonce', 'nonce' );
 
-        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+        if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
             \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-chat-lite' ) ], 403 );
         }
 
@@ -242,9 +242,9 @@ class Admin {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $widget_color = isset( $_POST['widget_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['widget_color'] ) ) : '#10B981';
 
-        \update_option( 'tcl_chat_enabled', $chat_enabled );
-        \update_option( 'tcl_widget_position', $widget_position );
-        \update_option( 'tcl_widget_color', $widget_color ?: '#10B981' );
+        \update_option( 'tclw_chat_enabled', $chat_enabled );
+        \update_option( 'tclw_widget_position', $widget_position );
+        \update_option( 'tclw_widget_color', $widget_color ?: '#10B981' );
 
         \wp_send_json_success( [ 'message' => __( 'Settings saved.', 'trill-chat-lite' ) ] );
     }
@@ -253,9 +253,9 @@ class Admin {
      * AJAX: Dismiss upgrade notice.
      */
     public function ajax_dismiss_notice(): void {
-        \check_ajax_referer( 'tcl_dismiss_notice', 'nonce' );
+        \check_ajax_referer( 'tclw_dismiss_notice', 'nonce' );
 
-        \update_option( 'tcl_upgrade_notice_dismissed', time() );
+        \update_option( 'tclw_upgrade_notice_dismissed', time() );
 
         \wp_send_json_success();
     }
@@ -264,9 +264,9 @@ class Admin {
      * AJAX: Reindex WooCommerce products.
      */
     public function ajax_reindex_products(): void {
-        \check_ajax_referer( 'tcl_admin_nonce', 'nonce' );
+        \check_ajax_referer( 'tclw_admin_nonce', 'nonce' );
 
-        if ( ! \current_user_can( 'manage_tcl_chat' ) ) {
+        if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
             \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-chat-lite' ) ], 403 );
         }
 

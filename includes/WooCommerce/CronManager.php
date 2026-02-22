@@ -28,8 +28,8 @@ class CronManager {
     /**
      * Cron hook names.
      */
-    private const HOOK_INDEX_PRODUCTS = 'tcl_index_products';
-    private const HOOK_CLEANUP        = 'tcl_cleanup_conversations';
+    private const HOOK_INDEX_PRODUCTS = 'tclw_index_products';
+    private const HOOK_CLEANUP        = 'tclw_cleanup_conversations';
 
     /**
      * Initialise cron hooks.

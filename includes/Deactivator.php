@@ -38,8 +38,8 @@ class Deactivator {
             \flush_rewrite_rules();
 
             // 4. Set deactivation flag.
-            \update_option( 'tcl_activated', false );
-            \update_option( 'tcl_deactivation_time', \current_time( 'mysql' ) );
+            \update_option( 'tclw_activated', false );
+            \update_option( 'tclw_deactivation_time', \current_time( 'mysql' ) );
 
             if ( function_exists( 'trill_chat_lite_log' ) ) {
                 trill_chat_lite_log( 'Plugin deactivated successfully' );
@@ -57,8 +57,8 @@ class Deactivator {
      */
     private static function clear_cron_jobs(): void {
         $hooks = [
-            'tcl_cleanup_conversations',
-            'tcl_index_products',
+            'tclw_cleanup_conversations',
+            'tclw_index_products',
         ];
 
         foreach ( $hooks as $hook ) {
@@ -78,8 +78,8 @@ class Deactivator {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query(
             "DELETE FROM {$wpdb->options}
-             WHERE option_name LIKE '_transient_tcl_%'
-             OR option_name LIKE '_transient_timeout_tcl_%'"
+             WHERE option_name LIKE '_transient_tclw_%'
+             OR option_name LIKE '_transient_timeout_tclw_%'"
         );
     }
 }

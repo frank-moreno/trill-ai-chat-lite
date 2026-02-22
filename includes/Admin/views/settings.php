@@ -11,17 +11,17 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$trill_chat_lite_chat_enabled    = get_option( 'tcl_chat_enabled', '1' );
-$trill_chat_lite_widget_position = get_option( 'tcl_widget_position', 'bottom-right' );
-$trill_chat_lite_widget_color    = get_option( 'tcl_widget_color', '#10B981' );
-$trill_chat_lite_welcome_message = get_option( 'tcl_welcome_message', '' );
+$trill_chat_lite_chat_enabled    = get_option( 'tclw_chat_enabled', '1' );
+$trill_chat_lite_widget_position = get_option( 'tclw_widget_position', 'bottom-right' );
+$trill_chat_lite_widget_color    = get_option( 'tclw_widget_color', '#10B981' );
+$trill_chat_lite_welcome_message = get_option( 'tclw_welcome_message', '' );
 ?>
 
 <div class="wrap tcl-settings-page">
     <h1><?php esc_html_e( 'Trill AI Chat — Settings', 'trill-chat-lite' ); ?></h1>
 
     <form method="post" action="options.php">
-        <?php settings_fields( 'tcl_settings' ); ?>
+        <?php settings_fields( 'tclw_settings' ); ?>
 
         <table class="form-table" role="presentation">
 
@@ -30,7 +30,7 @@ $trill_chat_lite_welcome_message = get_option( 'tcl_welcome_message', '' );
                 <th scope="row"><?php esc_html_e( 'Enable Chat Widget', 'trill-chat-lite' ); ?></th>
                 <td>
                     <label>
-                        <input type="checkbox" name="tcl_chat_enabled" value="1" <?php checked( $trill_chat_lite_chat_enabled, '1' ); ?> />
+                        <input type="checkbox" name="tclw_chat_enabled" value="1" <?php checked( $trill_chat_lite_chat_enabled, '1' ); ?> />
                         <?php esc_html_e( 'Show the AI chat widget on your store', 'trill-chat-lite' ); ?>
                     </label>
                 </td>
@@ -40,7 +40,7 @@ $trill_chat_lite_welcome_message = get_option( 'tcl_welcome_message', '' );
             <tr>
                 <th scope="row"><?php esc_html_e( 'Widget Position', 'trill-chat-lite' ); ?></th>
                 <td>
-                    <select name="tcl_widget_position">
+                    <select name="tclw_widget_position">
                         <option value="bottom-right" <?php selected( $trill_chat_lite_widget_position, 'bottom-right' ); ?>>
                             <?php esc_html_e( 'Bottom Right', 'trill-chat-lite' ); ?>
                         </option>
@@ -55,7 +55,7 @@ $trill_chat_lite_welcome_message = get_option( 'tcl_welcome_message', '' );
             <tr>
                 <th scope="row"><?php esc_html_e( 'Widget Colour', 'trill-chat-lite' ); ?></th>
                 <td>
-                    <input type="color" name="tcl_widget_color" value="<?php echo esc_attr( $trill_chat_lite_widget_color ); ?>" />
+                    <input type="color" name="tclw_widget_color" value="<?php echo esc_attr( $trill_chat_lite_widget_color ); ?>" />
                     <p class="description"><?php esc_html_e( 'Primary colour for the chat widget.', 'trill-chat-lite' ); ?></p>
                 </td>
             </tr>
@@ -64,7 +64,7 @@ $trill_chat_lite_welcome_message = get_option( 'tcl_welcome_message', '' );
             <tr>
                 <th scope="row"><?php esc_html_e( 'Welcome Message', 'trill-chat-lite' ); ?></th>
                 <td>
-                    <textarea name="tcl_welcome_message" rows="3" cols="50" class="large-text"><?php echo esc_textarea( $trill_chat_lite_welcome_message ); ?></textarea>
+                    <textarea name="tclw_welcome_message" rows="3" cols="50" class="large-text"><?php echo esc_textarea( $trill_chat_lite_welcome_message ); ?></textarea>
                     <p class="description"><?php esc_html_e( 'The first message shown when a visitor opens the chat.', 'trill-chat-lite' ); ?></p>
                 </td>
             </tr>

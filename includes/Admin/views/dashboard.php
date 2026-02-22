@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $trill_chat_lite_usage_limiter = new \TrillChatLite\Lite\UsageLimiter();
 $trill_chat_lite_stats         = $trill_chat_lite_usage_limiter->getUsageStats();
 $trill_chat_lite_usage_percent = ( $trill_chat_lite_stats['limit'] > 0 ) ? round( ( $trill_chat_lite_stats['used'] / $trill_chat_lite_stats['limit'] ) * 100 ) : 0;
-$trill_chat_lite_chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
+$trill_chat_lite_chat_enabled  = get_option( 'tclw_chat_enabled', '1' ) === '1';
 ?>
 
 <div class="wrap tcl-dashboard">
@@ -29,7 +29,7 @@ $trill_chat_lite_chat_enabled  = get_option( 'tcl_chat_enabled', '1' ) === '1';
                 — <?php esc_html_e( 'The chat widget is visible on your store.', 'trill-chat-lite' ); ?>
             <?php else : ?>
                 <span style="color: #d63638; font-weight: 600;">&#9679; <?php esc_html_e( 'Disabled', 'trill-chat-lite' ); ?></span>
-                — <a href="<?php echo esc_url( admin_url( 'admin.php?page=tcl-settings' ) ); ?>"><?php esc_html_e( 'Enable in Settings', 'trill-chat-lite' ); ?></a>
+                — <a href="<?php echo esc_url( admin_url( 'admin.php?page=tclw-settings' ) ); ?>"><?php esc_html_e( 'Enable in Settings', 'trill-chat-lite' ); ?></a>
             <?php endif; ?>
         </p>
     </div>

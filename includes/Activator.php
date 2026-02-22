@@ -47,8 +47,8 @@ class Activator {
             \flush_rewrite_rules();
 
             // 7. Set activation flag.
-            \update_option( 'tcl_activated', true );
-            \update_option( 'tcl_activation_time', \current_time( 'mysql' ) );
+            \update_option( 'tclw_activated', true );
+            \update_option( 'tclw_activation_time', \current_time( 'mysql' ) );
 
             if ( function_exists( 'trill_chat_lite_log' ) ) {
                 trill_chat_lite_log( 'Plugin activated successfully' );
@@ -79,12 +79,12 @@ class Activator {
      */
     private static function set_default_options(): void {
         $defaults = [
-            'tcl_version'          => defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0',
-            'tcl_chat_enabled'     => '1',
-            'tcl_widget_position'  => 'bottom-right',
-            'tcl_widget_color'     => '#10B981',
-            'tcl_conversations_used'       => 0,
-            'tcl_conversations_reset_date' => gmdate( 'Y-m-01' ),
+            'tclw_version'          => defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0',
+            'tclw_chat_enabled'     => '1',
+            'tclw_widget_position'  => 'bottom-right',
+            'tclw_widget_color'     => '#10B981',
+            'tclw_conversations_used'       => 0,
+            'tclw_conversations_reset_date' => gmdate( 'Y-m-01' ),
         ];
 
         foreach ( $defaults as $option => $value ) {
@@ -103,8 +103,8 @@ class Activator {
      */
     private static function create_roles(): void {
         $capabilities = [
-            'manage_tcl_chat'    => true,
-            'view_tcl_analytics' => true,
+            'manage_tclw_chat'    => true,
+            'view_tclw_analytics' => true,
         ];
 
         // Add capabilities to administrator.
@@ -120,12 +120,12 @@ class Activator {
         // Add limited capabilities to shop_manager.
         $shop_manager = \get_role( 'shop_manager' );
         if ( $shop_manager ) {
-            if ( ! $shop_manager->has_cap( 'manage_tcl_chat' ) ) {
-                $shop_manager->add_cap( 'manage_tcl_chat' );
+            if ( ! $shop_manager->has_cap( 'manage_tclw_chat' ) ) {
+                $shop_manager->add_cap( 'manage_tclw_chat' );
             }
         }
 
-        \update_option( 'tcl_capabilities', array_keys( $capabilities ) );
+        \update_option( 'tclw_capabilities', array_keys( $capabilities ) );
 
         if ( function_exists( 'trill_chat_lite_log' ) ) {
             trill_chat_lite_log( 'Roles and capabilities created', 'debug' );
@@ -154,13 +154,13 @@ class Activator {
      */
     private static function schedule_cron_jobs(): void {
         // Daily cleanup of old conversations.
-        if ( ! \wp_next_scheduled( 'tcl_cleanup_conversations' ) ) {
-            \wp_schedule_event( time(), 'daily', 'tcl_cleanup_conversations' );
+        if ( ! \wp_next_scheduled( 'tclw_cleanup_conversations' ) ) {
+            \wp_schedule_event( time(), 'daily', 'tclw_cleanup_conversations' );
         }
 
         // Hourly product indexing.
-        if ( ! \wp_next_scheduled( 'tcl_index_products' ) ) {
-            \wp_schedule_event( time(), 'hourly', 'tcl_index_products' );
+        if ( ! \wp_next_scheduled( 'tclw_index_products' ) ) {
+            \wp_schedule_event( time(), 'hourly', 'tclw_index_products' );
         }
 
         if ( function_exists( 'trill_chat_lite_log' ) ) {

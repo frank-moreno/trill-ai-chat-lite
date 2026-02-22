@@ -89,7 +89,7 @@ $trill_chat_lite_is_synced    = ( $trill_chat_lite_indexed === $trill_chat_lite_
 		$status.show().css('color', '#50575e').text('<?php echo esc_js( __( 'Please wait...', 'trill-chat-lite' ) ); ?>');
 
 		$.post(ajaxurl, {
-			action: 'tcl_reindex_products',
+			action: 'tclw_reindex_products',
 			nonce:  tclAdmin.nonce
 		}, function(response) {
 			if (response.success) {

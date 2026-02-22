@@ -28,7 +28,7 @@ class Settings {
      *
      * @var string
      */
-    private const SETTINGS_GROUP = 'tcl_settings';
+    private const SETTINGS_GROUP = 'tclw_settings';
 
     /**
      * Register settings with WordPress Settings API.
@@ -37,7 +37,7 @@ class Settings {
         // Chat enabled toggle.
         \register_setting(
             self::SETTINGS_GROUP,
-            'tcl_chat_enabled',
+            'tclw_chat_enabled',
             [
                 'type'              => 'string',
                 'sanitize_callback' => function ( $value ) {
@@ -50,7 +50,7 @@ class Settings {
         // Widget position.
         \register_setting(
             self::SETTINGS_GROUP,
-            'tcl_widget_position',
+            'tclw_widget_position',
             [
                 'type'              => 'string',
                 'sanitize_callback' => [ $this, 'sanitize_position' ],
@@ -61,7 +61,7 @@ class Settings {
         // Widget primary colour.
         \register_setting(
             self::SETTINGS_GROUP,
-            'tcl_widget_color',
+            'tclw_widget_color',
             [
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_hex_color',
@@ -72,7 +72,7 @@ class Settings {
         // Welcome message.
         \register_setting(
             self::SETTINGS_GROUP,
-            'tcl_welcome_message',
+            'tclw_welcome_message',
             [
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_text_field',
@@ -104,10 +104,10 @@ class Settings {
      */
     public function get_current_config(): array {
         return [
-            'chat_enabled'     => \get_option( 'tcl_chat_enabled', '1' ),
-            'widget_position'  => \get_option( 'tcl_widget_position', 'bottom-right' ),
-            'widget_color'     => \get_option( 'tcl_widget_color', '#10B981' ),
-            'welcome_message'  => \get_option( 'tcl_welcome_message', '' ),
+            'chat_enabled'     => \get_option( 'tclw_chat_enabled', '1' ),
+            'widget_position'  => \get_option( 'tclw_widget_position', 'bottom-right' ),
+            'widget_color'     => \get_option( 'tclw_widget_color', '#10B981' ),
+            'welcome_message'  => \get_option( 'tclw_welcome_message', '' ),
         ];
     }
 

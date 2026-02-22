@@ -4,8 +4,8 @@
  *
  * Removes ALL plugin data from the database:
  * - Custom database tables (tcl_*)
- * - WordPress options (tcl_*)
- * - Transients (tcl_*)
+ * - WordPress options (tclw_*)
+ * - Transients (tclw_*)
  * - Custom roles and capabilities
  * - Cron jobs
  *
@@ -37,34 +37,34 @@ foreach ( $trill_chat_lite_tables as $trill_chat_lite_table ) {
 }
 
 // =========================================================================
-// 2. DELETE ALL OPTIONS WITH tcl_ PREFIX
+// 2. DELETE ALL OPTIONS WITH tclw_ PREFIX
 // =========================================================================
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup.
 $wpdb->query(
-    "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'tcl_%'"
+    "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'tclw_%'"
 );
 
 // =========================================================================
-// 3. DELETE ALL TRANSIENTS WITH tcl_ PREFIX
+// 3. DELETE ALL TRANSIENTS WITH tclw_ PREFIX
 // =========================================================================
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup.
 $wpdb->query(
     "DELETE FROM {$wpdb->options}
-     WHERE option_name LIKE '_transient_tcl_%'
-     OR option_name LIKE '_transient_timeout_tcl_%'"
+     WHERE option_name LIKE '_transient_tclw_%'
+     OR option_name LIKE '_transient_timeout_tclw_%'"
 );
 
 // =========================================================================
 // 4. REMOVE CUSTOM ROLES AND CAPABILITIES
 // =========================================================================
 $trill_chat_lite_capabilities = [
-    'manage_tcl_chat',
-    'view_tcl_analytics',
+    'manage_tclw_chat',
+    'view_tclw_analytics',
 ];
 
 // Remove custom role.
-if ( get_role( 'tcl_chat_operator' ) ) {
-    remove_role( 'tcl_chat_operator' );
+if ( get_role( 'tclw_chat_operator' ) ) {
+    remove_role( 'tclw_chat_operator' );
 }
 
 // Remove capabilities from standard roles.
@@ -82,8 +82,8 @@ foreach ( $trill_chat_lite_roles as $trill_chat_lite_role_name ) {
 // 5. CLEAR CRON JOBS
 // =========================================================================
 $trill_chat_lite_cron_hooks = [
-    'tcl_cleanup_conversations',
-    'tcl_index_products',
+    'tclw_cleanup_conversations',
+    'tclw_index_products',
 ];
 
 foreach ( $trill_chat_lite_cron_hooks as $trill_chat_lite_hook ) {
