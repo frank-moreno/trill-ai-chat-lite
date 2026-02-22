@@ -18,7 +18,7 @@ $trill_chat_lite_welcome_message = get_option( 'tclw_welcome_message', '' );
 ?>
 
 <div class="wrap tcl-settings-page">
-    <h1><?php esc_html_e( 'Trill AI Chat — Settings', 'trill-chat-lite' ); ?></h1>
+    <h1><?php esc_html_e( 'Trill AI Chat — Settings', 'trill-ai-chat-lite' ); ?></h1>
 
     <form method="post" action="options.php">
         <?php settings_fields( 'tclw_settings' ); ?>
@@ -27,25 +27,25 @@ $trill_chat_lite_welcome_message = get_option( 'tclw_welcome_message', '' );
 
             <!-- Enable Chat -->
             <tr>
-                <th scope="row"><?php esc_html_e( 'Enable Chat Widget', 'trill-chat-lite' ); ?></th>
+                <th scope="row"><?php esc_html_e( 'Enable Chat Widget', 'trill-ai-chat-lite' ); ?></th>
                 <td>
                     <label>
                         <input type="checkbox" name="tclw_chat_enabled" value="1" <?php checked( $trill_chat_lite_chat_enabled, '1' ); ?> />
-                        <?php esc_html_e( 'Show the AI chat widget on your store', 'trill-chat-lite' ); ?>
+                        <?php esc_html_e( 'Show the AI chat widget on your store', 'trill-ai-chat-lite' ); ?>
                     </label>
                 </td>
             </tr>
 
             <!-- Widget Position -->
             <tr>
-                <th scope="row"><?php esc_html_e( 'Widget Position', 'trill-chat-lite' ); ?></th>
+                <th scope="row"><?php esc_html_e( 'Widget Position', 'trill-ai-chat-lite' ); ?></th>
                 <td>
                     <select name="tclw_widget_position">
                         <option value="bottom-right" <?php selected( $trill_chat_lite_widget_position, 'bottom-right' ); ?>>
-                            <?php esc_html_e( 'Bottom Right', 'trill-chat-lite' ); ?>
+                            <?php esc_html_e( 'Bottom Right', 'trill-ai-chat-lite' ); ?>
                         </option>
                         <option value="bottom-left" <?php selected( $trill_chat_lite_widget_position, 'bottom-left' ); ?>>
-                            <?php esc_html_e( 'Bottom Left', 'trill-chat-lite' ); ?>
+                            <?php esc_html_e( 'Bottom Left', 'trill-ai-chat-lite' ); ?>
                         </option>
                     </select>
                 </td>
@@ -53,19 +53,19 @@ $trill_chat_lite_welcome_message = get_option( 'tclw_welcome_message', '' );
 
             <!-- Widget Colour -->
             <tr>
-                <th scope="row"><?php esc_html_e( 'Widget Colour', 'trill-chat-lite' ); ?></th>
+                <th scope="row"><?php esc_html_e( 'Widget Colour', 'trill-ai-chat-lite' ); ?></th>
                 <td>
                     <input type="color" name="tclw_widget_color" value="<?php echo esc_attr( $trill_chat_lite_widget_color ); ?>" />
-                    <p class="description"><?php esc_html_e( 'Primary colour for the chat widget.', 'trill-chat-lite' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'Primary colour for the chat widget.', 'trill-ai-chat-lite' ); ?></p>
                 </td>
             </tr>
 
             <!-- Welcome Message -->
             <tr>
-                <th scope="row"><?php esc_html_e( 'Welcome Message', 'trill-chat-lite' ); ?></th>
+                <th scope="row"><?php esc_html_e( 'Welcome Message', 'trill-ai-chat-lite' ); ?></th>
                 <td>
                     <textarea name="tclw_welcome_message" rows="3" cols="50" class="large-text"><?php echo esc_textarea( $trill_chat_lite_welcome_message ); ?></textarea>
-                    <p class="description"><?php esc_html_e( 'The first message shown when a visitor opens the chat.', 'trill-chat-lite' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'The first message shown when a visitor opens the chat.', 'trill-ai-chat-lite' ); ?></p>
                 </td>
             </tr>
 
@@ -76,17 +76,17 @@ $trill_chat_lite_welcome_message = get_option( 'tclw_welcome_message', '' );
 
     <!-- Lite Limitations Notice -->
     <div class="tcl-card" style="background: #f0f6fc; border: 1px solid #c3c4c7; padding: 16px 20px; border-radius: 4px; margin-top: 20px;">
-        <h3 style="margin-top: 0;"><?php esc_html_e( 'Lite Version Limitations', 'trill-chat-lite' ); ?></h3>
-        <p><?php esc_html_e( 'The free version includes basic chat and product search. Upgrade to unlock:', 'trill-chat-lite' ); ?></p>
+        <h3 style="margin-top: 0;"><?php esc_html_e( 'Lite Version Limitations', 'trill-ai-chat-lite' ); ?></h3>
+        <p><?php esc_html_e( 'The free version includes basic chat and product search. Upgrade to unlock:', 'trill-ai-chat-lite' ); ?></p>
         <ul style="list-style: disc; padding-left: 20px;">
-            <li><?php esc_html_e( 'Unlimited conversations', 'trill-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Order tracking', 'trill-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Advanced analytics', 'trill-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Custom branding (remove "Powered by" badge)', 'trill-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Priority email support', 'trill-chat-lite' ); ?></li>
+            <li><?php esc_html_e( 'Unlimited conversations', 'trill-ai-chat-lite' ); ?></li>
+            <li><?php esc_html_e( 'Order tracking', 'trill-ai-chat-lite' ); ?></li>
+            <li><?php esc_html_e( 'Advanced analytics', 'trill-ai-chat-lite' ); ?></li>
+            <li><?php esc_html_e( 'Custom branding (remove "Powered by" badge)', 'trill-ai-chat-lite' ); ?></li>
+            <li><?php esc_html_e( 'Priority email support', 'trill-ai-chat-lite' ); ?></li>
         </ul>
         <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'settings_page' ) ); ?>" target="_blank" class="button button-primary">
-            <?php esc_html_e( 'Upgrade Now &rarr;', 'trill-chat-lite' ); ?>
+            <?php esc_html_e( 'Upgrade Now &rarr;', 'trill-ai-chat-lite' ); ?>
         </a>
     </div>
 </div>

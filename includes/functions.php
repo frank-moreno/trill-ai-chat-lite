@@ -89,7 +89,7 @@ function trill_chat_lite_get_widget_config(): array {
         'color'           => get_option( 'tclw_widget_color', '#10B981' ),
         'welcome_message' => get_option(
             'tclw_welcome_message',
-            __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-chat-lite' )
+            __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-ai-chat-lite' )
         ),
         'api_endpoint'    => rest_url( 'tclw/v1/message' ),
         'nonce'           => wp_create_nonce( 'wp_rest' ),

@@ -60,7 +60,7 @@ class Activator {
             }
 
             \wp_die(
-                esc_html__( 'Trill Chat Lite activation failed: ', 'trill-chat-lite' ) .
+                esc_html__( 'Trill Chat Lite activation failed: ', 'trill-ai-chat-lite' ) .
                 esc_html( $e->getMessage() )
             );
         }

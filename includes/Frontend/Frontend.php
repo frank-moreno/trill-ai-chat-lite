@@ -98,19 +98,19 @@ class Frontend {
             'widget_color'    => \get_option( 'tclw_widget_color', '#10B981' ),
             'plugin_url'      => TRILL_CHAT_LITE_PLUGIN_URL,
             'strings'  => [
-                'type_message'    => __( 'Type your message...', 'trill-chat-lite' ),
-                'send'            => __( 'Send', 'trill-chat-lite' ),
-                'chat_with_us'    => __( 'Chat with us!', 'trill-chat-lite' ),
+                'type_message'    => __( 'Type your message...', 'trill-ai-chat-lite' ),
+                'send'            => __( 'Send', 'trill-ai-chat-lite' ),
+                'chat_with_us'    => __( 'Chat with us!', 'trill-ai-chat-lite' ),
                 'welcome_message' => $this->get_welcome_message(),
-                'error_message'   => __( 'Sorry, I encountered an error. Please try again.', 'trill-chat-lite' ),
-                'connection_error' => __( 'Connection error. Please check your internet and try again.', 'trill-chat-lite' ),
-                'assistant_name'  => __( 'Robin', 'trill-chat-lite' ),
-                'assistant_role'  => __( 'AI Assistant', 'trill-chat-lite' ),
-                'online'          => __( 'Online', 'trill-chat-lite' ),
-                'typing'          => __( 'Robin is typing...', 'trill-chat-lite' ),
-                'close_chat'      => __( 'Close chat', 'trill-chat-lite' ),
-                'limit_reached'   => __( 'Monthly Limit Reached', 'trill-chat-lite' ),
-                'upgrade_now'     => __( 'Upgrade Now', 'trill-chat-lite' ),
+                'error_message'   => __( 'Sorry, I encountered an error. Please try again.', 'trill-ai-chat-lite' ),
+                'connection_error' => __( 'Connection error. Please check your internet and try again.', 'trill-ai-chat-lite' ),
+                'assistant_name'  => __( 'Robin', 'trill-ai-chat-lite' ),
+                'assistant_role'  => __( 'AI Assistant', 'trill-ai-chat-lite' ),
+                'online'          => __( 'Online', 'trill-ai-chat-lite' ),
+                'typing'          => __( 'Robin is typing...', 'trill-ai-chat-lite' ),
+                'close_chat'      => __( 'Close chat', 'trill-ai-chat-lite' ),
+                'limit_reached'   => __( 'Monthly Limit Reached', 'trill-ai-chat-lite' ),
+                'upgrade_now'     => __( 'Upgrade Now', 'trill-ai-chat-lite' ),
             ],
             'branding' => [
                 'powered_by_text' => LiteConfig::POWERED_BY_TEXT,
@@ -173,7 +173,7 @@ class Frontend {
         ?>
         <noscript>
             <div class="tcl-noscript-message" style="position: fixed; bottom: 20px; right: 20px; background: #10B981; color: white; padding: 15px 20px; border-radius: 8px; font-family: sans-serif; font-size: 14px; z-index: 9999;">
-                <?php esc_html_e( 'JavaScript is required for the chat widget.', 'trill-chat-lite' ); ?>
+                <?php esc_html_e( 'JavaScript is required for the chat widget.', 'trill-ai-chat-lite' ); ?>
             </div>
         </noscript>
         <?php
@@ -190,8 +190,8 @@ class Frontend {
     public function render_chat_shortcode( array $atts = [] ): string {
         $atts = \shortcode_atts( [
             'style'       => 'inline',
-            'title'       => __( 'Chat with us', 'trill-chat-lite' ),
-            'button_text' => __( 'Open Chat', 'trill-chat-lite' ),
+            'title'       => __( 'Chat with us', 'trill-ai-chat-lite' ),
+            'button_text' => __( 'Open Chat', 'trill-ai-chat-lite' ),
         ], $atts, 'trill_chat' );
 
         if ( \get_option( 'tclw_chat_enabled', '1' ) !== '1' ) {
@@ -215,7 +215,7 @@ class Frontend {
                 <p><strong><?php echo esc_html( $atts['title'] ); ?></strong></p>
                 <button type="button" class="tcl-shortcode-trigger button"
                         onclick="window.TCLChatWidget && window.TCLChatWidget.openWidget()">
-                    <?php esc_html_e( 'Start Chat', 'trill-chat-lite' ); ?>
+                    <?php esc_html_e( 'Start Chat', 'trill-ai-chat-lite' ); ?>
                 </button>
             </div>
             <?php
@@ -236,7 +236,7 @@ class Frontend {
             return $custom;
         }
 
-        return __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-chat-lite' );
+        return __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-ai-chat-lite' );
     }
 
     /**

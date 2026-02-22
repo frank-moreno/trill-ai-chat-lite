@@ -62,15 +62,15 @@ class UpgradeNotices {
                 <p><strong>%s</strong> %s <a href="%s" target="_blank">%s</a></p>
             </div>',
             esc_attr( \wp_create_nonce( 'tclw_dismiss_notice' ) ),
-            esc_html__( 'Trill AI Chat:', 'trill-chat-lite' ),
+            esc_html__( 'Trill AI Chat:', 'trill-ai-chat-lite' ),
             sprintf(
                 /* translators: %1$d: conversations used, %2$d: total limit */
-                esc_html__( "You've used %1\$d of %2\$d free conversations this month.", 'trill-chat-lite' ),
+                esc_html__( "You've used %1\$d of %2\$d free conversations this month.", 'trill-ai-chat-lite' ),
                 absint( $stats['used'] ),
                 absint( $stats['limit'] )
             ),
             esc_url( LiteConfig::getUpgradeUrl( 'admin_notice' ) ),
-            esc_html__( 'Upgrade for unlimited conversations &rarr;', 'trill-chat-lite' )
+            esc_html__( 'Upgrade for unlimited conversations &rarr;', 'trill-ai-chat-lite' )
         );
     }
 

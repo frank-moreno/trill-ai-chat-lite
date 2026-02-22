@@ -9,7 +9,7 @@
  * Author URI: https://trillai.io
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: trill-chat-lite
+ * Text Domain: trill-ai-chat-lite
  * Domain Path: /languages
  * WC requires at least: 8.0
  * WC tested up to: 9.5
@@ -57,7 +57,7 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
     add_action( 'admin_notices', function () {
         printf(
             '<div class="error"><p>%s</p></div>',
-            esc_html__( 'Trill Chat Lite requires PHP 8.0 or higher.', 'trill-chat-lite' )
+            esc_html__( 'Trill Chat Lite requires PHP 8.0 or higher.', 'trill-ai-chat-lite' )
         );
     } );
     return;
@@ -91,9 +91,9 @@ add_action( 'plugins_loaded', function () {
         add_action( 'admin_notices', function () {
             printf(
                 '<div class="notice notice-warning is-dismissible"><p>%s <a href="%s">%s</a></p></div>',
-                esc_html__( 'Trill Chat Lite has been deactivated because the full version is installed.', 'trill-chat-lite' ),
+                esc_html__( 'Trill Chat Lite has been deactivated because the full version is installed.', 'trill-ai-chat-lite' ),
                 esc_url( admin_url( 'plugins.php' ) ),
-                esc_html__( 'Manage plugins', 'trill-chat-lite' )
+                esc_html__( 'Manage plugins', 'trill-ai-chat-lite' )
             );
         } );
         deactivate_plugins( TRILL_CHAT_LITE_PLUGIN_BASENAME );
@@ -116,7 +116,7 @@ add_action( 'plugins_loaded', function () {
         add_action( 'admin_notices', function () {
             printf(
                 '<div class="error"><p>%s</p></div>',
-                esc_html__( 'Trill Chat Lite requires WooCommerce to be installed and active.', 'trill-chat-lite' )
+                esc_html__( 'Trill Chat Lite requires WooCommerce to be installed and active.', 'trill-ai-chat-lite' )
             );
         } );
         return;

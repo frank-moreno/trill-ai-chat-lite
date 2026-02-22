@@ -1,2 +1,2 @@
-# gspltd-chat-lite
-GSPLtd Chat Lite — Free AI-powered customer service for WooCommerce. WordPress.org edition.
+# trill-ai-chat-lite
+Trill AI Chat — Lite. Free AI-powered customer service for WooCommerce. WordPress.org edition.

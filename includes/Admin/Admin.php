@@ -81,8 +81,8 @@ class Admin {
     public function add_admin_menu(): void {
         // Main menu page (Dashboard).
         \add_menu_page(
-            __( 'Trill Chat', 'trill-chat-lite' ),
-            __( 'Trill Chat', 'trill-chat-lite' ),
+            __( 'Trill Chat', 'trill-ai-chat-lite' ),
+            __( 'Trill Chat', 'trill-ai-chat-lite' ),
             'manage_tclw_chat',
             'tclw-chat',
             [ $this, 'render_dashboard' ],
@@ -93,8 +93,8 @@ class Admin {
         // Dashboard submenu.
         \add_submenu_page(
             'tclw-chat',
-            __( 'Dashboard', 'trill-chat-lite' ),
-            __( 'Dashboard', 'trill-chat-lite' ),
+            __( 'Dashboard', 'trill-ai-chat-lite' ),
+            __( 'Dashboard', 'trill-ai-chat-lite' ),
             'manage_tclw_chat',
             'tclw-chat',
             [ $this, 'render_dashboard' ]
@@ -103,8 +103,8 @@ class Admin {
         // Products submenu.
         \add_submenu_page(
             'tclw-chat',
-            __( 'Products', 'trill-chat-lite' ),
-            __( 'Products', 'trill-chat-lite' ),
+            __( 'Products', 'trill-ai-chat-lite' ),
+            __( 'Products', 'trill-ai-chat-lite' ),
             'manage_tclw_chat',
             'tclw-products',
             [ $this, 'render_products' ]
@@ -113,8 +113,8 @@ class Admin {
         // Settings submenu.
         \add_submenu_page(
             'tclw-chat',
-            __( 'Settings', 'trill-chat-lite' ),
-            __( 'Settings', 'trill-chat-lite' ),
+            __( 'Settings', 'trill-ai-chat-lite' ),
+            __( 'Settings', 'trill-ai-chat-lite' ),
             'manage_tclw_chat',
             'tclw-settings',
             [ $this, 'render_settings' ]
@@ -177,14 +177,14 @@ class Admin {
             'ajaxurl' => \admin_url( 'admin-ajax.php' ),
             'nonce'   => \wp_create_nonce( 'tclw_admin_nonce' ),
             'strings' => [
-                'saving'          => __( 'Saving...', 'trill-chat-lite' ),
-                'saved'           => __( 'Settings saved successfully!', 'trill-chat-lite' ),
-                'error'           => __( 'An error occurred. Please try again.', 'trill-chat-lite' ),
-                'indexing'        => __( 'Indexing...', 'trill-chat-lite' ),
-                'please_wait'     => __( 'Please wait...', 'trill-chat-lite' ),
-                'indexing_failed' => __( 'Indexing failed.', 'trill-chat-lite' ),
-                'request_failed'  => __( 'Request failed. Please try again.', 'trill-chat-lite' ),
-                'reindex_now'     => __( 'Reindex Products Now', 'trill-chat-lite' ),
+                'saving'          => __( 'Saving...', 'trill-ai-chat-lite' ),
+                'saved'           => __( 'Settings saved successfully!', 'trill-ai-chat-lite' ),
+                'error'           => __( 'An error occurred. Please try again.', 'trill-ai-chat-lite' ),
+                'indexing'        => __( 'Indexing...', 'trill-ai-chat-lite' ),
+                'please_wait'     => __( 'Please wait...', 'trill-ai-chat-lite' ),
+                'indexing_failed' => __( 'Indexing failed.', 'trill-ai-chat-lite' ),
+                'request_failed'  => __( 'Request failed. Please try again.', 'trill-ai-chat-lite' ),
+                'reindex_now'     => __( 'Reindex Products Now', 'trill-ai-chat-lite' ),
             ],
         ] );
     }
@@ -198,7 +198,7 @@ class Admin {
      */
     public function render_dashboard(): void {
         if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
-            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ) );
         }
 
         include TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Admin/views/dashboard.php';
@@ -209,7 +209,7 @@ class Admin {
      */
     public function render_products(): void {
         if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
-            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ) );
         }
 
         include TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Admin/views/products.php';
@@ -220,7 +220,7 @@ class Admin {
      */
     public function render_settings(): void {
         if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
-            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-chat-lite' ) );
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ) );
         }
 
         include TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Admin/views/settings.php';
@@ -237,7 +237,7 @@ class Admin {
         \check_ajax_referer( 'tclw_admin_nonce', 'nonce' );
 
         if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
-            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-chat-lite' ) ], 403 );
+            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-ai-chat-lite' ) ], 403 );
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above
@@ -251,7 +251,7 @@ class Admin {
         \update_option( 'tclw_widget_position', $widget_position );
         \update_option( 'tclw_widget_color', $widget_color ?: '#10B981' );
 
-        \wp_send_json_success( [ 'message' => __( 'Settings saved.', 'trill-chat-lite' ) ] );
+        \wp_send_json_success( [ 'message' => __( 'Settings saved.', 'trill-ai-chat-lite' ) ] );
     }
 
     /**
@@ -272,11 +272,11 @@ class Admin {
         \check_ajax_referer( 'tclw_admin_nonce', 'nonce' );
 
         if ( ! \current_user_can( 'manage_tclw_chat' ) ) {
-            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-chat-lite' ) ], 403 );
+            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-ai-chat-lite' ) ], 403 );
         }
 
         if ( ! function_exists( 'wc_get_products' ) ) {
-            \wp_send_json_error( [ 'message' => __( 'WooCommerce is not active.', 'trill-chat-lite' ) ] );
+            \wp_send_json_error( [ 'message' => __( 'WooCommerce is not active.', 'trill-ai-chat-lite' ) ] );
         }
 
         $indexer = new \TrillChatLite\WooCommerce\ProductIndexer();
@@ -285,7 +285,7 @@ class Admin {
         \wp_send_json_success( [
             'message'      => sprintf(
                 /* translators: %d: number of products indexed */
-                __( '%d products indexed successfully.', 'trill-chat-lite' ),
+                __( '%d products indexed successfully.', 'trill-ai-chat-lite' ),
                 $result['indexed']
             ),
             'indexed'      => $result['indexed'],

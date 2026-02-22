@@ -76,7 +76,7 @@ class Settings {
             [
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_text_field',
-                'default'           => __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-chat-lite' ),
+                'default'           => __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-ai-chat-lite' ),
             ]
         );
 

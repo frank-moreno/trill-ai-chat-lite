@@ -164,7 +164,7 @@ class RestController {
             // 2. Validate message.
             if ( empty( trim( $message ) ) ) {
                 return $this->formatter->format_error(
-                    __( 'Message cannot be empty.', 'trill-chat-lite' ),
+                    __( 'Message cannot be empty.', 'trill-ai-chat-lite' ),
                     'EMPTY_MESSAGE',
                     400
                 );
@@ -174,7 +174,7 @@ class RestController {
                 return $this->formatter->format_error(
                     sprintf(
                         /* translators: %d: maximum character length */
-                        __( 'Message exceeds maximum length of %d characters.', 'trill-chat-lite' ),
+                        __( 'Message exceeds maximum length of %d characters.', 'trill-ai-chat-lite' ),
                         self::MAX_MESSAGE_LENGTH
                     ),
                     'MESSAGE_TOO_LONG',
@@ -186,7 +186,7 @@ class RestController {
             if ( ! $this->usage_limiter->canStartConversation() && empty( $session_id ) ) {
                 return new \WP_REST_Response( [
                     'success'     => false,
-                    'error'       => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-chat-lite' ),
+                    'error'       => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-ai-chat-lite' ),
                     'error_code'  => 'LIMIT_REACHED',
                     'upgrade_url' => LiteConfig::getUpgradeUrl( 'api_limit' ),
                     'usage'       => $this->usage_limiter->getUsageStats(),
@@ -203,7 +203,7 @@ class RestController {
                 if ( empty( $session_id ) ) {
                     trill_chat_lite_log( 'Failed to create conversation', 'error' );
                     return $this->formatter->format_error(
-                        __( 'Failed to create conversation.', 'trill-chat-lite' ),
+                        __( 'Failed to create conversation.', 'trill-ai-chat-lite' ),
                         'DB_ERROR',
                         500
                     );
@@ -216,7 +216,7 @@ class RestController {
                 // Validate existing session.
                 if ( ! preg_match( self::UUID_PATTERN, $session_id ) ) {
                     return $this->formatter->format_error(
-                        __( 'Invalid session ID format.', 'trill-chat-lite' ),
+                        __( 'Invalid session ID format.', 'trill-ai-chat-lite' ),
                         'INVALID_SESSION',
                         400
                     );
@@ -224,7 +224,7 @@ class RestController {
 
                 if ( ! $this->db->conversation_exists( $session_id ) ) {
                     return $this->formatter->format_error(
-                        __( 'Session not found. Please start a new conversation.', 'trill-chat-lite' ),
+                        __( 'Session not found. Please start a new conversation.', 'trill-ai-chat-lite' ),
                         'SESSION_NOT_FOUND',
                         404
                     );
@@ -237,7 +237,7 @@ class RestController {
             if ( ! $user_message_id ) {
                 trill_chat_lite_log( 'Failed to store user message', 'error', [ 'session_id' => $session_id ] );
                 return $this->formatter->format_error(
-                    __( 'Failed to store message.', 'trill-chat-lite' ),
+                    __( 'Failed to store message.', 'trill-ai-chat-lite' ),
                     'DB_ERROR',
                     500
                 );
@@ -272,7 +272,7 @@ class RestController {
                 $status     = $error_code === 'LIMIT_REACHED' ? 429 : 502;
 
                 return $this->formatter->format_error(
-                    $ai_response['error'] ?? __( 'AI service temporarily unavailable.', 'trill-chat-lite' ),
+                    $ai_response['error'] ?? __( 'AI service temporarily unavailable.', 'trill-ai-chat-lite' ),
                     $error_code,
                     $status
                 );
@@ -325,7 +325,7 @@ class RestController {
             ] );
 
             return $this->formatter->format_error(
-                __( 'An unexpected error occurred. Please try again.', 'trill-chat-lite' ),
+                __( 'An unexpected error occurred. Please try again.', 'trill-ai-chat-lite' ),
                 'INTERNAL_ERROR',
                 500
             );
@@ -344,7 +344,7 @@ class RestController {
 
             if ( ! $this->db->conversation_exists( $session_id ) ) {
                 return $this->formatter->format_error(
-                    __( 'Conversation not found.', 'trill-chat-lite' ),
+                    __( 'Conversation not found.', 'trill-ai-chat-lite' ),
                     'NOT_FOUND',
                     404
                 );
@@ -371,7 +371,7 @@ class RestController {
             trill_chat_lite_log( 'Conversation endpoint error', 'error', [ 'error' => $e->getMessage() ] );
 
             return $this->formatter->format_error(
-                __( 'Failed to retrieve conversation.', 'trill-chat-lite' ),
+                __( 'Failed to retrieve conversation.', 'trill-ai-chat-lite' ),
                 'INTERNAL_ERROR',
                 500
             );
@@ -394,7 +394,7 @@ class RestController {
 
             if ( ! $saved ) {
                 return $this->formatter->format_error(
-                    __( 'Failed to save feedback.', 'trill-chat-lite' ),
+                    __( 'Failed to save feedback.', 'trill-ai-chat-lite' ),
                     'DB_ERROR',
                     500
                 );
@@ -402,14 +402,14 @@ class RestController {
 
             return new \WP_REST_Response( [
                 'success' => true,
-                'message' => __( 'Thank you for your feedback!', 'trill-chat-lite' ),
+                'message' => __( 'Thank you for your feedback!', 'trill-ai-chat-lite' ),
             ], 200 );
 
         } catch ( \Exception $e ) {
             trill_chat_lite_log( 'Feedback endpoint error', 'error', [ 'error' => $e->getMessage() ] );
 
             return $this->formatter->format_error(
-                __( 'Failed to save feedback.', 'trill-chat-lite' ),
+                __( 'Failed to save feedback.', 'trill-ai-chat-lite' ),
                 'INTERNAL_ERROR',
                 500
             );
@@ -429,7 +429,7 @@ class RestController {
         if ( ! empty( $nonce ) && ! \wp_verify_nonce( $nonce, 'wp_rest' ) ) {
             return new \WP_Error(
                 'rest_forbidden',
-                __( 'Invalid security token. Please refresh the page.', 'trill-chat-lite' ),
+                __( 'Invalid security token. Please refresh the page.', 'trill-ai-chat-lite' ),
                 [ 'status' => 403 ]
             );
         }
@@ -443,7 +443,7 @@ class RestController {
         if ( $count >= 30 ) {
             return new \WP_Error(
                 'rest_rate_limited',
-                __( 'Too many requests. Please try again later.', 'trill-chat-lite' ),
+                __( 'Too many requests. Please try again later.', 'trill-ai-chat-lite' ),
                 [ 'status' => 429 ]
             );
         }

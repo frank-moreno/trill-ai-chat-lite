@@ -94,7 +94,7 @@ class ProxyClient {
 
             return [
                 'success'    => false,
-                'error'      => __( 'Unable to connect to AI service. Please try again later.', 'trill-chat-lite' ),
+                'error'      => __( 'Unable to connect to AI service. Please try again later.', 'trill-ai-chat-lite' ),
                 'error_code' => 'CONNECTION_ERROR',
             ];
         }
@@ -121,7 +121,7 @@ class ProxyClient {
 
             return [
                 'success'    => false,
-                'error'      => __( 'Received invalid response from AI service.', 'trill-chat-lite' ),
+                'error'      => __( 'Received invalid response from AI service.', 'trill-ai-chat-lite' ),
                 'error_code' => 'MALFORMED_RESPONSE',
             ];
         }
@@ -156,14 +156,14 @@ class ProxyClient {
             case 429:
                 return [
                     'success'    => false,
-                    'error'      => __( 'Too many requests. Please wait a moment and try again.', 'trill-chat-lite' ),
+                    'error'      => __( 'Too many requests. Please wait a moment and try again.', 'trill-ai-chat-lite' ),
                     'error_code' => 'RATE_LIMITED',
                 ];
 
             case 402:
                 return [
                     'success'    => false,
-                    'error'      => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-chat-lite' ),
+                    'error'      => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-ai-chat-lite' ),
                     'error_code' => 'LIMIT_REACHED',
                     'meta'       => [
                         'upgrade_url' => LiteConfig::getUpgradeUrl( 'limit_reached' ),
@@ -173,7 +173,7 @@ class ProxyClient {
             case 403:
                 return [
                     'success'    => false,
-                    'error'      => __( 'Access denied. Please check your site configuration.', 'trill-chat-lite' ),
+                    'error'      => __( 'Access denied. Please check your site configuration.', 'trill-ai-chat-lite' ),
                     'error_code' => 'FORBIDDEN',
                 ];
 
@@ -182,7 +182,7 @@ class ProxyClient {
             case 503:
                 return [
                     'success'    => false,
-                    'error'      => __( 'AI service is temporarily unavailable. Please try again later.', 'trill-chat-lite' ),
+                    'error'      => __( 'AI service is temporarily unavailable. Please try again later.', 'trill-ai-chat-lite' ),
                     'error_code' => 'SERVICE_UNAVAILABLE',
                 ];
 
@@ -191,7 +191,7 @@ class ProxyClient {
                     'success'    => false,
                     'error'      => sprintf(
                         /* translators: %d: HTTP status code */
-                        __( 'Unexpected error (HTTP %d). Please try again.', 'trill-chat-lite' ),
+                        __( 'Unexpected error (HTTP %d). Please try again.', 'trill-ai-chat-lite' ),
                         $status_code
                     ),
                     'error_code' => 'HTTP_ERROR',

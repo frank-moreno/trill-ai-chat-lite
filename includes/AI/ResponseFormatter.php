@@ -136,17 +136,17 @@ class ResponseFormatter {
         // If products were shown, offer product-related actions.
         if ( ! empty( $products ) ) {
             return [
-                [ 'label' => __( 'Show more products', 'trill-chat-lite' ), 'value' => 'show more products' ],
-                [ 'label' => __( 'View my cart', 'trill-chat-lite' ),       'value' => 'view my cart' ],
-                [ 'label' => __( 'Help with sizing', 'trill-chat-lite' ),   'value' => 'help with sizing' ],
+                [ 'label' => __( 'Show more products', 'trill-ai-chat-lite' ), 'value' => 'show more products' ],
+                [ 'label' => __( 'View my cart', 'trill-ai-chat-lite' ),       'value' => 'view my cart' ],
+                [ 'label' => __( 'Help with sizing', 'trill-ai-chat-lite' ),   'value' => 'help with sizing' ],
             ];
         }
 
         // Default quick replies.
         return [
-            [ 'label' => __( 'Browse products', 'trill-chat-lite' ),       'value' => 'show me your products' ],
-            [ 'label' => __( "What's on sale?", 'trill-chat-lite' ),       'value' => "what's on sale" ],
-            [ 'label' => __( 'Shipping info', 'trill-chat-lite' ),         'value' => 'tell me about shipping' ],
+            [ 'label' => __( 'Browse products', 'trill-ai-chat-lite' ),       'value' => 'show me your products' ],
+            [ 'label' => __( "What's on sale?", 'trill-ai-chat-lite' ),       'value' => "what's on sale" ],
+            [ 'label' => __( 'Shipping info', 'trill-ai-chat-lite' ),         'value' => 'tell me about shipping' ],
         ];
     }
 }
