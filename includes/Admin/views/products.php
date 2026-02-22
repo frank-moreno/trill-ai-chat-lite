@@ -78,32 +78,3 @@ $trill_chat_lite_is_synced    = ( $trill_chat_lite_indexed === $trill_chat_lite_
 		<p><?php esc_html_e( 'When a customer asks about a product, the AI searches your WooCommerce catalogue in real time and includes matching products in its response.', 'trill-chat-lite' ); ?></p>
 	</div>
 </div>
-
-<script>
-(function($) {
-	$('#tcl-reindex-btn').on('click', function() {
-		var $btn    = $(this);
-		var $status = $('#tcl-reindex-status');
-
-		$btn.prop('disabled', true).text('<?php echo esc_js( __( 'Indexing...', 'trill-chat-lite' ) ); ?>');
-		$status.show().css('color', '#50575e').text('<?php echo esc_js( __( 'Please wait...', 'trill-chat-lite' ) ); ?>');
-
-		$.post(ajaxurl, {
-			action: 'tclw_reindex_products',
-			nonce:  tclAdmin.nonce
-		}, function(response) {
-			if (response.success) {
-				$status.css('color', '#00a32a').text(response.data.message);
-				// Reload after a short delay to refresh the table.
-				setTimeout(function() { location.reload(); }, 1500);
-			} else {
-				$status.css('color', '#d63638').text(response.data.message || '<?php echo esc_js( __( 'Indexing failed.', 'trill-chat-lite' ) ); ?>');
-			}
-		}).fail(function() {
-			$status.css('color', '#d63638').text('<?php echo esc_js( __( 'Request failed. Please try again.', 'trill-chat-lite' ) ); ?>');
-		}).always(function() {
-			$btn.prop('disabled', false).text('<?php echo esc_js( __( 'Reindex Products Now', 'trill-chat-lite' ) ); ?>');
-		});
-	});
-})(jQuery);
-</script>

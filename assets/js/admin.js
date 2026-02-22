@@ -34,6 +34,38 @@
 
             // Colour picker change.
             $(document).on('input change', '#tclw_widget_color', this.updateColourPreview.bind(this));
+
+            // Product reindex button.
+            $(document).on('click', '#tcl-reindex-btn', this.handleReindex.bind(this));
+        },
+
+        /**
+         * Handle product reindex button click.
+         */
+        handleReindex: function () {
+            var $btn    = $('#tcl-reindex-btn');
+            var $status = $('#tcl-reindex-status');
+            var strings = tclAdmin.strings || {};
+
+            $btn.prop('disabled', true).text(strings.indexing || 'Indexing...');
+            $status.show().css('color', '#50575e').text(strings.please_wait || 'Please wait...');
+
+            $.post(tclAdmin.ajaxurl, {
+                action: 'tclw_reindex_products',
+                nonce:  tclAdmin.nonce
+            }, function (response) {
+                if (response.success) {
+                    $status.css('color', '#00a32a').text(response.data.message);
+                    // Reload after a short delay to refresh the table.
+                    setTimeout(function () { location.reload(); }, 1500);
+                } else {
+                    $status.css('color', '#d63638').text(response.data.message || strings.indexing_failed || 'Indexing failed.');
+                }
+            }).fail(function () {
+                $status.css('color', '#d63638').text(strings.request_failed || 'Request failed. Please try again.');
+            }).always(function () {
+                $btn.prop('disabled', false).text(strings.reindex_now || 'Reindex Products Now');
+            });
         },
 
         /**

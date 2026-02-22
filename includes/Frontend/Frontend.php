@@ -141,6 +141,24 @@ class Frontend {
         $localize_data = \apply_filters( 'trill_chat_lite_localize_script_data', $localize_data );
 
         \wp_localize_script( 'tclw-chat-widget', 'tclw_ajax', $localize_data );
+
+        // Dynamic widget styles (colour and position).
+        $color    = \get_option( 'tclw_widget_color', '#10B981' );
+        $position = \get_option( 'tclw_widget_position', 'bottom-right' );
+        $is_left  = ( 'bottom-left' === $position );
+
+        $inline_css = sprintf(
+            ':root { --tcl-primary: %s; }
+            .tcl-chat-widget { right: %s; left: %s; }
+            .tcl-chat-window { right: %s; left: %s; }',
+            esc_attr( $color ),
+            $is_left ? 'auto' : '20px',
+            $is_left ? '20px' : 'auto',
+            $is_left ? 'auto' : '0',
+            $is_left ? '0' : 'auto'
+        );
+
+        \wp_add_inline_style( 'tclw-chat-widget', $inline_css );
     }
 
     /**
@@ -151,24 +169,8 @@ class Frontend {
             return;
         }
 
-        $position = \get_option( 'tclw_widget_position', 'bottom-right' );
-        $color    = \get_option( 'tclw_widget_color', '#10B981' );
-
-        // Inject CSS custom properties so the widget CSS/JS can use them.
+        // Dynamic CSS is injected via wp_add_inline_style() in enqueue_frontend_assets().
         ?>
-        <style id="tcl-widget-vars">
-            :root {
-                --tcl-primary: <?php echo esc_attr( $color ); ?>;
-            }
-            .tcl-chat-widget {
-                right: <?php echo $position === 'bottom-left' ? 'auto' : '20px'; ?>;
-                left: <?php echo $position === 'bottom-left' ? '20px' : 'auto'; ?>;
-            }
-            .tcl-chat-window {
-                right: <?php echo $position === 'bottom-left' ? 'auto' : '0'; ?>;
-                left: <?php echo $position === 'bottom-left' ? '0' : 'auto'; ?>;
-            }
-        </style>
         <noscript>
             <div class="tcl-noscript-message" style="position: fixed; bottom: 20px; right: 20px; background: #10B981; color: white; padding: 15px 20px; border-radius: 8px; font-family: sans-serif; font-size: 14px; z-index: 9999;">
                 <?php esc_html_e( 'JavaScript is required for the chat widget.', 'trill-chat-lite' ); ?>

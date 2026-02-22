@@ -177,9 +177,14 @@ class Admin {
             'ajaxurl' => \admin_url( 'admin-ajax.php' ),
             'nonce'   => \wp_create_nonce( 'tclw_admin_nonce' ),
             'strings' => [
-                'saving' => __( 'Saving...', 'trill-chat-lite' ),
-                'saved'  => __( 'Settings saved successfully!', 'trill-chat-lite' ),
-                'error'  => __( 'An error occurred. Please try again.', 'trill-chat-lite' ),
+                'saving'          => __( 'Saving...', 'trill-chat-lite' ),
+                'saved'           => __( 'Settings saved successfully!', 'trill-chat-lite' ),
+                'error'           => __( 'An error occurred. Please try again.', 'trill-chat-lite' ),
+                'indexing'        => __( 'Indexing...', 'trill-chat-lite' ),
+                'please_wait'     => __( 'Please wait...', 'trill-chat-lite' ),
+                'indexing_failed' => __( 'Indexing failed.', 'trill-chat-lite' ),
+                'request_failed'  => __( 'Request failed. Please try again.', 'trill-chat-lite' ),
+                'reindex_now'     => __( 'Reindex Products Now', 'trill-chat-lite' ),
             ],
         ] );
     }
