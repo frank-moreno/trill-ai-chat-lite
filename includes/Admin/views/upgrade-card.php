@@ -2,7 +2,7 @@
 /**
  * Upgrade comparison card view.
  *
- * Rendered by UpgradeNotices::renderUpgradeCard() via trill_chat_lite_after_dashboard_stats hook.
+ * Rendered by UpgradeNotices::renderUpgradeCard() via trcl_after_dashboard_stats hook.
  *
  * @package TrillChatLite\Admin
  * @since 1.0.0
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<div class="tcl-upgrade-card" style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 24px; margin: 20px 0;">
+<div class="trcl-upgrade-card" style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 24px; margin: 20px 0;">
     <h2 style="margin-top: 0; font-size: 18px;"><?php esc_html_e( 'Unlock More with Trill AI Chat', 'trill-ai-chat-lite' ); ?></h2>
 
     <table class="widefat" style="margin: 16px 0;">

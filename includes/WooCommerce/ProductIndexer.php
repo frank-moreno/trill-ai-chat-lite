@@ -49,10 +49,10 @@ class ProductIndexer {
         $total         = (int) ( $product_count->publish ?? 0 );
 
         // Store product count for dashboard display.
-        \update_option( 'tclw_indexed_products', $total );
-        \update_option( 'tclw_last_index_time', \current_time( 'mysql' ) );
+        \update_option( 'trcl_indexed_products', $total );
+        \update_option( 'trcl_last_index_time', \current_time( 'mysql' ) );
 
-        trill_chat_lite_log( 'Product index refreshed', 'info', [
+        trcl_log( 'Product index refreshed', 'info', [
             'total' => $total,
         ] );
 
@@ -70,8 +70,8 @@ class ProductIndexer {
      */
     public function get_status(): array {
         return [
-            'indexed'      => (int) \get_option( 'tclw_indexed_products', 0 ),
-            'last_indexed' => \get_option( 'tclw_last_index_time', '' ),
+            'indexed'      => (int) \get_option( 'trcl_indexed_products', 0 ),
+            'last_indexed' => \get_option( 'trcl_last_index_time', '' ),
         ];
     }
 

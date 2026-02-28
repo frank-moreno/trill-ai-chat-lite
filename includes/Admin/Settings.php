@@ -28,7 +28,7 @@ class Settings {
      *
      * @var string
      */
-    private const SETTINGS_GROUP = 'tclw_settings';
+    private const SETTINGS_GROUP = 'trcl_settings';
 
     /**
      * Register settings with WordPress Settings API.
@@ -37,7 +37,7 @@ class Settings {
         // Chat enabled toggle.
         \register_setting(
             self::SETTINGS_GROUP,
-            'tclw_chat_enabled',
+            'trcl_chat_enabled',
             [
                 'type'              => 'string',
                 'sanitize_callback' => function ( $value ) {
@@ -50,7 +50,7 @@ class Settings {
         // Widget position.
         \register_setting(
             self::SETTINGS_GROUP,
-            'tclw_widget_position',
+            'trcl_widget_position',
             [
                 'type'              => 'string',
                 'sanitize_callback' => [ $this, 'sanitize_position' ],
@@ -61,7 +61,7 @@ class Settings {
         // Widget primary colour.
         \register_setting(
             self::SETTINGS_GROUP,
-            'tclw_widget_color',
+            'trcl_widget_color',
             [
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_hex_color',
@@ -69,10 +69,23 @@ class Settings {
             ]
         );
 
+        // Show "Powered by Trill AI" badge (opt-in, OFF by default).
+        \register_setting(
+            self::SETTINGS_GROUP,
+            'trcl_show_powered_by',
+            [
+                'type'              => 'string',
+                'sanitize_callback' => function ( $value ) {
+                    return $value === '1' ? '1' : '0';
+                },
+                'default'           => '0',
+            ]
+        );
+
         // Welcome message.
         \register_setting(
             self::SETTINGS_GROUP,
-            'tclw_welcome_message',
+            'trcl_welcome_message',
             [
                 'type'              => 'string',
                 'sanitize_callback' => 'sanitize_text_field',
@@ -80,7 +93,7 @@ class Settings {
             ]
         );
 
-        trill_chat_lite_log( 'Settings registered with WordPress', 'debug' );
+        trcl_log( 'Settings registered with WordPress', 'debug' );
     }
 
     /**
@@ -104,10 +117,11 @@ class Settings {
      */
     public function get_current_config(): array {
         return [
-            'chat_enabled'     => \get_option( 'tclw_chat_enabled', '1' ),
-            'widget_position'  => \get_option( 'tclw_widget_position', 'bottom-right' ),
-            'widget_color'     => \get_option( 'tclw_widget_color', '#10B981' ),
-            'welcome_message'  => \get_option( 'tclw_welcome_message', '' ),
+            'chat_enabled'      => \get_option( 'trcl_chat_enabled', '1' ),
+            'widget_position'   => \get_option( 'trcl_widget_position', 'bottom-right' ),
+            'widget_color'      => \get_option( 'trcl_widget_color', '#10B981' ),
+            'welcome_message'   => \get_option( 'trcl_welcome_message', '' ),
+            'show_powered_by'   => \get_option( 'trcl_show_powered_by', '0' ),
         ];
     }
 

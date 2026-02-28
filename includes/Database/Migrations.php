@@ -3,7 +3,7 @@
  * Database Migrations.
  *
  * Creates and manages database schema for the Lite plugin.
- * Tables: tcl_conversations, tcl_messages, tcl_feedback.
+ * Tables: trcl_conversations, trcl_messages, trcl_feedback.
  *
  * @package TrillChatLite\Database
  * @since 1.0.0
@@ -36,13 +36,16 @@ class Migrations {
     public static function run(): void {
         global $wpdb;
 
-        $installed_version = \get_option( 'tclw_db_version', '0.0.0' );
+        $installed_version = \get_option( 'trcl_db_version', '0.0.0' );
 
         if ( version_compare( $installed_version, self::SCHEMA_VERSION, '>=' ) ) {
             return;
         }
 
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        // Guard: ensure dbDelta() is available (may not be loaded in all contexts).
+        if ( ! function_exists( 'dbDelta' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        }
 
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -50,9 +53,9 @@ class Migrations {
         self::create_messages_table( $wpdb, $charset_collate );
         self::create_feedback_table( $wpdb, $charset_collate );
 
-        \update_option( 'tclw_db_version', self::SCHEMA_VERSION );
+        \update_option( 'trcl_db_version', self::SCHEMA_VERSION );
 
-        trill_chat_lite_log( 'Database migrations completed', 'info', [
+        trcl_log( 'Database migrations completed', 'info', [
             'version' => self::SCHEMA_VERSION,
         ] );
     }
@@ -64,7 +67,7 @@ class Migrations {
      * @param string $charset_collate Charset and collation.
      */
     private static function create_conversations_table( \wpdb $wpdb, string $charset_collate ): void {
-        $table_name = $wpdb->prefix . 'tcl_conversations';
+        $table_name = $wpdb->prefix . 'trcl_conversations';
 
         $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -93,8 +96,8 @@ class Migrations {
      * @param string $charset_collate Charset and collation.
      */
     private static function create_messages_table( \wpdb $wpdb, string $charset_collate ): void {
-        $table_name     = $wpdb->prefix . 'tcl_messages';
-        $conversations  = $wpdb->prefix . 'tcl_conversations';
+        $table_name     = $wpdb->prefix . 'trcl_messages';
+        $conversations  = $wpdb->prefix . 'trcl_conversations';
 
         $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -120,7 +123,7 @@ class Migrations {
      * @param string $charset_collate Charset and collation.
      */
     private static function create_feedback_table( \wpdb $wpdb, string $charset_collate ): void {
-        $table_name = $wpdb->prefix . 'tcl_feedback';
+        $table_name = $wpdb->prefix . 'trcl_feedback';
 
         $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -146,9 +149,9 @@ class Migrations {
         global $wpdb;
 
         $tables = [
-            $wpdb->prefix . 'tcl_feedback',
-            $wpdb->prefix . 'tcl_messages',
-            $wpdb->prefix . 'tcl_conversations',
+            $wpdb->prefix . 'trcl_feedback',
+            $wpdb->prefix . 'trcl_messages',
+            $wpdb->prefix . 'trcl_conversations',
         ];
 
         foreach ( $tables as $table ) {
@@ -156,9 +159,9 @@ class Migrations {
             $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
         }
 
-        \delete_option( 'tclw_db_version' );
+        \delete_option( 'trcl_db_version' );
 
-        trill_chat_lite_log( 'All plugin tables dropped', 'info' );
+        trcl_log( 'All plugin tables dropped', 'info' );
     }
 
     /**

@@ -31,46 +31,35 @@ class UpgradeNotices {
      */
     public function init(): void {
         \add_action( 'admin_notices', [ $this, 'renderDashboardNotice' ] );
-        \add_action( 'trill_chat_lite_after_dashboard_stats', [ $this, 'renderUpgradeCard' ] );
-        \add_action( 'trill_chat_lite_chat_widget_footer', [ $this, 'renderPoweredByBadge' ] );
+        \add_action( 'trcl_after_dashboard_stats', [ $this, 'renderUpgradeCard' ] );
+        \add_action( 'trcl_chat_widget_footer', [ $this, 'renderPoweredByBadge' ] );
     }
 
     /**
-     * Dismissible admin notice (shown once per week, only when usage > 60%).
+     * Dismissible admin notice (shown once per week).
+     *
+     * No local usage tracking — limits enforced server-side by proxy.
      */
     public function renderDashboardNotice(): void {
         $screen = \get_current_screen();
-        if ( ! $screen || strpos( $screen->id, 'tclw-chat' ) === false ) {
+        if ( ! $screen || strpos( $screen->id, 'trcl-chat' ) === false ) {
             return;
         }
 
-        $dismissed = \get_option( 'tclw_upgrade_notice_dismissed', 0 );
+        $dismissed = \get_option( 'trcl_upgrade_notice_dismissed', 0 );
         if ( $dismissed && ( time() - $dismissed ) < WEEK_IN_SECONDS ) {
             return;
         }
 
-        $stats         = ( new UsageLimiter() )->getUsageStats();
-        $usage_percent = ( $stats['limit'] > 0 ) ? round( ( $stats['used'] / $stats['limit'] ) * 100 ) : 0;
-
-        // Only show when usage > 60%.
-        if ( $usage_percent < 60 ) {
-            return;
-        }
-
         printf(
-            '<div class="notice notice-info is-dismissible tcl-upgrade-notice" data-nonce="%s">
+            '<div class="notice notice-info is-dismissible trcl-upgrade-notice" data-nonce="%s">
                 <p><strong>%s</strong> %s <a href="%s" target="_blank">%s</a></p>
             </div>',
-            esc_attr( \wp_create_nonce( 'tclw_dismiss_notice' ) ),
+            esc_attr( \wp_create_nonce( 'trcl_dismiss_notice' ) ),
             esc_html__( 'Trill AI Chat:', 'trill-ai-chat-lite' ),
-            sprintf(
-                /* translators: %1$d: conversations used, %2$d: total limit */
-                esc_html__( "You've used %1\$d of %2\$d free conversations this month.", 'trill-ai-chat-lite' ),
-                absint( $stats['used'] ),
-                absint( $stats['limit'] )
-            ),
+            esc_html__( 'Unlock unlimited conversations, order tracking, and analytics.', 'trill-ai-chat-lite' ),
             esc_url( LiteConfig::getUpgradeUrl( 'admin_notice' ) ),
-            esc_html__( 'Upgrade for unlimited conversations &rarr;', 'trill-ai-chat-lite' )
+            esc_html__( 'Upgrade Now &rarr;', 'trill-ai-chat-lite' )
         );
     }
 
@@ -78,20 +67,22 @@ class UpgradeNotices {
      * Upgrade card on dashboard page.
      */
     public function renderUpgradeCard(): void {
-        include TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Admin/views/upgrade-card.php';
+        include TRCL_PLUGIN_DIR . 'includes/Admin/views/upgrade-card.php';
     }
 
     /**
      * "Powered by Trill AI" badge in chat widget footer.
+     *
+     * Opt-in only (OFF by default) per WordPress.org Guideline 11.
      */
     public function renderPoweredByBadge(): void {
-        if ( ! LiteConfig::SHOW_POWERED_BY ) {
+        if ( ! LiteConfig::get_show_powered_by() ) {
             return;
         }
 
         printf(
-            '<a href="%s" target="_blank" rel="noopener" class="tcl-powered-by">%s</a>',
-            esc_url( LiteConfig::POWERED_BY_URL ),
+            '<a href="%s" target="_blank" rel="noopener" class="trcl-powered-by">%s</a>',
+            esc_url( LiteConfig::get_powered_by_url() ),
             esc_html( LiteConfig::POWERED_BY_TEXT )
         );
     }

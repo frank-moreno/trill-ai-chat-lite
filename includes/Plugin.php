@@ -21,7 +21,6 @@ use TrillChatLite\Admin\Settings;
 use TrillChatLite\Frontend\Frontend;
 use TrillChatLite\Database\DbManager;
 use TrillChatLite\Lite\UpgradeNotices;
-use TrillChatLite\Lite\UsageLimiter;
 use TrillChatLite\AI\ProxyClient;
 use TrillChatLite\WooCommerce\CronManager;
 
@@ -77,7 +76,7 @@ final class Plugin {
      * Private constructor.
      */
     private function __construct() {
-        $this->version = defined( 'TRILL_CHAT_LITE_VERSION' ) ? TRILL_CHAT_LITE_VERSION : '1.0.0';
+        $this->version = defined( 'TRCL_VERSION' ) ? TRCL_VERSION : '1.0.0';
         $this->loader  = new Loader();
 
         $this->init_components();
@@ -104,7 +103,7 @@ final class Plugin {
         $this->set_locale();
         $this->loader->run();
 
-        trill_chat_lite_log( 'Trill Chat Lite initialised successfully', 'info' );
+        trcl_log( 'Trill Chat Lite initialised successfully', 'info' );
     }
 
     /**
@@ -117,10 +116,7 @@ final class Plugin {
         // 1. Database Manager.
         $this->components['db_manager'] = new DbManager();
 
-        // 2. Usage Limiter (Lite-specific).
-        $this->components['usage_limiter'] = new UsageLimiter();
-
-        // 3. Settings manager.
+        // 2. Settings manager.
         $this->components['settings'] = new Settings();
 
         // 4. Admin component (always instantiated for AJAX handlers).
@@ -148,7 +144,7 @@ final class Plugin {
         // 8. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 
-        trill_chat_lite_log( 'All plugin components initialised', 'debug' );
+        trcl_log( 'All plugin components initialised', 'debug' );
     }
 
     /**
@@ -156,8 +152,7 @@ final class Plugin {
      */
     public function register_rest_routes(): void {
         $controller = new \TrillChatLite\AI\RestController(
-            $this->components['db_manager'],
-            $this->components['usage_limiter']
+            $this->components['db_manager']
         );
         $controller->register_routes();
     }

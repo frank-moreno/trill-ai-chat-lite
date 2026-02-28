@@ -8,7 +8,7 @@
  * @license GPL-2.0-or-later
  */
 
-/* global jQuery, tclAdmin */
+/* global jQuery, trclAdmin */
 (function ($) {
     'use strict';
 
@@ -30,29 +30,29 @@
          */
         bindEvents: function () {
             // Settings form AJAX save.
-            $(document).on('submit', '#tcl-settings-form', this.handleSettingsSave.bind(this));
+            $(document).on('submit', '#trcl-settings-form', this.handleSettingsSave.bind(this));
 
             // Colour picker change.
-            $(document).on('input change', '#tclw_widget_color', this.updateColourPreview.bind(this));
+            $(document).on('input change', '#trcl_widget_color', this.updateColourPreview.bind(this));
 
             // Product reindex button.
-            $(document).on('click', '#tcl-reindex-btn', this.handleReindex.bind(this));
+            $(document).on('click', '#trcl-reindex-btn', this.handleReindex.bind(this));
         },
 
         /**
          * Handle product reindex button click.
          */
         handleReindex: function () {
-            var $btn    = $('#tcl-reindex-btn');
-            var $status = $('#tcl-reindex-status');
-            var strings = tclAdmin.strings || {};
+            var $btn    = $('#trcl-reindex-btn');
+            var $status = $('#trcl-reindex-status');
+            var strings = trclAdmin.strings || {};
 
             $btn.prop('disabled', true).text(strings.indexing || 'Indexing...');
             $status.show().css('color', '#50575e').text(strings.please_wait || 'Please wait...');
 
-            $.post(tclAdmin.ajaxurl, {
-                action: 'tclw_reindex_products',
-                nonce:  tclAdmin.nonce
+            $.post(trclAdmin.ajaxurl, {
+                action: 'trcl_reindex_products',
+                nonce:  trclAdmin.nonce
             }, function (response) {
                 if (response.success) {
                     $status.css('color', '#00a32a').text(response.data.message);
@@ -80,10 +80,10 @@
             var $button = $form.find('.button-primary');
             var originalText = $button.val();
 
-            $button.val(tclAdmin.strings.saving || 'Saving...').prop('disabled', true);
+            $button.val(trclAdmin.strings.saving || 'Saving...').prop('disabled', true);
 
             $.ajax({
-                url: tclAdmin.ajax_url,
+                url: trclAdmin.ajax_url,
                 type: 'POST',
                 data: $form.serialize(),
                 success: function (response) {
@@ -106,7 +106,7 @@
          * Initialise colour preview.
          */
         initColourPreview: function () {
-            var $input = $('#tclw_widget_color');
+            var $input = $('#trcl_widget_color');
             if ($input.length) {
                 this.updateColourPreview({ currentTarget: $input[0] });
             }
@@ -119,7 +119,7 @@
          */
         updateColourPreview: function (e) {
             var colour = $(e.currentTarget).val();
-            var $preview = $('.tcl-colour-preview');
+            var $preview = $('.trcl-colour-preview');
 
             if ($preview.length && colour) {
                 $preview.css('background-color', colour);
@@ -143,7 +143,7 @@
             );
 
             // Remove existing notices.
-            $('.tcl-settings-wrap .notice, .tcl-dashboard-wrap .notice').remove();
+            $('.trcl-settings-wrap .notice, .trcl-dashboard-wrap .notice').remove();
 
             // Insert notice.
             var $heading = $('h1').first();

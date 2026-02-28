@@ -11,70 +11,47 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-$trill_chat_lite_usage_limiter = new \TrillChatLite\Lite\UsageLimiter();
-$trill_chat_lite_stats         = $trill_chat_lite_usage_limiter->getUsageStats();
-$trill_chat_lite_usage_percent = ( $trill_chat_lite_stats['limit'] > 0 ) ? round( ( $trill_chat_lite_stats['used'] / $trill_chat_lite_stats['limit'] ) * 100 ) : 0;
-$trill_chat_lite_chat_enabled  = get_option( 'tclw_chat_enabled', '1' ) === '1';
+$trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
 ?>
 
-<div class="wrap tcl-dashboard">
+<div class="wrap trcl-dashboard">
     <h1><?php esc_html_e( 'Trill AI Chat — Dashboard', 'trill-ai-chat-lite' ); ?></h1>
 
     <!-- Status Card -->
-    <div class="tcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">
+    <div class="trcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">
         <h2 style="margin-top: 0;"><?php esc_html_e( 'Chat Status', 'trill-ai-chat-lite' ); ?></h2>
         <p>
-            <?php if ( $trill_chat_lite_chat_enabled ) : ?>
+            <?php if ( $trcl_chat_enabled ) : ?>
                 <span style="color: #00a32a; font-weight: 600;">&#9679; <?php esc_html_e( 'Active', 'trill-ai-chat-lite' ); ?></span>
                 — <?php esc_html_e( 'The chat widget is visible on your store.', 'trill-ai-chat-lite' ); ?>
             <?php else : ?>
                 <span style="color: #d63638; font-weight: 600;">&#9679; <?php esc_html_e( 'Disabled', 'trill-ai-chat-lite' ); ?></span>
-                — <a href="<?php echo esc_url( admin_url( 'admin.php?page=tclw-settings' ) ); ?>"><?php esc_html_e( 'Enable in Settings', 'trill-ai-chat-lite' ); ?></a>
+                — <a href="<?php echo esc_url( admin_url( 'admin.php?page=trcl-settings' ) ); ?>"><?php esc_html_e( 'Enable in Settings', 'trill-ai-chat-lite' ); ?></a>
             <?php endif; ?>
         </p>
     </div>
 
-    <!-- Usage Card -->
-    <div class="tcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">
-        <h2 style="margin-top: 0;"><?php esc_html_e( 'Monthly Usage', 'trill-ai-chat-lite' ); ?></h2>
-
-        <div style="display: flex; gap: 40px; align-items: center; margin: 16px 0;">
-            <div>
-                <div style="font-size: 22px; font-weight: 700; color: #1d2327;">
-                    <?php echo esc_html( $trill_chat_lite_stats['used'] ); ?> / <?php echo esc_html( $trill_chat_lite_stats['limit'] ); ?>
-                </div>
-                <div style="color: #50575e; font-size: 13px;">
-                    <?php esc_html_e( 'conversations this month', 'trill-ai-chat-lite' ); ?>
-                </div>
-            </div>
-            <div style="flex: 1; max-width: 300px;">
-                <div style="background: #e5e7eb; border-radius: 9999px; height: 12px; overflow: hidden;">
-                    <div style="background: <?php echo $trill_chat_lite_usage_percent >= 80 ? '#d63638' : '#10B981'; ?>; width: <?php echo esc_attr( min( 100, $trill_chat_lite_usage_percent ) ); ?>%; height: 100%; border-radius: 9999px; transition: width 0.3s;"></div>
-                </div>
-                <div style="color: #50575e; font-size: 12px; margin-top: 4px;">
-                    <?php echo esc_html( $trill_chat_lite_stats['remaining'] ); ?> <?php esc_html_e( 'remaining', 'trill-ai-chat-lite' ); ?>
-                </div>
-            </div>
-        </div>
-
-        <?php if ( $trill_chat_lite_usage_percent >= 80 ) : ?>
-            <p style="background: #fef3cd; border: 1px solid #ffc107; padding: 10px 14px; border-radius: 4px; margin-top: 12px;">
-                <?php esc_html_e( 'You are running low on free conversations.', 'trill-ai-chat-lite' ); ?>
-                <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'dashboard_usage' ) ); ?>" target="_blank" style="font-weight: 600;">
-                    <?php esc_html_e( 'Upgrade for unlimited conversations &rarr;', 'trill-ai-chat-lite' ); ?>
-                </a>
-            </p>
-        <?php endif; ?>
+    <!-- Service Info Card -->
+    <div class="trcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">
+        <h2 style="margin-top: 0;"><?php esc_html_e( 'Service Information', 'trill-ai-chat-lite' ); ?></h2>
+        <p>
+            <?php esc_html_e( 'Chat conversations are processed by the Trill AI service. Usage limits are managed server-side.', 'trill-ai-chat-lite' ); ?>
+        </p>
+        <p>
+            <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'dashboard' ) ); ?>" target="_blank" class="button button-primary">
+                <?php esc_html_e( 'Upgrade for unlimited conversations &rarr;', 'trill-ai-chat-lite' ); ?>
+            </a>
+        </p>
     </div>
 
     <?php
     /**
-     * Hook: trill_chat_lite_after_dashboard_stats
+     * Hook: trcl_after_dashboard_stats
      *
      * Fires after the dashboard stats cards.
      * Used by UpgradeNotices to render the upgrade comparison card.
      */
-    do_action( 'trill_chat_lite_after_dashboard_stats' );
+    do_action( 'trcl_after_dashboard_stats' );
     ?>
 
 </div>

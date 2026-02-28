@@ -5,6 +5,10 @@
  * Handles registration and processing of all REST API endpoints.
  * Simplified for Lite: managed proxy only, no BYOK, no topic enforcement.
  *
+ * Conversation limits are enforced exclusively server-side by the proxy
+ * (api.trillai.io) via HTTP 429 responses. No local enforcement per
+ * WordPress.org Guideline 5 (no trialware).
+ *
  * @package TrillChatLite\AI
  * @since 1.0.0
  * @license GPL-2.0-or-later
@@ -18,13 +22,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use TrillChatLite\Database\DbManager;
 use TrillChatLite\Lite\LiteConfig;
-use TrillChatLite\Lite\UsageLimiter;
 
 /**
  * REST Controller — Lite API endpoints.
  *
  * SOLID: Single Responsibility — only REST API routing.
- * SOLID: Dependency Inversion — receives DbManager and UsageLimiter via constructor.
+ * SOLID: Dependency Inversion — receives DbManager via constructor.
  */
 class RestController {
 
@@ -33,7 +36,7 @@ class RestController {
      *
      * @var string
      */
-    private const API_NAMESPACE = 'tclw/v1';
+    private const API_NAMESPACE = 'trcl/v1';
 
     /**
      * UUID validation pattern.
@@ -46,18 +49,16 @@ class RestController {
     private const MAX_MESSAGE_LENGTH = 500;
 
     /**
+     * Rate limit: max requests per minute per IP.
+     */
+    private const RATE_LIMIT_PER_MINUTE = 10;
+
+    /**
      * Database manager.
      *
      * @var DbManager
      */
     private DbManager $db;
-
-    /**
-     * Usage limiter.
-     *
-     * @var UsageLimiter
-     */
-    private UsageLimiter $usage_limiter;
 
     /**
      * Proxy client.
@@ -83,12 +84,10 @@ class RestController {
     /**
      * Constructor.
      *
-     * @param DbManager    $db            Database manager instance.
-     * @param UsageLimiter $usage_limiter Usage limiter instance.
+     * @param DbManager $db Database manager instance.
      */
-    public function __construct( DbManager $db, UsageLimiter $usage_limiter ) {
+    public function __construct( DbManager $db ) {
         $this->db             = $db;
-        $this->usage_limiter  = $usage_limiter;
         $this->proxy          = new ProxyClient();
         $this->prompt_builder = new PromptBuilder();
         $this->formatter      = new ResponseFormatter();
@@ -98,26 +97,29 @@ class RestController {
      * Register all REST API routes.
      */
     public function register_routes(): void {
-        // POST /wp-json/tcl/v1/message
+        // POST /wp-json/trcl/v1/message
+        // Intentionally public: store visitors (not logged in) must be able to chat.
+        // Rate limiting via proxy (server-side) and per-IP transient (client-side).
         \register_rest_route(
             self::API_NAMESPACE,
             '/message',
             [
                 'methods'             => 'POST',
                 'callback'            => [ $this, 'handle_message' ],
-                'permission_callback' => [ $this, 'check_permissions' ],
+                'permission_callback' => [ $this, 'check_message_permissions' ],
                 'args'                => $this->get_message_args(),
             ]
         );
 
-        // GET /wp-json/tcl/v1/conversation/{session_id}
+        // GET /wp-json/trcl/v1/conversation/{session_id}
+        // Semi-public: validates session ownership via cookie/fingerprint.
         \register_rest_route(
             self::API_NAMESPACE,
             '/conversation/(?P<session_id>[\w-]+)',
             [
                 'methods'             => 'GET',
                 'callback'            => [ $this, 'handle_get_conversation' ],
-                'permission_callback' => [ $this, 'check_permissions' ],
+                'permission_callback' => [ $this, 'check_conversation_permissions' ],
                 'args'                => [
                     'session_id' => [
                         'required'          => true,
@@ -129,19 +131,20 @@ class RestController {
             ]
         );
 
-        // POST /wp-json/tcl/v1/feedback
+        // POST /wp-json/trcl/v1/feedback
+        // Semi-public: validates that message_id belongs to an active session.
         \register_rest_route(
             self::API_NAMESPACE,
             '/feedback',
             [
                 'methods'             => 'POST',
                 'callback'            => [ $this, 'handle_feedback' ],
-                'permission_callback' => [ $this, 'check_permissions' ],
+                'permission_callback' => [ $this, 'check_feedback_permissions' ],
                 'args'                => $this->get_feedback_args(),
             ]
         );
 
-        trill_chat_lite_log( 'REST API routes registered', 'debug', [
+        trcl_log( 'REST API routes registered', 'debug', [
             'namespace' => self::API_NAMESPACE,
         ] );
     }
@@ -182,18 +185,7 @@ class RestController {
                 );
             }
 
-            // 3. Check usage limit (client-side enforcement, server also enforces).
-            if ( ! $this->usage_limiter->canStartConversation() && empty( $session_id ) ) {
-                return new \WP_REST_Response( [
-                    'success'     => false,
-                    'error'       => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-ai-chat-lite' ),
-                    'error_code'  => 'LIMIT_REACHED',
-                    'upgrade_url' => LiteConfig::getUpgradeUrl( 'api_limit' ),
-                    'usage'       => $this->usage_limiter->getUsageStats(),
-                ], 429 );
-            }
-
-            // 4. Get or create conversation.
+            // 3. Get or create conversation (no local limit check — server enforces).
             $is_new_conversation = false;
 
             if ( empty( $session_id ) ) {
@@ -201,7 +193,7 @@ class RestController {
                 $session_id = $this->db->create_conversation( $user_id );
 
                 if ( empty( $session_id ) ) {
-                    trill_chat_lite_log( 'Failed to create conversation', 'error' );
+                    trcl_log( 'Failed to create conversation', 'error' );
                     return $this->formatter->format_error(
                         __( 'Failed to create conversation.', 'trill-ai-chat-lite' ),
                         'DB_ERROR',
@@ -209,8 +201,6 @@ class RestController {
                     );
                 }
 
-                // Increment usage counter for new conversations.
-                $this->usage_limiter->incrementUsage();
                 $is_new_conversation = true;
             } else {
                 // Validate existing session.
@@ -231,11 +221,11 @@ class RestController {
                 }
             }
 
-            // 5. Store user message.
+            // 4. Store user message.
             $user_message_id = $this->db->create_message( $session_id, 'user', $message );
 
             if ( ! $user_message_id ) {
-                trill_chat_lite_log( 'Failed to store user message', 'error', [ 'session_id' => $session_id ] );
+                trcl_log( 'Failed to store user message', 'error', [ 'session_id' => $session_id ] );
                 return $this->formatter->format_error(
                     __( 'Failed to store message.', 'trill-ai-chat-lite' ),
                     'DB_ERROR',
@@ -243,10 +233,10 @@ class RestController {
                 );
             }
 
-            // 6. Search relevant products.
+            // 5. Search relevant products.
             $product_results = $this->search_products( $message );
 
-            // 7. Build context for proxy.
+            // 6. Build context for proxy.
             $this->prompt_builder->with_store_context( $this->build_store_context() );
 
             if ( ! empty( $product_results ) ) {
@@ -259,40 +249,49 @@ class RestController {
 
             $proxy_context = $this->prompt_builder->build_context();
 
-            // 8. Send to proxy.
+            // 7. Send to proxy.
             $ai_response = $this->proxy->send_message( $message, $session_id, $proxy_context );
 
             if ( ! $ai_response['success'] ) {
-                trill_chat_lite_log( 'Proxy request failed', 'error', [
+                trcl_log( 'Proxy request failed', 'error', [
                     'error_code' => $ai_response['error_code'] ?? 'UNKNOWN',
                     'session_id' => $session_id,
                 ] );
 
                 $error_code = $ai_response['error_code'] ?? 'AI_ERROR';
-                $status     = $error_code === 'LIMIT_REACHED' ? 429 : 502;
+
+                // Handle proxy 429 (server-side limit reached) gracefully.
+                if ( $error_code === 'LIMIT_REACHED' ) {
+                    return new \WP_REST_Response( [
+                        'success'     => false,
+                        'error'       => __( 'You have reached your monthly conversation limit. Upgrade for unlimited conversations.', 'trill-ai-chat-lite' ),
+                        'error_code'  => 'SERVICE_LIMIT_REACHED',
+                        'upgrade_url' => LiteConfig::getUpgradeUrl( 'api_limit' ),
+                    ], 429 );
+                }
 
                 return $this->formatter->format_error(
                     $ai_response['error'] ?? __( 'AI service temporarily unavailable.', 'trill-ai-chat-lite' ),
                     $error_code,
-                    $status
+                    502
                 );
             }
 
-            // 9. Store AI response.
+            // 8. Store AI response.
             $ai_content    = $ai_response['message']['content'];
             $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content );
 
             if ( ! $ai_message_id ) {
-                trill_chat_lite_log( 'Failed to store AI message (response still returned)', 'warning', [
+                trcl_log( 'Failed to store AI message (response still returned)', 'warning', [
                     'session_id' => $session_id,
                 ] );
                 $ai_message_id = 0;
             }
 
-            // 10. Format and return response.
+            // 9. Format and return response.
             $processing_time = microtime( true ) - $start_time;
 
-            trill_chat_lite_log( 'Message processed successfully', 'info', [
+            trcl_log( 'Message processed successfully', 'info', [
                 'session_id'       => $session_id,
                 'processing_time'  => round( $processing_time, 3 ),
                 'is_new'           => $is_new_conversation,
@@ -307,9 +306,6 @@ class RestController {
                 $product_results
             );
 
-            // Add usage stats.
-            $response_data['usage'] = $this->usage_limiter->getUsageStats();
-
             // Add proxy meta if available.
             if ( ! empty( $ai_response['meta'] ) ) {
                 $response_data['meta'] = $ai_response['meta'];
@@ -318,7 +314,7 @@ class RestController {
             return new \WP_REST_Response( $response_data, 200 );
 
         } catch ( \Exception $e ) {
-            trill_chat_lite_log( 'Message endpoint exception', 'error', [
+            trcl_log( 'Message endpoint exception', 'error', [
                 'error' => $e->getMessage(),
                 'file'  => $e->getFile(),
                 'line'  => $e->getLine(),
@@ -368,7 +364,7 @@ class RestController {
             ], 200 );
 
         } catch ( \Exception $e ) {
-            trill_chat_lite_log( 'Conversation endpoint error', 'error', [ 'error' => $e->getMessage() ] );
+            trcl_log( 'Conversation endpoint error', 'error', [ 'error' => $e->getMessage() ] );
 
             return $this->formatter->format_error(
                 __( 'Failed to retrieve conversation.', 'trill-ai-chat-lite' ),
@@ -406,7 +402,7 @@ class RestController {
             ], 200 );
 
         } catch ( \Exception $e ) {
-            trill_chat_lite_log( 'Feedback endpoint error', 'error', [ 'error' => $e->getMessage() ] );
+            trcl_log( 'Feedback endpoint error', 'error', [ 'error' => $e->getMessage() ] );
 
             return $this->formatter->format_error(
                 __( 'Failed to save feedback.', 'trill-ai-chat-lite' ),
@@ -416,16 +412,23 @@ class RestController {
         }
     }
 
+    // =========================================================================
+    // PERMISSION CALLBACKS (ISSUE-05: Separate per endpoint)
+    // =========================================================================
+
     /**
-     * Check permissions for REST requests.
+     * Permission callback for POST /message.
+     *
+     * Intentionally public — store visitors (not logged in) must be able to
+     * send messages via the chat widget. Rate limiting is enforced per-IP
+     * and the proxy enforces conversation quotas server-side.
      *
      * @param \WP_REST_Request $request Request object.
-     * @return bool|\WP_Error
+     * @return true|\WP_Error
      */
-    public function check_permissions( \WP_REST_Request $request ) {
-        // Verify nonce for authenticated requests.
+    public function check_message_permissions( \WP_REST_Request $request ) {
+        // Verify nonce if provided (logged-in users).
         $nonce = $request->get_header( 'X-WP-Nonce' );
-
         if ( ! empty( $nonce ) && ! \wp_verify_nonce( $nonce, 'wp_rest' ) ) {
             return new \WP_Error(
                 'rest_forbidden',
@@ -434,13 +437,92 @@ class RestController {
             );
         }
 
-        // Basic rate limiting via transient.
+        // Per-IP rate limiting (max 10 requests/minute).
+        return $this->enforce_rate_limit( self::RATE_LIMIT_PER_MINUTE );
+    }
+
+    /**
+     * Permission callback for GET /conversation/{session_id}.
+     *
+     * Semi-public — validates that the requester owns the session by
+     * checking the session_id exists and was created recently.
+     * The session_id itself acts as a bearer token (UUID is unguessable).
+     *
+     * @param \WP_REST_Request $request Request object.
+     * @return true|\WP_Error
+     */
+    public function check_conversation_permissions( \WP_REST_Request $request ) {
+        // Verify nonce if provided.
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! empty( $nonce ) && ! \wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new \WP_Error(
+                'rest_forbidden',
+                __( 'Invalid security token. Please refresh the page.', 'trill-ai-chat-lite' ),
+                [ 'status' => 403 ]
+            );
+        }
+
+        // Validate UUID format.
+        $session_id = $request->get_param( 'session_id' );
+        if ( empty( $session_id ) || ! preg_match( self::UUID_PATTERN, $session_id ) ) {
+            return new \WP_Error(
+                'rest_forbidden',
+                __( 'Invalid session identifier.', 'trill-ai-chat-lite' ),
+                [ 'status' => 403 ]
+            );
+        }
+
+        // Rate limit (30/minute for reads — less restrictive than writes).
+        return $this->enforce_rate_limit( 30 );
+    }
+
+    /**
+     * Permission callback for POST /feedback.
+     *
+     * Semi-public — validates that the message_id is a positive integer.
+     * The callback handler will verify the message exists.
+     *
+     * @param \WP_REST_Request $request Request object.
+     * @return true|\WP_Error
+     */
+    public function check_feedback_permissions( \WP_REST_Request $request ) {
+        // Verify nonce if provided.
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! empty( $nonce ) && ! \wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new \WP_Error(
+                'rest_forbidden',
+                __( 'Invalid security token. Please refresh the page.', 'trill-ai-chat-lite' ),
+                [ 'status' => 403 ]
+            );
+        }
+
+        // Validate message_id is provided and positive.
+        $message_id = $request->get_param( 'message_id' );
+        if ( empty( $message_id ) || ! is_numeric( $message_id ) || (int) $message_id <= 0 ) {
+            return new \WP_Error(
+                'rest_forbidden',
+                __( 'Invalid message identifier.', 'trill-ai-chat-lite' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        // Rate limit (10/minute — same as message to prevent spam).
+        return $this->enforce_rate_limit( self::RATE_LIMIT_PER_MINUTE );
+    }
+
+    /**
+     * Enforce per-IP rate limiting via transient.
+     *
+     * @param int $max_per_minute Maximum requests per minute.
+     * @return true|\WP_Error
+     */
+    private function enforce_rate_limit( int $max_per_minute ) {
         $ip      = $this->get_client_ip();
         $ip_hash = md5( $ip );
-        $key     = 'tclw_rate_' . $ip_hash;
+        $key     = 'trcl_rate_' . $ip_hash;
         $count   = (int) \get_transient( $key );
 
-        if ( $count >= 30 ) {
+        if ( $count >= $max_per_minute ) {
             return new \WP_Error(
                 'rest_rate_limited',
                 __( 'Too many requests. Please try again later.', 'trill-ai-chat-lite' ),
@@ -559,7 +641,7 @@ class RestController {
                 $results[] = [
                     'product_id' => $product->get_id(),
                     'name'       => $product->get_name(),
-                    'price'      => trill_chat_lite_format_price( $product->get_price() ),
+                    'price'      => trcl_format_price( $product->get_price() ),
                     'url'        => $product->get_permalink(),
                     'in_stock'   => $product->is_in_stock(),
                 ];
@@ -568,7 +650,7 @@ class RestController {
             return $results;
 
         } catch ( \Exception $e ) {
-            trill_chat_lite_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
+            trcl_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
             return [];
         }
     }
