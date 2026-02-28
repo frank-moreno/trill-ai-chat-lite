@@ -23,7 +23,6 @@ shoppers find what they're looking for.
 * Automatic product search and recommendations
 * Natural language understanding of customer queries
 * Easy setup — works in minutes
-* 50 free conversations per month
 
 **How it works:**
 
@@ -46,10 +45,10 @@ conversations, order tracking, analytics, and priority support.
 
 == Frequently Asked Questions ==
 
-= How many conversations can I have per month? =
+= Are there any conversation limits? =
 
-The Lite version includes 50 conversations per month. Upgrade to a paid plan
-for more conversations.
+The Lite version connects to the Trill AI service which manages usage
+server-side. Upgrade to a paid plan for higher limits and premium features.
 
 = Does this work with any WooCommerce theme? =
 
@@ -63,7 +62,7 @@ https://trillai.io/privacy/.
 
 = Can I remove the "Powered by Trill AI" badge? =
 
-The badge is included in the Lite version. Paid plans do not include the badge.
+The badge is opt-in and off by default. You can enable it in Settings if you wish to show it.
 
 == Screenshots ==
 
@@ -84,15 +83,22 @@ Initial release of Trill Chat Lite.
 
 == External Services ==
 
-This plugin connects to the Trill AI API (https://api.trillai.io) to process
-chat messages using artificial intelligence. When a visitor sends a message
-through the chat widget, the message content and relevant product context are
-sent to this external service for AI processing.
+This plugin relies on the **Trill AI API** (`https://api.trillai.io`) as its
+sole AI processing back-end. The service is required for the plugin to function.
+
+**What data is sent and when:**
+
+* When a store visitor sends a chat message, the message text and relevant
+  WooCommerce product context (names, prices, descriptions) are transmitted to
+  the Trill AI API over HTTPS for AI processing.
+* The API also enforces per-site usage limits server-side (no local trialware).
+
+**Service links:**
 
 * Service URL: https://api.trillai.io
 * Terms of Service: https://trillai.io/terms/
 * Privacy Policy: https://trillai.io/privacy/
 
-No personal data is collected or stored by the external service beyond what is
-necessary to process the chat message. Messages are not used for training AI
-models.
+No personal visitor data is collected or stored by the external service beyond
+what is strictly necessary to process the individual chat message. Messages are
+not used for training AI models.

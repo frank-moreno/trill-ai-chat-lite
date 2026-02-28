@@ -105,7 +105,7 @@ class Logger {
             return;
         }
 
-        $min_level = defined( 'TRILL_CHAT_LITE_LOG_LEVEL' ) ? TRILL_CHAT_LITE_LOG_LEVEL : 'info';
+        $min_level = defined( 'TRCL_LOG_LEVEL' ) ? TRCL_LOG_LEVEL : 'info';
 
         if ( ( self::LEVELS[ $level ] ?? 0 ) < ( self::LEVELS[ $min_level ] ?? 0 ) ) {
             return;

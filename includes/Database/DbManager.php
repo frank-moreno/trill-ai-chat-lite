@@ -46,9 +46,9 @@ class DbManager {
         global $wpdb;
         $this->wpdb = $wpdb;
 
-        $this->conversations_table = $wpdb->prefix . 'tcl_conversations';
-        $this->messages_table      = $wpdb->prefix . 'tcl_messages';
-        $this->feedback_table      = $wpdb->prefix . 'tcl_feedback';
+        $this->conversations_table = $wpdb->prefix . 'trcl_conversations';
+        $this->messages_table      = $wpdb->prefix . 'trcl_messages';
+        $this->feedback_table      = $wpdb->prefix . 'trcl_feedback';
     }
 
     /**
@@ -85,13 +85,13 @@ class DbManager {
         );
 
         if ( false === $result ) {
-            trill_chat_lite_log( 'Failed to create conversation: ' . $this->wpdb->last_error, 'error', [
+            trcl_log( 'Failed to create conversation: ' . $this->wpdb->last_error, 'error', [
                 'session_id' => $session_id,
             ] );
             return '';
         }
 
-        trill_chat_lite_log( 'Conversation created', 'info', [
+        trcl_log( 'Conversation created', 'info', [
             'session_id' => $session_id,
         ] );
 
@@ -176,7 +176,7 @@ class DbManager {
         $conversation_id = $this->get_conversation_id( $session_id );
 
         if ( ! $conversation_id ) {
-            trill_chat_lite_log( 'Cannot create message: conversation not found', 'error', [
+            trcl_log( 'Cannot create message: conversation not found', 'error', [
                 'session_id' => $session_id,
             ] );
             return false;
@@ -204,7 +204,7 @@ class DbManager {
         );
 
         if ( false === $result ) {
-            trill_chat_lite_log( 'Failed to create message: ' . $this->wpdb->last_error, 'error', [
+            trcl_log( 'Failed to create message: ' . $this->wpdb->last_error, 'error', [
                 'session_id' => $session_id,
             ] );
             return false;
@@ -369,7 +369,7 @@ class DbManager {
         );
         // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
-        trill_chat_lite_log( "Cleaned up {$deleted} old conversations", 'info' );
+        trcl_log( "Cleaned up {$deleted} old conversations", 'info' );
 
         return (int) $deleted;
     }

@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Trill AI Chat — Lite
- * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically. Free for up to 50 conversations/month.
+ * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically.
  * Version: 1.0.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
@@ -24,18 +24,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 // =========================================================================
 // CONSTANTS
 // =========================================================================
-define( 'TRILL_CHAT_LITE_VERSION', '1.0.0' );
-define( 'TRILL_CHAT_LITE_PLUGIN_FILE', __FILE__ );
-define( 'TRILL_CHAT_LITE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'TRILL_CHAT_LITE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'TRILL_CHAT_LITE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+define( 'TRCL_VERSION', '1.0.0' );
+define( 'TRCL_PLUGIN_FILE', __FILE__ );
+define( 'TRCL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'TRCL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'TRCL_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
-// Lite-specific constants
-define( 'TRILL_CHAT_LITE_MONTHLY_CONVERSATION_LIMIT', 50 );
-define( 'TRILL_CHAT_LITE_AI_MODEL', 'gpt-4o-mini' );
-define( 'TRILL_CHAT_LITE_PROXY_URL', 'https://api.trillai.io/v1/lite/chat' );
-define( 'TRILL_CHAT_LITE_UPGRADE_URL', 'https://trillai.io/pricing/?utm_source=plugin&utm_medium=lite&utm_campaign=upgrade' );
-define( 'TRILL_CHAT_LITE_IS_LITE', true );
+// Lite-specific constants.
+define( 'TRCL_AI_MODEL', 'gpt-4o-mini' );
+define( 'TRCL_PROXY_URL', 'https://api.trillai.io/v1/lite/chat' );
+define( 'TRCL_UPGRADE_URL', 'https://trillai.io/pricing/?utm_source=plugin&utm_medium=lite&utm_campaign=upgrade' );
+define( 'TRCL_IS_LITE', true );
 
 // =========================================================================
 // WOOCOMMERCE HPOS COMPATIBILITY
@@ -66,12 +65,12 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
 // =========================================================================
 // AUTOLOADER (custom PSR-4, no Composer needed)
 // =========================================================================
-require_once TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/Autoloader.php';
+require_once TRCL_PLUGIN_DIR . 'includes/Autoloader.php';
 
 // =========================================================================
 // GLOBAL HELPER FUNCTIONS (loaded before plugin boot)
 // =========================================================================
-require_once TRILL_CHAT_LITE_PLUGIN_DIR . 'includes/functions.php';
+require_once TRCL_PLUGIN_DIR . 'includes/functions.php';
 
 // =========================================================================
 // ACTIVATION / DEACTIVATION HOOKS
@@ -96,7 +95,7 @@ add_action( 'plugins_loaded', function () {
                 esc_html__( 'Manage plugins', 'trill-ai-chat-lite' )
             );
         } );
-        deactivate_plugins( TRILL_CHAT_LITE_PLUGIN_BASENAME );
+        deactivate_plugins( TRCL_PLUGIN_BASENAME );
         return;
     }
 
@@ -104,7 +103,7 @@ add_action( 'plugins_loaded', function () {
     if ( function_exists( 'is_plugin_active' ) ) {
         if ( is_plugin_active( 'woocommerce-ai-chat/gspltd-ai-chat.php' ) ||
              is_plugin_active( 'woocommerce-ai-chat/woocommerce-ai-chat.php' ) ) {
-            deactivate_plugins( TRILL_CHAT_LITE_PLUGIN_BASENAME );
+            deactivate_plugins( TRCL_PLUGIN_BASENAME );
             return;
         }
     }

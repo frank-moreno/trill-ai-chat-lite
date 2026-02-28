@@ -8,7 +8,7 @@
  * @license GPL-2.0-or-later
  */
 
-/* global jQuery, tclAdmin */
+/* global jQuery, trclAdmin */
 (function ($) {
     'use strict';
 
@@ -30,19 +30,19 @@
          * When the WordPress dismissible notice is closed, send AJAX to record dismissal.
          */
         bindDismissNotice: function () {
-            $(document).on('click', '.tcl-upgrade-notice .notice-dismiss', function () {
-                var $notice = $(this).closest('.tcl-upgrade-notice');
+            $(document).on('click', '.trcl-upgrade-notice .notice-dismiss', function () {
+                var $notice = $(this).closest('.trcl-upgrade-notice');
                 var nonce = $notice.data('nonce');
 
-                if (!nonce || typeof tclAdmin === 'undefined') {
+                if (!nonce || typeof trclAdmin === 'undefined') {
                     return;
                 }
 
                 $.ajax({
-                    url: tclAdmin.ajax_url,
+                    url: trclAdmin.ajax_url,
                     type: 'POST',
                     data: {
-                        action: 'tclw_dismiss_notice',
+                        action: 'trcl_dismiss_notice',
                         nonce: nonce
                     }
                 });

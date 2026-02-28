@@ -10,14 +10,14 @@
  * @license GPL-2.0-or-later
  */
 
-/* global jQuery, tclw_ajax */
+/* global jQuery, trcl_ajax */
 (function ($) {
     'use strict';
 
     /**
      * Chat Widget module.
      */
-    window.TCLChatWidget = {
+    window.TRCLChatWidget = {
 
         /** State */
         sessionId: null,
@@ -30,7 +30,7 @@
          * Initialise the chat widget.
          */
         init: function () {
-            if (tclw_ajax.enabled !== '1') {
+            if (trcl_ajax.enabled !== '1') {
                 return;
             }
 
@@ -46,47 +46,47 @@
          */
         render: function () {
             var html = '' +
-                '<div class="tcl-chat-widget" id="tcl-chat-widget">' +
+                '<div class="trcl-chat-widget" id="trcl-chat-widget">' +
                     '<!-- Toggle Button -->' +
-                    '<button class="tcl-chat-toggle" id="tcl-chat-toggle" aria-label="' + this.str('chat_with_us') + '">' +
+                    '<button class="trcl-chat-toggle" id="trcl-chat-toggle" aria-label="' + this.str('chat_with_us') + '">' +
                         '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
                             '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>' +
                         '</svg>' +
                     '</button>' +
                     '<!-- Chat Window -->' +
-                    '<div class="tcl-chat-window" id="tcl-chat-window">' +
+                    '<div class="trcl-chat-window" id="trcl-chat-window">' +
                         '<!-- Header -->' +
-                        '<div class="tcl-chat-header">' +
-                            '<div class="tcl-chat-avatar"><img src="' + tclw_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + tclw_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="Robin" width="40" height="40" /></div>' +
-                            '<div class="tcl-chat-header-info">' +
-                                '<div class="tcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
-                                '<div class="tcl-chat-header-status">' +
-                                    '<span class="tcl-status-dot"></span> ' + this.str('online') +
+                        '<div class="trcl-chat-header">' +
+                            '<div class="trcl-chat-avatar"><img src="' + trcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + trcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="Robin" width="40" height="40" /></div>' +
+                            '<div class="trcl-chat-header-info">' +
+                                '<div class="trcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
+                                '<div class="trcl-chat-header-status">' +
+                                    '<span class="trcl-status-dot"></span> ' + this.str('online') +
                                 '</div>' +
                             '</div>' +
-                            '<button class="tcl-chat-close" id="tcl-chat-close" aria-label="' + this.str('close_chat') + '">' +
+                            '<button class="trcl-chat-close" id="trcl-chat-close" aria-label="' + this.str('close_chat') + '">' +
                                 '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
                                     '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>' +
                                 '</svg>' +
                             '</button>' +
                         '</div>' +
                         '<!-- Messages -->' +
-                        '<div class="tcl-chat-messages" id="tcl-chat-messages"></div>' +
+                        '<div class="trcl-chat-messages" id="trcl-chat-messages"></div>' +
                         '<!-- Quick Replies -->' +
-                        '<div class="tcl-quick-replies" id="tcl-quick-replies"></div>' +
+                        '<div class="trcl-quick-replies" id="trcl-quick-replies"></div>' +
                         '<!-- Input -->' +
-                        '<div class="tcl-chat-input-area">' +
-                            '<input type="text" class="tcl-chat-input" id="tcl-chat-input" placeholder="' + this.str('type_message') + '" maxlength="500" enterkeyhint="send" />' +
-                            '<button class="tcl-chat-send" id="tcl-chat-send" aria-label="' + this.str('send') + '">' +
+                        '<div class="trcl-chat-input-area">' +
+                            '<input type="text" class="trcl-chat-input" id="trcl-chat-input" placeholder="' + this.str('type_message') + '" maxlength="500" enterkeyhint="send" />' +
+                            '<button class="trcl-chat-send" id="trcl-chat-send" aria-label="' + this.str('send') + '">' +
                                 '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
                                     '<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/>' +
                                 '</svg>' +
                             '</button>' +
                         '</div>' +
                         '<!-- Powered By -->' +
-                        (tclw_ajax.branding && tclw_ajax.branding.show_powered_by ?
-                            '<a href="' + tclw_ajax.branding.powered_by_url + '" target="_blank" rel="noopener" class="tcl-powered-by">' +
-                                tclw_ajax.branding.powered_by_text +
+                        (trcl_ajax.branding && trcl_ajax.branding.show_powered_by ?
+                            '<a href="' + trcl_ajax.branding.powered_by_url + '" target="_blank" rel="noopener" class="trcl-powered-by">' +
+                                trcl_ajax.branding.powered_by_text +
                             '</a>' : '') +
                     '</div>' +
                 '</div>';
@@ -101,22 +101,22 @@
             var self = this;
 
             // Toggle chat.
-            $(document).on('click', '#tcl-chat-toggle', function () {
+            $(document).on('click', '#trcl-chat-toggle', function () {
                 self.toggleWidget();
             });
 
             // Close chat.
-            $(document).on('click', '#tcl-chat-close', function () {
+            $(document).on('click', '#trcl-chat-close', function () {
                 self.closeWidget();
             });
 
             // Send message.
-            $(document).on('click', '#tcl-chat-send', function () {
+            $(document).on('click', '#trcl-chat-send', function () {
                 self.sendMessage();
             });
 
             // Enter key.
-            $(document).on('keypress', '#tcl-chat-input', function (e) {
+            $(document).on('keypress', '#trcl-chat-input', function (e) {
                 if (e.which === 13 && !e.shiftKey) {
                     e.preventDefault();
                     self.sendMessage();
@@ -124,16 +124,16 @@
             });
 
             // Quick reply click.
-            $(document).on('click', '.tcl-quick-reply', function () {
+            $(document).on('click', '.trcl-quick-reply', function () {
                 var value = $(this).data('value');
                 if (value) {
-                    $('#tcl-chat-input').val(value);
+                    $('#trcl-chat-input').val(value);
                     self.sendMessage();
                 }
             });
 
             // Product card add-to-cart.
-            $(document).on('click', '.tcl-product-card-action', function (e) {
+            $(document).on('click', '.trcl-product-card-action', function (e) {
                 e.preventDefault();
                 var productId = $(this).data('product-id');
                 if (productId) {
@@ -142,14 +142,14 @@
             });
 
             // Mobile: handle input focus (keyboard appearing).
-            $(document).on('focus', '#tcl-chat-input', function () {
+            $(document).on('focus', '#trcl-chat-input', function () {
                 if (self.isMobile) {
                     self.handleMobileKeyboardOpen();
                 }
             });
 
             // Mobile: handle input blur (keyboard closing).
-            $(document).on('blur', '#tcl-chat-input', function () {
+            $(document).on('blur', '#trcl-chat-input', function () {
                 if (self.isMobile) {
                     self.handleMobileKeyboardClose();
                 }
@@ -188,8 +188,8 @@
          * Open the widget.
          */
         openWidget: function () {
-            $('#tcl-chat-window').addClass('tcl-chat-window--open');
-            $('#tcl-chat-toggle').hide();
+            $('#trcl-chat-window').addClass('trcl-chat-window--open');
+            $('#trcl-chat-toggle').hide();
             this.isOpen = true;
 
             // On mobile, prevent body scroll when chat is open.
@@ -198,13 +198,13 @@
             }
 
             // Show welcome message if no messages.
-            if ($('#tcl-chat-messages').children().length === 0) {
+            if ($('#trcl-chat-messages').children().length === 0) {
                 this.addMessage('assistant', this.str('welcome_message'));
             }
 
             // Focus input (slight delay for animation).
             setTimeout(function () {
-                $('#tcl-chat-input').focus();
+                $('#trcl-chat-input').focus();
             }, 300);
         },
 
@@ -212,8 +212,8 @@
          * Close the widget.
          */
         closeWidget: function () {
-            $('#tcl-chat-window').removeClass('tcl-chat-window--open');
-            $('#tcl-chat-toggle').show();
+            $('#trcl-chat-window').removeClass('trcl-chat-window--open');
+            $('#trcl-chat-toggle').show();
             this.isOpen = false;
 
             // Restore body scroll.
@@ -222,7 +222,7 @@
             }
 
             // Blur input to dismiss keyboard.
-            $('#tcl-chat-input').blur();
+            $('#trcl-chat-input').blur();
         },
 
         /**
@@ -254,7 +254,7 @@
                 return;
             }
 
-            var $window = $('#tcl-chat-window');
+            var $window = $('#trcl-chat-window');
 
             // Adjust chat window height to match visual viewport.
             // This prevents the keyboard from overlapping the input.
@@ -267,7 +267,7 @@
          * Scroll messages to bottom.
          */
         scrollToBottom: function () {
-            var $messages = $('#tcl-chat-messages');
+            var $messages = $('#trcl-chat-messages');
             if ($messages.length && $messages[0].scrollHeight) {
                 $messages.scrollTop($messages[0].scrollHeight);
             }
@@ -278,7 +278,7 @@
          */
         sendMessage: function () {
             var self = this;
-            var $input = $('#tcl-chat-input');
+            var $input = $('#trcl-chat-input');
             var message = $.trim($input.val());
 
             if (!message || this.isLoading || this.limitReached) {
@@ -292,14 +292,14 @@
             // Show typing indicator.
             this.showTyping();
             this.isLoading = true;
-            $('#tcl-chat-send').prop('disabled', true);
+            $('#trcl-chat-send').prop('disabled', true);
 
             // Clear quick replies.
-            $('#tcl-quick-replies').empty();
+            $('#trcl-quick-replies').empty();
 
             // Send API request.
             $.ajax({
-                url: tclw_ajax.rest_url + 'message',
+                url: trcl_ajax.rest_url + 'message',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
@@ -311,7 +311,7 @@
                     }
                 }),
                 beforeSend: function (xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', tclw_ajax.nonce);
+                    xhr.setRequestHeader('X-WP-Nonce', trcl_ajax.nonce);
                 },
                 success: function (response) {
                     self.hideTyping();
@@ -337,12 +337,7 @@
                             self.renderQuickReplies(response.quick_replies);
                         }
 
-                        // Check usage.
-                        if (response.usage) {
-                            self.checkUsageLimit(response.usage);
-                        }
-
-                        // Check proxy meta for upgrade prompt.
+                        // Check proxy meta for upgrade prompt (server-side limits).
                         if (response.meta && response.meta.upgrade_prompt) {
                             self.showUpgradePrompt();
                         }
@@ -355,8 +350,8 @@
 
                     if (xhr.status === 429) {
                         var body = xhr.responseJSON || {};
-                        if (body.error_code === 'LIMIT_REACHED') {
-                            self.showLimitReached(body.upgrade_url);
+                        if (body.code === 'SERVICE_LIMIT_REACHED') {
+                            self.showLimitReached(body.data && body.data.upgrade_url ? body.data.upgrade_url : trcl_ajax.upgrade_url);
                             return;
                         }
                     }
@@ -365,11 +360,11 @@
                 },
                 complete: function () {
                     self.isLoading = false;
-                    $('#tcl-chat-send').prop('disabled', false);
+                    $('#trcl-chat-send').prop('disabled', false);
 
                     // Keep focus on input for mobile continuity.
                     if (!self.isMobile) {
-                        $('#tcl-chat-input').focus();
+                        $('#trcl-chat-input').focus();
                     }
                 }
             });
@@ -382,14 +377,14 @@
          * @param {string} content Message content.
          */
         addMessage: function (role, content) {
-            var $messages = $('#tcl-chat-messages');
+            var $messages = $('#trcl-chat-messages');
             var sanitised = $('<div>').text(content).html();
 
             // Basic markdown-like formatting.
             sanitised = sanitised.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             sanitised = sanitised.replace(/\n/g, '<br>');
 
-            var $msg = $('<div class="tcl-message tcl-message--' + role + '">' + sanitised + '</div>');
+            var $msg = $('<div class="trcl-message trcl-message--' + role + '">' + sanitised + '</div>');
             $messages.append($msg);
             this.scrollToBottom();
         },
@@ -398,12 +393,12 @@
          * Show typing indicator.
          */
         showTyping: function () {
-            var $messages = $('#tcl-chat-messages');
+            var $messages = $('#trcl-chat-messages');
             $messages.append(
-                '<div class="tcl-typing" id="tcl-typing">' +
-                    '<span class="tcl-typing-dot"></span>' +
-                    '<span class="tcl-typing-dot"></span>' +
-                    '<span class="tcl-typing-dot"></span>' +
+                '<div class="trcl-typing" id="trcl-typing">' +
+                    '<span class="trcl-typing-dot"></span>' +
+                    '<span class="trcl-typing-dot"></span>' +
+                    '<span class="trcl-typing-dot"></span>' +
                 '</div>'
             );
             this.scrollToBottom();
@@ -413,7 +408,7 @@
          * Hide typing indicator.
          */
         hideTyping: function () {
-            $('#tcl-typing').remove();
+            $('#trcl-typing').remove();
         },
 
         /**
@@ -422,25 +417,25 @@
          * @param {Array} products Product data.
          */
         renderProductCards: function (products) {
-            var $container = $('<div class="tcl-product-cards"></div>');
+            var $container = $('<div class="trcl-product-cards"></div>');
 
             products.forEach(function (product) {
                 var $card = $(
-                    '<div class="tcl-product-card">' +
-                        (product.image ? '<img class="tcl-product-card-image" src="' + product.image + '" alt="" />' : '') +
-                        '<div class="tcl-product-card-body">' +
-                            '<p class="tcl-product-card-name">' + $('<span>').text(product.name).html() + '</p>' +
-                            '<span class="tcl-product-card-price">' + (product.price_html || product.price) + '</span>' +
+                    '<div class="trcl-product-card">' +
+                        (product.image ? '<img class="trcl-product-card-image" src="' + product.image + '" alt="" />' : '') +
+                        '<div class="trcl-product-card-body">' +
+                            '<p class="trcl-product-card-name">' + $('<span>').text(product.name).html() + '</p>' +
+                            '<span class="trcl-product-card-price">' + (product.price_html || product.price) + '</span>' +
                         '</div>' +
                         (product.add_to_cart ?
-                            '<button class="tcl-product-card-action" data-product-id="' + product.id + '">Add to Cart</button>' :
-                            '<a href="' + product.url + '" class="tcl-product-card-action" target="_blank">View</a>') +
+                            '<button class="trcl-product-card-action" data-product-id="' + product.id + '">Add to Cart</button>' :
+                            '<a href="' + product.url + '" class="trcl-product-card-action" target="_blank">View</a>') +
                     '</div>'
                 );
                 $container.append($card);
             });
 
-            $('#tcl-chat-messages').append($container);
+            $('#trcl-chat-messages').append($container);
             this.scrollToBottom();
         },
 
@@ -450,12 +445,12 @@
          * @param {Array} replies Quick reply data.
          */
         renderQuickReplies: function (replies) {
-            var $container = $('#tcl-quick-replies');
+            var $container = $('#trcl-quick-replies');
             $container.empty();
 
             replies.forEach(function (reply) {
                 $container.append(
-                    '<button class="tcl-quick-reply" data-value="' + $('<span>').text(reply.value).html() + '">' +
+                    '<button class="trcl-quick-reply" data-value="' + $('<span>').text(reply.value).html() + '">' +
                         $('<span>').text(reply.label).html() +
                     '</button>'
                 );
@@ -473,7 +468,7 @@
             $button.text('Adding...').prop('disabled', true);
 
             $.ajax({
-                url: tclw_ajax.ajax_url,
+                url: trcl_ajax.ajax_url,
                 type: 'POST',
                 data: {
                     action: 'woocommerce_add_to_cart',
@@ -498,36 +493,25 @@
         },
 
         /**
-         * Check and display usage limit status.
-         *
-         * @param {Object} usage Usage stats.
-         */
-        checkUsageLimit: function (usage) {
-            if (usage.remaining <= 0) {
-                this.showLimitReached(tclw_ajax.upgrade_url);
-            }
-        },
-
-        /**
-         * Show limit reached banner.
+         * Show limit reached banner (triggered by server-side proxy 429).
          *
          * @param {string} upgradeUrl URL to upgrade page.
          */
         showLimitReached: function (upgradeUrl) {
             this.limitReached = true;
-            $('#tcl-chat-input').prop('disabled', true).attr('placeholder', this.str('limit_reached'));
-            $('#tcl-chat-send').prop('disabled', true);
+            $('#trcl-chat-input').prop('disabled', true).attr('placeholder', this.str('limit_reached'));
+            $('#trcl-chat-send').prop('disabled', true);
 
             var $banner = $(
-                '<div class="tcl-limit-banner">' +
+                '<div class="trcl-limit-banner">' +
                     '<p>' + this.str('limit_reached') + '</p>' +
-                    '<a href="' + (upgradeUrl || tclw_ajax.upgrade_url) + '" target="_blank">' +
+                    '<a href="' + (upgradeUrl || trcl_ajax.upgrade_url) + '" target="_blank">' +
                         this.str('upgrade_now') +
                     '</a>' +
                 '</div>'
             );
 
-            $('.tcl-chat-input-area').before($banner);
+            $('.trcl-chat-input-area').before($banner);
         },
 
         /**
@@ -537,7 +521,7 @@
             // Subtle message, not blocking.
             this.addMessage('assistant',
                 'You\'re approaching your monthly limit. ' +
-                '<a href="' + tclw_ajax.upgrade_url + '" target="_blank">Upgrade for unlimited conversations</a>.'
+                '<a href="' + trcl_ajax.upgrade_url + '" target="_blank">Upgrade for unlimited conversations</a>.'
             );
         },
 
@@ -549,8 +533,8 @@
         handleError: function (response) {
             var errorMsg = response.error || this.str('error_message');
 
-            if (response.error_code === 'LIMIT_REACHED') {
-                this.showLimitReached(response.upgrade_url || tclw_ajax.upgrade_url);
+            if (response.error_code === 'SERVICE_LIMIT_REACHED' || response.code === 'SERVICE_LIMIT_REACHED') {
+                this.showLimitReached(response.upgrade_url || trcl_ajax.upgrade_url);
                 this.addMessage('assistant', errorMsg);
             } else {
                 this.addMessage('assistant', errorMsg);
@@ -561,7 +545,7 @@
          * Apply theme colour from settings.
          */
         applyThemeColour: function () {
-            var $widget = $('#tcl-chat-widget');
+            var $widget = $('#trcl-chat-widget');
             if ($widget.length) {
                 // The colour is applied via CSS custom property, set in wp_head if customised.
                 // Default falls back to #10B981 in CSS.
@@ -574,7 +558,7 @@
         saveSession: function () {
             try {
                 if (this.sessionId) {
-                    localStorage.setItem('tcl_session_id', this.sessionId);
+                    localStorage.setItem('trcl_session_id', this.sessionId);
                 }
             } catch (e) {
                 // localStorage not available.
@@ -586,7 +570,7 @@
          */
         loadSession: function () {
             try {
-                this.sessionId = localStorage.getItem('tcl_session_id') || null;
+                this.sessionId = localStorage.getItem('trcl_session_id') || null;
             } catch (e) {
                 this.sessionId = null;
             }
@@ -599,14 +583,14 @@
          * @return {string} Translated string.
          */
         str: function (key) {
-            return (tclw_ajax.strings && tclw_ajax.strings[key]) || key;
+            return (trcl_ajax.strings && trcl_ajax.strings[key]) || key;
         }
     };
 
     // Initialise on DOM ready.
     $(document).ready(function () {
-        if (typeof tclw_ajax !== 'undefined') {
-            TCLChatWidget.init();
+        if (typeof trcl_ajax !== 'undefined') {
+            TRCLChatWidget.init();
         }
     });
 

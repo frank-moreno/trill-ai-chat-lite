@@ -28,8 +28,8 @@ class CronManager {
     /**
      * Cron hook names.
      */
-    private const HOOK_INDEX_PRODUCTS = 'tclw_index_products';
-    private const HOOK_CLEANUP        = 'tclw_cleanup_conversations';
+    private const HOOK_INDEX_PRODUCTS = 'trcl_index_products';
+    private const HOOK_CLEANUP        = 'trcl_cleanup_conversations';
 
     /**
      * Initialise cron hooks.
@@ -53,7 +53,7 @@ class CronManager {
             \wp_schedule_event( time(), 'daily', self::HOOK_CLEANUP );
         }
 
-        trill_chat_lite_log( 'Cron events scheduled', 'info' );
+        trcl_log( 'Cron events scheduled', 'info' );
     }
 
     /**
@@ -74,31 +74,31 @@ class CronManager {
             }
         }
 
-        trill_chat_lite_log( 'Cron events unscheduled', 'info' );
+        trcl_log( 'Cron events unscheduled', 'info' );
     }
 
     /**
      * Run product index refresh.
      */
     public function run_product_index(): void {
-        trill_chat_lite_log( 'Cron: starting product index refresh', 'info' );
+        trcl_log( 'Cron: starting product index refresh', 'info' );
 
         $indexer = new ProductIndexer();
         $result  = $indexer->index_products();
 
-        trill_chat_lite_log( 'Cron: product index complete', 'info', $result );
+        trcl_log( 'Cron: product index complete', 'info', $result );
     }
 
     /**
      * Run conversation cleanup.
      */
     public function run_cleanup(): void {
-        trill_chat_lite_log( 'Cron: starting conversation cleanup', 'info' );
+        trcl_log( 'Cron: starting conversation cleanup', 'info' );
 
         $db      = new DbManager();
         $deleted = $db->cleanup_old_conversations( 30 );
 
-        trill_chat_lite_log( 'Cron: cleanup complete', 'info', [
+        trcl_log( 'Cron: cleanup complete', 'info', [
             'deleted' => $deleted,
         ] );
     }

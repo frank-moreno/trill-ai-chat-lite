@@ -11,7 +11,7 @@
    Chat Widget Container
    ======================================== */
 
-.tcl-chat-widget {
+.trcl-chat-widget {
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -22,7 +22,7 @@
     -webkit-font-smoothing: antialiased;
 }
 
-.tcl-chat-widget * {
+.trcl-chat-widget * {
     box-sizing: border-box;
 }
 
@@ -30,11 +30,11 @@
    Chat Toggle Button
    ======================================== */
 
-.tcl-chat-toggle {
+.trcl-chat-toggle {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--tcl-primary, #10B981);
+    background: var(--trcl-primary, #10B981);
     color: #fff;
     border: none;
     cursor: pointer;
@@ -46,12 +46,12 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.tcl-chat-toggle:hover {
+.trcl-chat-toggle:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-.tcl-chat-toggle svg {
+.trcl-chat-toggle svg {
     width: 24px;
     height: 24px;
     fill: currentColor;
@@ -61,7 +61,7 @@
    Chat Window
    ======================================== */
 
-.tcl-chat-window {
+.trcl-chat-window {
     display: none;
     width: 370px;
     height: 520px;
@@ -75,7 +75,7 @@
     right: 0;
 }
 
-.tcl-chat-window--open {
+.trcl-chat-window--open {
     display: flex;
 }
 
@@ -83,8 +83,8 @@
    Chat Header
    ======================================== */
 
-.tcl-chat-header {
-    background: var(--tcl-primary, #10B981);
+.trcl-chat-header {
+    background: var(--trcl-primary, #10B981);
     color: #fff;
     padding: 16px;
     display: flex;
@@ -93,7 +93,7 @@
     flex-shrink: 0;
 }
 
-.tcl-chat-avatar {
+.trcl-chat-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -106,24 +106,24 @@
     flex-shrink: 0;
 }
 
-.tcl-chat-avatar img {
+.trcl-chat-avatar img {
     width: 100%;
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
 }
 
-.tcl-chat-header-info {
+.trcl-chat-header-info {
     flex: 1;
     min-width: 0;
 }
 
-.tcl-chat-header-name {
+.trcl-chat-header-name {
     font-weight: 600;
     font-size: 15px;
 }
 
-.tcl-chat-header-status {
+.trcl-chat-header-status {
     font-size: 12px;
     opacity: 0.85;
     display: flex;
@@ -131,7 +131,7 @@
     gap: 4px;
 }
 
-.tcl-status-dot {
+.trcl-status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
@@ -139,7 +139,7 @@
     display: inline-block;
 }
 
-.tcl-chat-close {
+.trcl-chat-close {
     background: none;
     border: none;
     color: #fff;
@@ -150,11 +150,11 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.tcl-chat-close:hover {
+.trcl-chat-close:hover {
     opacity: 1;
 }
 
-.tcl-chat-close svg {
+.trcl-chat-close svg {
     width: 20px;
     height: 20px;
 }
@@ -163,7 +163,7 @@
    Chat Messages
    ======================================== */
 
-.tcl-chat-messages {
+.trcl-chat-messages {
     flex: 1;
     overflow-y: auto;
     padding: 16px;
@@ -175,7 +175,7 @@
     overscroll-behavior: contain;
 }
 
-.tcl-message {
+.trcl-message {
     max-width: 85%;
     padding: 10px 14px;
     border-radius: 12px;
@@ -184,27 +184,27 @@
     animation: tcl-fade-in 0.3s ease;
 }
 
-.tcl-message--user {
-    background: var(--tcl-primary, #10B981);
+.trcl-message--user {
+    background: var(--trcl-primary, #10B981);
     color: #fff;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
 }
 
-.tcl-message--assistant {
+.trcl-message--assistant {
     background: #f3f4f6;
     color: #1f2937;
     align-self: flex-start;
     border-bottom-left-radius: 4px;
 }
 
-.tcl-message--assistant a {
-    color: var(--tcl-primary, #059669);
+.trcl-message--assistant a {
+    color: var(--trcl-primary, #059669);
     text-decoration: underline;
 }
 
 /* Typing Indicator */
-.tcl-typing {
+.trcl-typing {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -216,7 +216,7 @@
     max-width: 80px;
 }
 
-.tcl-typing-dot {
+.trcl-typing-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
@@ -224,11 +224,11 @@
     animation: tcl-bounce 1.4s ease-in-out infinite;
 }
 
-.tcl-typing-dot:nth-child(2) {
+.trcl-typing-dot:nth-child(2) {
     animation-delay: 0.2s;
 }
 
-.tcl-typing-dot:nth-child(3) {
+.trcl-typing-dot:nth-child(3) {
     animation-delay: 0.4s;
 }
 
@@ -236,7 +236,7 @@
    Quick Replies
    ======================================== */
 
-.tcl-quick-replies {
+.trcl-quick-replies {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -244,10 +244,10 @@
     flex-shrink: 0;
 }
 
-.tcl-quick-reply {
+.trcl-quick-reply {
     background: #fff;
-    border: 1px solid var(--tcl-primary, #10B981);
-    color: var(--tcl-primary, #059669);
+    border: 1px solid var(--trcl-primary, #10B981);
+    color: var(--trcl-primary, #059669);
     padding: 6px 12px;
     border-radius: 16px;
     font-size: 13px;
@@ -257,8 +257,8 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.tcl-quick-reply:hover {
-    background: var(--tcl-primary, #10B981);
+.trcl-quick-reply:hover {
+    background: var(--trcl-primary, #10B981);
     color: #fff;
 }
 
@@ -266,7 +266,7 @@
    Product Cards
    ======================================== */
 
-.tcl-product-cards {
+.trcl-product-cards {
     display: flex;
     gap: 8px;
     overflow-x: auto;
@@ -276,7 +276,7 @@
     -webkit-overflow-scrolling: touch;
 }
 
-.tcl-product-card {
+.trcl-product-card {
     min-width: 150px;
     max-width: 150px;
     background: #fff;
@@ -286,17 +286,17 @@
     flex-shrink: 0;
 }
 
-.tcl-product-card-image {
+.trcl-product-card-image {
     width: 100%;
     height: 100px;
     object-fit: cover;
 }
 
-.tcl-product-card-body {
+.trcl-product-card-body {
     padding: 8px;
 }
 
-.tcl-product-card-name {
+.trcl-product-card-name {
     font-size: 12px;
     font-weight: 600;
     color: #1f2937;
@@ -307,17 +307,17 @@
     overflow: hidden;
 }
 
-.tcl-product-card-price {
+.trcl-product-card-price {
     font-size: 13px;
     font-weight: 700;
-    color: var(--tcl-primary, #059669);
+    color: var(--trcl-primary, #059669);
 }
 
-.tcl-product-card-action {
+.trcl-product-card-action {
     display: block;
     width: 100%;
     padding: 6px;
-    background: var(--tcl-primary, #10B981);
+    background: var(--trcl-primary, #10B981);
     color: #fff;
     border: none;
     font-size: 11px;
@@ -327,7 +327,7 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.tcl-product-card-action:hover {
+.trcl-product-card-action:hover {
     opacity: 0.9;
 }
 
@@ -335,7 +335,7 @@
    Chat Input
    ======================================== */
 
-.tcl-chat-input-area {
+.trcl-chat-input-area {
     padding: 12px 16px;
     border-top: 1px solid #e5e7eb;
     display: flex;
@@ -344,7 +344,7 @@
     flex-shrink: 0;
 }
 
-.tcl-chat-input {
+.trcl-chat-input {
     flex: 1;
     border: 1px solid #d1d5db;
     border-radius: 20px;
@@ -360,15 +360,15 @@
     appearance: none;
 }
 
-.tcl-chat-input:focus {
-    border-color: var(--tcl-primary, #10B981);
+.trcl-chat-input:focus {
+    border-color: var(--trcl-primary, #10B981);
 }
 
-.tcl-chat-send {
+.trcl-chat-send {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--tcl-primary, #10B981);
+    background: var(--trcl-primary, #10B981);
     color: #fff;
     border: none;
     cursor: pointer;
@@ -380,16 +380,16 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.tcl-chat-send:hover {
+.trcl-chat-send:hover {
     opacity: 0.9;
 }
 
-.tcl-chat-send:disabled {
+.trcl-chat-send:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.tcl-chat-send svg {
+.trcl-chat-send svg {
     width: 16px;
     height: 16px;
 }
@@ -398,7 +398,7 @@
    Powered By Badge
    ======================================== */
 
-.tcl-powered-by {
+.trcl-powered-by {
     display: block;
     text-align: center;
     padding: 6px;
@@ -409,7 +409,7 @@
     flex-shrink: 0;
 }
 
-.tcl-powered-by:hover {
+.trcl-powered-by:hover {
     color: #6b7280;
 }
 
@@ -417,7 +417,7 @@
    Limit Reached
    ======================================== */
 
-.tcl-limit-banner {
+.trcl-limit-banner {
     background: #fef3c7;
     border-top: 1px solid #f59e0b;
     padding: 12px 16px;
@@ -425,13 +425,13 @@
     flex-shrink: 0;
 }
 
-.tcl-limit-banner p {
+.trcl-limit-banner p {
     margin: 0 0 8px;
     font-size: 13px;
     color: #92400e;
 }
 
-.tcl-limit-banner a {
+.trcl-limit-banner a {
     display: inline-block;
     background: #f59e0b;
     color: #fff;
@@ -442,7 +442,7 @@
     font-weight: 600;
 }
 
-.tcl-limit-banner a:hover {
+.trcl-limit-banner a:hover {
     background: #d97706;
 }
 
@@ -450,11 +450,11 @@
    Noscript Message
    ======================================== */
 
-.tcl-noscript-message {
+.trcl-noscript-message {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: var(--tcl-primary, #10B981);
+    background: var(--trcl-primary, #10B981);
     color: #fff;
     padding: 15px 20px;
     border-radius: 8px;
@@ -467,14 +467,14 @@
    Shortcode Styles
    ======================================== */
 
-.tcl-shortcode-inline {
+.trcl-shortcode-inline {
     background: #f3f4f6;
     border-radius: 8px;
     padding: 16px;
     text-align: center;
 }
 
-.tcl-shortcode-trigger {
+.trcl-shortcode-trigger {
     cursor: pointer;
 }
 
@@ -509,13 +509,13 @@
 @media (max-width: 480px) {
 
     /* Widget container: flush to edges when open */
-    .tcl-chat-widget {
+    .trcl-chat-widget {
         bottom: 16px;
         right: 16px;
     }
 
     /* Full-screen chat window on mobile */
-    .tcl-chat-window {
+    .trcl-chat-window {
         position: fixed;
         top: 0;
         left: 0;
@@ -530,55 +530,55 @@
 
     /* Use dynamic viewport height for browsers with address bar */
     @supports (height: 100dvh) {
-        .tcl-chat-window {
+        .trcl-chat-window {
             height: 100dvh;
         }
     }
 
     /* Header: slightly smaller padding on mobile */
-    .tcl-chat-header {
+    .trcl-chat-header {
         padding: 12px 16px;
         padding-top: max(12px, env(safe-area-inset-top));
     }
 
     /* Close button: larger tap target on mobile */
-    .tcl-chat-close {
+    .trcl-chat-close {
         padding: 12px;
         margin: -8px -8px -8px 0;
     }
 
     /* Messages area: fill available space */
-    .tcl-chat-messages {
+    .trcl-chat-messages {
         padding: 12px;
         gap: 10px;
     }
 
     /* Messages: slightly wider on mobile */
-    .tcl-message {
+    .trcl-message {
         max-width: 90%;
     }
 
     /* Input area: safe area padding for notch devices */
-    .tcl-chat-input-area {
+    .trcl-chat-input-area {
         padding: 10px 12px;
         padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
 
     /* Input: 16px font prevents iOS zoom on focus */
-    .tcl-chat-input {
+    .trcl-chat-input {
         font-size: 16px;
         padding: 10px 14px;
         min-height: 40px;
     }
 
     /* Send button: slightly larger tap target */
-    .tcl-chat-send {
+    .trcl-chat-send {
         width: 40px;
         height: 40px;
     }
 
     /* Quick replies: horizontal scroll on mobile */
-    .tcl-quick-replies {
+    .trcl-quick-replies {
         flex-wrap: nowrap;
         overflow-x: auto;
         padding: 8px 12px;
@@ -586,27 +586,27 @@
         scrollbar-width: none;
     }
 
-    .tcl-quick-replies::-webkit-scrollbar {
+    .trcl-quick-replies::-webkit-scrollbar {
         display: none;
     }
 
     /* Product cards: smaller cards on mobile */
-    .tcl-product-card {
+    .trcl-product-card {
         min-width: 130px;
         max-width: 130px;
     }
 
-    .tcl-product-cards {
+    .trcl-product-cards {
         padding: 8px 12px;
     }
 
     /* Powered by: safe area bottom */
-    .tcl-powered-by {
+    .trcl-powered-by {
         padding-bottom: max(6px, env(safe-area-inset-bottom));
     }
 
     /* Limit banner */
-    .tcl-limit-banner {
+    .trcl-limit-banner {
         padding: 10px 12px;
         padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
@@ -617,7 +617,7 @@
    ======================================== */
 
 @media (max-height: 500px) and (max-width: 900px) {
-    .tcl-chat-window {
+    .trcl-chat-window {
         position: fixed;
         top: 0;
         left: 0;
@@ -629,22 +629,22 @@
         z-index: 100000;
     }
 
-    .tcl-chat-header {
+    .trcl-chat-header {
         padding: 8px 16px;
     }
 
-    .tcl-chat-avatar {
+    .trcl-chat-avatar {
         width: 32px;
         height: 32px;
         font-size: 14px;
     }
 
-    .tcl-chat-messages {
+    .trcl-chat-messages {
         padding: 8px 12px;
         gap: 6px;
     }
 
-    .tcl-message {
+    .trcl-message {
         padding: 8px 12px;
         font-size: 13px;
     }
