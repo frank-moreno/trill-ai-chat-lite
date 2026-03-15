@@ -126,9 +126,11 @@ class ProxyClient {
             ];
         }
 
+        $ai_content = $decoded['message']['content'] ?? $decoded['response'] ?? '';
+
         trcl_log( 'ProxyClient: response received', 'info', [
             'conversation_id'         => $conversation_id,
-            'response_length'         => mb_strlen( $decoded['response'] ),
+            'response_length'         => mb_strlen( $ai_content ),
             'conversations_remaining' => $decoded['meta']['conversations_remaining'] ?? null,
         ] );
 

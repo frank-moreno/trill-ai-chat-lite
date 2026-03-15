@@ -237,6 +237,13 @@ class RestController {
             $is_product_msg  = $this->is_product_query( $message );
             $product_results = $is_product_msg ? $this->search_products( $message ) : [];
 
+            trcl_log( 'Product search result', 'debug', [
+                'message'        => $message,
+                'is_product_msg' => $is_product_msg,
+                'products_found' => count( $product_results ),
+                'product_names'  => array_column( $product_results, 'name' ),
+            ] );
+
             // 6. Build context for proxy.
             $this->prompt_builder->with_store_context( $this->build_store_context() );
 
@@ -252,6 +259,12 @@ class RestController {
             $this->prompt_builder->with_history( $history );
 
             $proxy_context = $this->prompt_builder->build_context();
+
+            trcl_log( 'Proxy context built', 'debug', [
+                'has_system_prompt' => ! empty( $proxy_context['system_prompt'] ),
+                'has_products'      => ! empty( $proxy_context['products'] ),
+                'system_prompt_len' => mb_strlen( $proxy_context['system_prompt'] ?? '' ),
+            ] );
 
             // 7. Send to proxy.
             $ai_response = $this->proxy->send_message( $message, $session_id, $proxy_context );
@@ -636,17 +649,29 @@ class RestController {
 
         try {
             $search_query = $this->extract_search_query( $message );
+            $variants     = $this->get_search_variants( $search_query );
+            $products     = [];
 
-            // Primary: WooCommerce native full-text search.
-            $products = \wc_get_products( [
-                'status' => 'publish',
-                'limit'  => 5,
-                's'      => $search_query,
-            ] );
+            // Primary: WooCommerce native full-text search with plural variants.
+            foreach ( $variants as $variant ) {
+                $products = \wc_get_products( [
+                    'status' => 'publish',
+                    'limit'  => 5,
+                    's'      => $variant,
+                ] );
+                if ( ! empty( $products ) ) {
+                    break;
+                }
+            }
 
             // Fallback: taxonomy search (categories + tags) when native returns empty.
             if ( empty( $products ) ) {
-                $products = $this->search_by_taxonomy( $search_query );
+                foreach ( $variants as $variant ) {
+                    $products = $this->search_by_taxonomy( $variant );
+                    if ( ! empty( $products ) ) {
+                        break;
+                    }
+                }
             }
 
             $results = [];
@@ -819,18 +844,57 @@ class RestController {
             'are there any', 'is there any', 'is there a',
             'any recommendations for', 'recommend me',
             'please show', 'please find',
+            'list me your', 'list me', 'list your', 'list all',
         ];
 
         foreach ( $remove_phrases as $phrase ) {
             $query = str_ireplace( $phrase, '', $query );
         }
 
+        // Remove location/context suffixes that pollute the search term.
+        $remove_suffixes = [
+            'in your store', 'in the store', 'in your shop', 'in the shop',
+            'in this store', 'in this shop', 'on your website', 'on the website',
+            'on your site', 'on the site', 'in stock', 'available',
+            'that you sell', 'that you have', 'you carry', 'you stock',
+            'right now', 'at the moment', 'currently',
+        ];
+
+        foreach ( $remove_suffixes as $suffix ) {
+            $query = str_ireplace( $suffix, '', $query );
+        }
+
         // Remove filler words, punctuation, and articles.
-        $query = preg_replace( '/\b(a|an|the|some|any|please|just|maybe)\b/', '', $query );
+        $query = preg_replace( '/\b(a|an|the|some|any|please|just|maybe|all|your|my)\b/', '', $query );
         $query = str_replace( [ '?', '!', '.', ',' ], '', $query );
         $query = trim( preg_replace( '/\s+/', ' ', $query ) );
 
         return $query ?: $message;
+    }
+
+    /**
+     * Normalise a search term for WooCommerce: try the original and
+     * a de-pluralised variant (strip trailing 's' / 'es').
+     *
+     * WooCommerce native search uses MySQL LIKE %term% which is literal,
+     * so "t-shirts" won't match "T-Shirt". This helper returns both
+     * forms so the caller can try each.
+     *
+     * @param string $term Single or multi-word search term.
+     * @return string[] Array of term variants to try (original first).
+     */
+    private function get_search_variants( string $term ): array {
+        $variants = [ $term ];
+
+        // De-pluralise: "t-shirts" → "t-shirt", "dresses" → "dress".
+        if ( preg_match( '/es$/i', $term ) && mb_strlen( $term ) > 4 ) {
+            $variants[] = preg_replace( '/es$/i', '', $term );
+        }
+        if ( preg_match( '/s$/i', $term ) && mb_strlen( $term ) > 3 ) {
+            $variants[] = preg_replace( '/s$/i', '', $term );
+        }
+
+        return array_unique( $variants );
     }
 
     /**
