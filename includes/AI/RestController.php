@@ -743,19 +743,22 @@ class RestController {
             }
         }
 
-        // Last resort: try each word individually.
+        // Last resort: try each word individually (with plural variants).
         if ( empty( $products ) && count( $words ) > 1 ) {
             foreach ( $words as $word ) {
                 if ( mb_strlen( $word ) < 3 ) {
                     continue;
                 }
-                $products = \wc_get_products( [
-                    'status' => 'publish',
-                    'limit'  => $limit,
-                    's'      => $word,
-                ] );
-                if ( ! empty( $products ) ) {
-                    break;
+                $word_variants = $this->get_search_variants( $word );
+                foreach ( $word_variants as $wv ) {
+                    $products = \wc_get_products( [
+                        'status' => 'publish',
+                        'limit'  => $limit,
+                        's'      => $wv,
+                    ] );
+                    if ( ! empty( $products ) ) {
+                        break 2;
+                    }
                 }
             }
         }
@@ -798,9 +801,13 @@ class RestController {
             '/^(bye|goodbye|see\s+you|take\s+care)\b/i',
             '/\b(opening\s+hours?|business\s+hours?|when\s+(are\s+you|do\s+you)\s+open)\b/i',
             '/\b(contact|email|phone|call|speak\s+to|talk\s+to)\s+(a\s+)?(human|person|agent|someone|support|staff)\b/i',
-            '/\b(return\s+policy|refund\s+policy|shipping\s+policy|privacy\s+policy)\b/i',
+            '/\b(return\s+policy|refund\s+policy|shipping\s+policy|privacy\s+policy|terms\s+and\s+conditions)\b/i',
             '/\b(track|tracking)\s+(my\s+)?(order|parcel|package|delivery)\b/i',
             '/\b(who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do)\b/i',
+            '/\b(how\s+(long|much)\s+(does|do|is)\s+(delivery|shipping|postage))\b/i',
+            '/\b(where\s+is\s+my\s+order|order\s+status|my\s+order)\b/i',
+            '/\b(payment\s+method|pay\s+with|accept\s+(paypal|visa|mastercard|card))\b/i',
+            '/\b(cancel|change|amend)\s+(my\s+)?(order|subscription)\b/i',
         ];
 
         foreach ( $non_product_patterns as $pattern ) {
@@ -827,24 +834,55 @@ class RestController {
 
         // Remove conversational preambles (order matters: longest first).
         $remove_phrases = [
+            // "I'm looking for / I am looking for" family.
             "i'm looking for", 'i am looking for',
+            // "Do you have / sell" family.
             'do you have any', 'do you have',
             'do you sell any', 'do you sell',
-            'can i buy', 'can i get', 'can you show me',
+            'do you stock any', 'do you stock',
+            'do you carry any', 'do you carry',
+            // "Can / Could" family.
+            'can i buy', 'can i get', 'can i see',
+            'can you show me', 'can you recommend',
             'could you show me', 'could you recommend',
-            'where can i find', 'where are your',
+            // "Where / What" family.
+            'where can i find', 'where are the', 'where are your',
+            "what's the price of", 'what is the price of',
+            "what's available in", 'what is available in',
             'what about', 'what kind of', 'what types of',
-            'show me your', 'show me some', 'show me',
+            'what sort of',
+            // "Show / List" family.
+            'show me your', 'show me some', 'show me all', 'show me',
+            'list me your', 'list me all', 'list me', 'list your', 'list all',
+            // "Have you got" family (British English).
             'have you got any', 'have you got',
-            'i want to buy', 'i want to see', 'i want',
-            'i need to buy', 'i need',
-            'i would like', "i'd like",
-            'looking for', 'search for', 'find me',
+            'got any',
+            // "I want / need / would like" family.
+            'i want to buy', 'i want to see', 'i want some', 'i want',
+            'i need to buy', 'i need some', 'i need',
+            'i would like to see', 'i would like to buy',
+            'i would like some', 'i would like',
+            "i'd like to see", "i'd like to buy",
+            "i'd like some", "i'd like",
+            // "Tell me / Know about" family.
+            'tell me about your', 'tell me about',
+            'tell me more about', 'know about your',
+            // "Looking / Search" family.
+            'looking for some', 'looking for',
+            'search for', 'find me some', 'find me',
+            // "How much" family.
             'how much is', 'how much are', 'how much do',
+            'how much does', 'how much for',
+            // "Are / Is there" family.
             'are there any', 'is there any', 'is there a',
-            'any recommendations for', 'recommend me',
-            'please show', 'please find',
-            'list me your', 'list me', 'list your', 'list all',
+            // "Recommend" family.
+            'any recommendations for', 'any good',
+            'recommend me some', 'recommend me',
+            'what do you recommend for', 'what do you recommend',
+            "what's popular in",
+            // "Please" family.
+            'please show me', 'please show', 'please find',
+            'please list',
         ];
 
         foreach ( $remove_phrases as $phrase ) {
@@ -855,9 +893,14 @@ class RestController {
         $remove_suffixes = [
             'in your store', 'in the store', 'in your shop', 'in the shop',
             'in this store', 'in this shop', 'on your website', 'on the website',
-            'on your site', 'on the site', 'in stock', 'available',
-            'that you sell', 'that you have', 'you carry', 'you stock',
-            'right now', 'at the moment', 'currently',
+            'on your site', 'on the site', 'on this site',
+            'in your catalogue', 'in the catalogue', 'in your catalog', 'in the catalog',
+            'in your collection', 'in the collection',
+            'in stock', 'available', 'for sale',
+            'that you sell', 'that you have', 'that you offer',
+            'you carry', 'you stock', 'you offer',
+            'right now', 'at the moment', 'currently', 'today',
+            'for me', 'for us',
         ];
 
         foreach ( $remove_suffixes as $suffix ) {
@@ -865,20 +908,48 @@ class RestController {
         }
 
         // Remove filler words, punctuation, and articles.
-        $query = preg_replace( '/\b(a|an|the|some|any|please|just|maybe|all|your|my)\b/', '', $query );
-        $query = str_replace( [ '?', '!', '.', ',' ], '', $query );
+        $query = preg_replace( '/\b(a|an|the|some|any|please|just|maybe|all|your|my|this|that|those|these)\b/', '', $query );
+        $query = str_replace( [ '?', '!', '.', ',', ';', ':' ], '', $query );
         $query = trim( preg_replace( '/\s+/', ' ', $query ) );
 
-        return $query ?: $message;
+        // If the cleaned query is empty or too short (< 2 chars), fall back to
+        // the longest word(s) from the original message as a last resort.
+        if ( mb_strlen( $query ) < 2 ) {
+            $fallback_words = array_filter(
+                explode( ' ', strtolower( preg_replace( '/[^a-zA-Z0-9\s\-]/', '', $message ) ) ),
+                function ( $w ) {
+                    return mb_strlen( $w ) >= 3;
+                }
+            );
+            if ( ! empty( $fallback_words ) ) {
+                // Sort by length descending — longest words are most likely product terms.
+                usort( $fallback_words, function ( $a, $b ) {
+                    return mb_strlen( $b ) - mb_strlen( $a );
+                } );
+                $query = implode( ' ', array_slice( $fallback_words, 0, 3 ) );
+            }
+        }
+
+        return $query ?: strtolower( $message );
     }
 
     /**
      * Normalise a search term for WooCommerce: try the original and
-     * a de-pluralised variant (strip trailing 's' / 'es').
+     * de-pluralised / stemmed variants.
      *
      * WooCommerce native search uses MySQL LIKE %term% which is literal,
-     * so "t-shirts" won't match "T-Shirt". This helper returns both
-     * forms so the caller can try each.
+     * so "t-shirts" won't match "T-Shirt". This helper returns multiple
+     * forms so the caller can try each until one matches.
+     *
+     * Covers common English plural rules:
+     *  - ies → y   (accessories → accessory, hoodies handled by -s rule too)
+     *  - ves → f   (scarves → scarf)
+     *  - ses/xes/zes/ches/shes → remove trailing "es"
+     *  - generic -es  (dresses → dress)
+     *  - generic -s   (t-shirts → t-shirt)
+     *
+     * For multi-word queries each word is also de-pluralised individually
+     * and the result added as an extra variant.
      *
      * @param string $term Single or multi-word search term.
      * @return string[] Array of term variants to try (original first).
@@ -886,15 +957,66 @@ class RestController {
     private function get_search_variants( string $term ): array {
         $variants = [ $term ];
 
-        // De-pluralise: "t-shirts" → "t-shirt", "dresses" → "dress".
-        if ( preg_match( '/es$/i', $term ) && mb_strlen( $term ) > 4 ) {
-            $variants[] = preg_replace( '/es$/i', '', $term );
+        // De-pluralise the whole term.
+        $singular = $this->depluralize( $term );
+        if ( $singular !== $term ) {
+            $variants[] = $singular;
         }
-        if ( preg_match( '/s$/i', $term ) && mb_strlen( $term ) > 3 ) {
-            $variants[] = preg_replace( '/s$/i', '', $term );
+
+        // For multi-word terms, de-pluralise each word individually.
+        if ( strpos( $term, ' ' ) !== false ) {
+            $words   = explode( ' ', $term );
+            $stemmed = array_map( [ $this, 'depluralize' ], $words );
+            $joined  = implode( ' ', $stemmed );
+            if ( $joined !== $term ) {
+                $variants[] = $joined;
+            }
         }
 
         return array_unique( $variants );
+    }
+
+    /**
+     * Attempt to de-pluralise a single English word.
+     *
+     * @param string $word Single word.
+     * @return string Singular form (best effort) or original.
+     */
+    private function depluralize( string $word ): string {
+        $len = mb_strlen( $word );
+
+        // Too short to safely stem.
+        if ( $len < 4 ) {
+            return $word;
+        }
+
+        // -ies → -y  (accessories → accessory, categories → category).
+        if ( preg_match( '/[^aeiou]ies$/i', $word ) ) {
+            return preg_replace( '/ies$/i', 'y', $word );
+        }
+
+        // -ves → -f  (scarves → scarf, knives → knife).
+        if ( preg_match( '/ves$/i', $word ) && $len > 4 ) {
+            return preg_replace( '/ves$/i', 'f', $word );
+        }
+
+        // -ses, -xes, -zes, -ches, -shes → remove "es"
+        // (dresses→dress, boxes→box, watches→watch, brushes→brush).
+        if ( preg_match( '/(ss|x|z|ch|sh)es$/i', $word ) ) {
+            return preg_replace( '/es$/i', '', $word );
+        }
+
+        // Generic -es when word is long enough (shoes stays shoes→shoe OK).
+        if ( preg_match( '/[^s]es$/i', $word ) && $len > 4 ) {
+            return preg_replace( '/es$/i', '', $word );
+        }
+
+        // Generic -s (t-shirts→t-shirt, bags→bag).
+        if ( preg_match( '/[^s]s$/i', $word ) && $len > 3 ) {
+            return preg_replace( '/s$/i', '', $word );
+        }
+
+        return $word;
     }
 
     /**
@@ -911,7 +1033,12 @@ class RestController {
 
         if ( function_exists( 'WC' ) ) {
             $context['currency']        = \get_woocommerce_currency();
-            $context['currency_symbol'] = \get_woocommerce_currency_symbol();
+            // Decode HTML entities (e.g. &pound; → £) before sending to the proxy.
+            $context['currency_symbol'] = html_entity_decode(
+                \get_woocommerce_currency_symbol(),
+                ENT_QUOTES | ENT_HTML5,
+                'UTF-8'
+            );
 
             $product_count            = \wp_count_posts( 'product' );
             $context['total_products'] = (int) ( $product_count->publish ?? 0 );
