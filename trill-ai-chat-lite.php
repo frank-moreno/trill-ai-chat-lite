@@ -33,7 +33,7 @@ define( 'TRCL_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 // Lite-specific constants.
 define( 'TRCL_AI_MODEL', 'gpt-4o-mini' );
 define( 'TRCL_PROXY_URL', 'https://api.trillai.io/v1/lite/chat' );
-define( 'TRCL_UPGRADE_URL', 'https://trillai.io/pricing/?utm_source=plugin&utm_medium=lite&utm_campaign=upgrade' );
+define( 'TRCL_UPGRADE_URL', 'https://trillai.io/pricing/' );
 define( 'TRCL_IS_LITE', true );
 
 // =========================================================================

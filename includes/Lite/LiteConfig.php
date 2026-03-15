@@ -76,15 +76,19 @@ class LiteConfig {
     /**
      * Get upgrade URL with UTM parameters.
      *
-     * @param string $context UTM content value.
-     * @return string
+     * UTM schema (per Upgrade Path Analysis v1.1):
+     *   utm_source   = lite_plugin (fixed — identifies the origin product)
+     *   utm_medium   = varies by CTA placement (admin_notice, widget, dashboard_cta, etc.)
+     *   utm_campaign = upgrade (fixed)
+     *
+     * @param string $medium The CTA placement context, used as utm_medium value.
+     * @return string Fully-qualified URL with UTM query parameters.
      */
-    public static function getUpgradeUrl( string $context = 'generic' ): string {
+    public static function getUpgradeUrl( string $medium = 'generic' ): string {
         return \add_query_arg( [
-            'utm_source'   => 'plugin',
-            'utm_medium'   => 'lite',
+            'utm_source'   => 'lite_plugin',
+            'utm_medium'   => sanitize_key( $medium ),
             'utm_campaign' => 'upgrade',
-            'utm_content'  => $context,
         ], self::UPGRADE_URL );
     }
 }

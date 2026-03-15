@@ -70,16 +70,29 @@ class Deactivator {
     }
 
     /**
-     * Clear plugin transients.
+     * Clear plugin transients from wp_options.
+     *
+     * Uses $wpdb->esc_like() before $wpdb->prepare() per WordPress coding standards
+     * and OWASP ASVS v4.0 (parameterised queries).
+     *
+     * @see https://developer.wordpress.org/reference/classes/wpdb/esc_like/
+     * @see https://developer.wordpress.org/reference/classes/wpdb/prepare/
      */
     private static function clear_transients(): void {
         global $wpdb;
 
+        $like_transient         = $wpdb->esc_like( '_transient_trcl_' ) . '%';
+        $like_transient_timeout = $wpdb->esc_like( '_transient_timeout_trcl_' ) . '%';
+
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->query(
-            "DELETE FROM {$wpdb->options}
-             WHERE option_name LIKE '_transient_trcl_%'
-             OR option_name LIKE '_transient_timeout_trcl_%'"
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options}
+                 WHERE option_name LIKE %s
+                 OR option_name LIKE %s",
+                $like_transient,
+                $like_transient_timeout
+            )
         );
     }
 }
