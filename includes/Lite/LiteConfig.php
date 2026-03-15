@@ -26,6 +26,15 @@ class LiteConfig {
     public const DOCS_URL        = 'https://trillai.io/docs/';
 
     /**
+     * Monthly conversation limit for display purposes only.
+     *
+     * The actual limit is enforced server-side by the proxy (api.trillai.io).
+     * This constant is used in the admin dashboard usage widget to give
+     * store owners a visual reference of their remaining quota.
+     */
+    public const MONTHLY_LIMIT = 50;
+
+    /**
      * Default "Powered by" branding values.
      * Display is controlled via wp_option (opt-in, OFF by default).
      */

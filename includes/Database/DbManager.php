@@ -247,6 +247,31 @@ class DbManager {
     }
 
     /**
+     * Count conversations started in the current calendar month.
+     *
+     * This is an INFORMATIONAL counter only — the actual conversation limit
+     * is enforced server-side by the proxy (api.trillai.io) via HTTP 402.
+     * The local count may diverge slightly from the server count.
+     *
+     * @return int Number of conversations this month.
+     */
+    public function get_monthly_conversation_count(): int {
+        $first_day = \gmdate( 'Y-m-01 00:00:00' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
+        $count = $this->wpdb->get_var(
+            $this->wpdb->prepare(
+                "SELECT COUNT(*) FROM {$this->conversations_table} WHERE started_at >= %s",
+                $first_day
+            )
+        );
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+        return (int) $count;
+    }
+
+    /**
      * Get conversation statistics.
      *
      * @return array Statistics array.
