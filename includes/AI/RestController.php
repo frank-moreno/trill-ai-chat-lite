@@ -234,13 +234,17 @@ class RestController {
             }
 
             // 5. Search relevant products.
-            $product_results = $this->search_products( $message );
+            $is_product_msg  = $this->is_product_query( $message );
+            $product_results = $is_product_msg ? $this->search_products( $message ) : [];
 
             // 6. Build context for proxy.
             $this->prompt_builder->with_store_context( $this->build_store_context() );
 
             if ( ! empty( $product_results ) ) {
                 $this->prompt_builder->with_product_context( $product_results );
+            } elseif ( $is_product_msg ) {
+                // Search was performed but no products found — inform the AI.
+                $this->prompt_builder->with_empty_search_result();
             }
 
             // Get conversation history.
@@ -614,6 +618,9 @@ class RestController {
     /**
      * Search for products relevant to the message.
      *
+     * Uses WooCommerce native search as primary strategy, then falls back
+     * to taxonomy-based search (categories/tags) if no results are found.
+     *
      * @param string $message User message.
      * @return array Product results or empty array.
      */
@@ -630,11 +637,17 @@ class RestController {
         try {
             $search_query = $this->extract_search_query( $message );
 
+            // Primary: WooCommerce native full-text search.
             $products = \wc_get_products( [
                 'status' => 'publish',
                 'limit'  => 5,
                 's'      => $search_query,
             ] );
+
+            // Fallback: taxonomy search (categories + tags) when native returns empty.
+            if ( empty( $products ) ) {
+                $products = $this->search_by_taxonomy( $search_query );
+            }
 
             $results = [];
             foreach ( $products as $product ) {
@@ -653,6 +666,76 @@ class RestController {
             trcl_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
             return [];
         }
+    }
+
+    /**
+     * Fallback: search products by matching category or tag names.
+     *
+     * WooCommerce native 's' parameter only searches post_title and
+     * post_content. This method catches products that are tagged or
+     * categorised with the search term but whose title doesn't contain it
+     * (e.g. a "V-Neck Tee" in the "T-Shirts" category).
+     *
+     * @param string $query Cleaned search query.
+     * @param int    $limit Maximum results.
+     * @return \WC_Product[] Matching products or empty array.
+     */
+    private function search_by_taxonomy( string $query, int $limit = 5 ): array {
+        $words    = array_filter( explode( ' ', $query ) );
+        $products = [];
+
+        // Search product categories.
+        $cat_terms = \get_terms( [
+            'taxonomy'   => 'product_cat',
+            'hide_empty' => true,
+            'search'     => $query,
+        ] );
+
+        if ( ! \is_wp_error( $cat_terms ) && ! empty( $cat_terms ) ) {
+            $cat_slugs = \wp_list_pluck( $cat_terms, 'slug' );
+            $products  = \wc_get_products( [
+                'status'   => 'publish',
+                'limit'    => $limit,
+                'category' => $cat_slugs,
+            ] );
+        }
+
+        // If still empty, try product tags.
+        if ( empty( $products ) ) {
+            $tag_terms = \get_terms( [
+                'taxonomy'   => 'product_tag',
+                'hide_empty' => true,
+                'search'     => $query,
+            ] );
+
+            if ( ! \is_wp_error( $tag_terms ) && ! empty( $tag_terms ) ) {
+                $tag_slugs = \wp_list_pluck( $tag_terms, 'slug' );
+                $products  = \wc_get_products( [
+                    'status' => 'publish',
+                    'limit'  => $limit,
+                    'tag'    => $tag_slugs,
+                ] );
+            }
+        }
+
+        // Last resort: try each word individually.
+        if ( empty( $products ) && count( $words ) > 1 ) {
+            foreach ( $words as $word ) {
+                if ( mb_strlen( $word ) < 3 ) {
+                    continue;
+                }
+                $products = \wc_get_products( [
+                    'status' => 'publish',
+                    'limit'  => $limit,
+                    's'      => $word,
+                ] );
+                if ( ! empty( $products ) ) {
+                    break;
+                }
+            }
+        }
+
+        return $products;
     }
 
     /**

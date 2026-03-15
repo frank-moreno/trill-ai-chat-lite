@@ -52,6 +52,13 @@ class PromptBuilder {
     private string $custom_prompt = '';
 
     /**
+     * Whether a product search was performed but returned no results.
+     *
+     * @var bool
+     */
+    private bool $search_performed_empty = false;
+
+    /**
      * Set store context.
      *
      * @param array $context Store context data.
@@ -85,6 +92,16 @@ class PromptBuilder {
     }
 
     /**
+     * Flag that a product search was performed but returned no results.
+     *
+     * @return self
+     */
+    public function with_empty_search_result(): self {
+        $this->search_performed_empty = true;
+        return $this;
+    }
+
+    /**
      * Set custom system prompt.
      *
      * @param string $prompt Custom prompt text.
@@ -114,6 +131,8 @@ class PromptBuilder {
         // Product context.
         if ( ! empty( $this->product_context ) ) {
             $parts[] = $this->build_product_section();
+        } elseif ( $this->search_performed_empty ) {
+            $parts[] = $this->build_empty_search_section();
         }
 
         // Guidelines.
@@ -204,6 +223,31 @@ class PromptBuilder {
     }
 
     /**
+     * Build section for when a product search returned no matches.
+     *
+     * @return string Empty search prompt section.
+     */
+    private function build_empty_search_section(): string {
+        $store_url = $this->store_context['store_url'] ?? \get_site_url();
+
+        $lines = [
+            'PRODUCT SEARCH RESULT:',
+            'A product search was performed but returned no matching results.',
+            'Do NOT say you lack access to the catalogue — the search was executed successfully.',
+            sprintf( 'Suggest the customer try different search terms or browse the store at %s.', $store_url ),
+        ];
+
+        if ( ! empty( $this->store_context['top_categories'] ) ) {
+            $lines[] = sprintf(
+                'Available categories to suggest: %s.',
+                implode( ', ', $this->store_context['top_categories'] )
+            );
+        }
+
+        return implode( "\n", $lines );
+    }
+
+    /**
      * Build response guidelines section.
      *
      * @return string Guidelines prompt.
@@ -214,22 +258,36 @@ class PromptBuilder {
             '- Keep responses concise (2-3 sentences unless detail is requested)',
             '- Always be helpful and friendly',
             '- If you mention a product, include its price and a link when available',
-            '- If you cannot find what the customer is looking for, suggest alternatives',
+            '- If you cannot find what the customer is looking for, suggest alternatives or browsing store categories',
             '- Do not discuss competitors or external websites',
             '- Do not provide medical, legal, or financial advice',
             '- If a question is outside your scope, politely redirect to store support',
             '- Format product names in bold when mentioning them',
             '- Use the store currency for all prices',
+            '',
+            'IMPORTANT PRODUCT ACCESS RULES:',
+            '- You DO have access to the store product catalogue via real-time search',
+            '- NEVER say you do not have access to the store inventory or catalogue',
+            '- NEVER say you cannot browse or search the store products',
+            '- When products are provided in the context, present them with prices and links',
+            '- When a product search returns no results, say the specific item was not found and suggest the customer try different terms or browse the store categories',
         ] );
     }
 
     /**
      * Build a context array for the proxy request.
      *
+     * Includes a pre-built system prompt so the proxy can use it directly
+     * instead of having to reconstruct persona, guidelines, and product
+     * sections from raw data.
+     *
      * @return array Context data for the API.
      */
     public function build_context(): array {
         $context = [];
+
+        // Include pre-built system prompt for the proxy.
+        $context['system_prompt'] = $this->build();
 
         if ( ! empty( $this->store_context ) ) {
             $context['store'] = $this->store_context;
