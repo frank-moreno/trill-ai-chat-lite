@@ -658,48 +658,93 @@ class RestController {
     /**
      * Check if message is asking about products.
      *
+     * Uses inverted logic: assumes any message COULD be product-related
+     * unless it clearly matches a non-product pattern (greetings, thanks,
+     * support requests, etc.). This is safer for an e-commerce chatbot
+     * where false negatives (missing a product query) are more costly
+     * than false positives (searching when unnecessary).
+     *
      * @param string $message User message.
-     * @return bool
+     * @return bool True if the message may be product-related.
      */
     private function is_product_query( string $message ): bool {
-        $keywords = [
-            'product', 'item', 'buy', 'purchase', 'price', 'cost',
-            'stock', 'available', 'sell', 'shop', 'catalog',
-            'looking for', 'search', 'find', 'show me', 'recommend',
-            'cheap', 'expensive', 'sale', 'discount', 'offer',
+        $message_lower = strtolower( trim( $message ) );
+
+        // Very short messages that are clearly not product queries.
+        $non_product_exact = [
+            'hi', 'hello', 'hey', 'hiya', 'yo',
+            'thanks', 'thank you', 'cheers', 'ta',
+            'bye', 'goodbye', 'see you', 'ciao',
+            'yes', 'no', 'ok', 'okay', 'sure', 'nope', 'yep',
+            'help', 'support', 'help me',
         ];
 
-        $message_lower = strtolower( $message );
+        if ( in_array( $message_lower, $non_product_exact, true ) ) {
+            return false;
+        }
 
-        foreach ( $keywords as $keyword ) {
-            if ( strpos( $message_lower, $keyword ) !== false ) {
-                return true;
+        // Patterns that indicate non-product queries.
+        $non_product_patterns = [
+            '/^(hi|hello|hey|good\s+(morning|afternoon|evening))\b/i',
+            '/^(thanks?|thank\s+you|cheers)\b/i',
+            '/^(bye|goodbye|see\s+you|take\s+care)\b/i',
+            '/\b(opening\s+hours?|business\s+hours?|when\s+(are\s+you|do\s+you)\s+open)\b/i',
+            '/\b(contact|email|phone|call|speak\s+to|talk\s+to)\s+(a\s+)?(human|person|agent|someone|support|staff)\b/i',
+            '/\b(return\s+policy|refund\s+policy|shipping\s+policy|privacy\s+policy)\b/i',
+            '/\b(track|tracking)\s+(my\s+)?(order|parcel|package|delivery)\b/i',
+            '/\b(who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do)\b/i',
+        ];
+
+        foreach ( $non_product_patterns as $pattern ) {
+            if ( preg_match( $pattern, $message_lower ) ) {
+                return false;
             }
         }
 
-        return false;
+        // Everything else: assume it could be product-related.
+        return true;
     }
 
     /**
      * Extract search query from user message.
      *
+     * Strips conversational preamble and filler words, leaving only
+     * the terms likely to match WooCommerce product titles/descriptions.
+     *
      * @param string $message User message.
      * @return string Cleaned search query.
      */
     private function extract_search_query( string $message ): string {
-        $remove_phrases = [
-            'do you have', 'can i buy', 'show me', 'i want', 'i need',
-            'looking for', 'search for', 'find me', 'what about',
-            'how much is', 'how much are', "i'm looking for",
-        ];
-
         $query = strtolower( $message );
+
+        // Remove conversational preambles (order matters: longest first).
+        $remove_phrases = [
+            "i'm looking for", 'i am looking for',
+            'do you have any', 'do you have',
+            'do you sell any', 'do you sell',
+            'can i buy', 'can i get', 'can you show me',
+            'could you show me', 'could you recommend',
+            'where can i find', 'where are your',
+            'what about', 'what kind of', 'what types of',
+            'show me your', 'show me some', 'show me',
+            'have you got any', 'have you got',
+            'i want to buy', 'i want to see', 'i want',
+            'i need to buy', 'i need',
+            'i would like', "i'd like",
+            'looking for', 'search for', 'find me',
+            'how much is', 'how much are', 'how much do',
+            'are there any', 'is there any', 'is there a',
+            'any recommendations for', 'recommend me',
+            'please show', 'please find',
+        ];
 
         foreach ( $remove_phrases as $phrase ) {
             $query = str_ireplace( $phrase, '', $query );
         }
 
-        $query = str_replace( '?', '', $query );
+        // Remove filler words, punctuation, and articles.
+        $query = preg_replace( '/\b(a|an|the|some|any|please|just|maybe)\b/', '', $query );
+        $query = str_replace( [ '?', '!', '.', ',' ], '', $query );
         $query = trim( preg_replace( '/\s+/', ' ', $query ) );
 
         return $query ?: $message;
