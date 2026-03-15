@@ -4,7 +4,7 @@ Tags: woocommerce, ai, chat, customer service, chatbot
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,10 +73,24 @@ The badge is opt-in and off by default. You can enable it in Settings if you wis
 
 == Changelog ==
 
+= 1.1.0 =
+* Improved product search accuracy with smarter English de-pluralisation (e.g. "t-shirts" now matches "T-Shirt", "accessories" matches "Accessory")
+* Added taxonomy-based fallback search across product categories and tags when the native search returns no results
+* Expanded conversational query extraction to recognise over 50 common shopping phrases (e.g. "tell me about", "what's the price of", "got any", "do you stock")
+* Fixed chatbot incorrectly responding "I don't have access to the store catalogue" — the AI now always acknowledges product search capability
+* Added intelligent empty-search handling that suggests alternative terms and store categories
+* Fixed currency symbol encoding issue when sending store context to the AI service
+* Added non-product query filters for shipping, payment, order status, and cancellation questions to reduce unnecessary product searches
+* Improved PHP 7.4 compatibility
+* Added monthly conversation usage widget to the admin dashboard
+
 = 1.0.0 =
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Significantly improved product search — the AI chatbot now finds products much more reliably across a wide range of customer queries.
 
 = 1.0.0 =
 Initial release of Trill Chat Lite.
