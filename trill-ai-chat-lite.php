@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Trill AI Chat — Lite
  * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Trill AI
@@ -24,14 +24,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 // =========================================================================
 // CONSTANTS
 // =========================================================================
-define( 'TRCL_VERSION', '1.1.0' );
+define( 'TRCL_VERSION', '1.1.1' );
 define( 'TRCL_PLUGIN_FILE', __FILE__ );
 define( 'TRCL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TRCL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'TRCL_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
 // Lite-specific constants.
-define( 'TRCL_AI_MODEL', 'gpt-4o-mini' );
+define( 'TRCL_AI_MODEL', 'gpt-5.4-nano' );
 define( 'TRCL_PROXY_URL', 'https://api.trillai.io/v1/lite/chat' );
 define( 'TRCL_UPGRADE_URL', 'https://trillai.io/pricing/' );
 define( 'TRCL_IS_LITE', true );

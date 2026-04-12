@@ -82,13 +82,13 @@ class Settings {
             ]
         );
 
-        // Welcome message.
+        // Welcome message (textarea — sanitize_textarea_field preserves line breaks).
         \register_setting(
             self::SETTINGS_GROUP,
             'trcl_welcome_message',
             [
                 'type'              => 'string',
-                'sanitize_callback' => 'sanitize_text_field',
+                'sanitize_callback' => 'sanitize_textarea_field',
                 'default'           => __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-ai-chat-lite' ),
             ]
         );

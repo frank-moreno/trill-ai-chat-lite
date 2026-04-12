@@ -249,11 +249,14 @@ class Admin {
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $show_powered_by = isset( $_POST['show_powered_by'] ) ? sanitize_text_field( wp_unslash( $_POST['show_powered_by'] ) ) : '0';
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $welcome_message = isset( $_POST['welcome_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['welcome_message'] ) ) : '';
 
         \update_option( 'trcl_chat_enabled', $chat_enabled );
         \update_option( 'trcl_widget_position', $widget_position );
         \update_option( 'trcl_widget_color', $widget_color ?: '#10B981' );
         \update_option( 'trcl_show_powered_by', $show_powered_by );
+        \update_option( 'trcl_welcome_message', $welcome_message );
 
         \wp_send_json_success( [ 'message' => __( 'Settings saved.', 'trill-ai-chat-lite' ) ] );
     }

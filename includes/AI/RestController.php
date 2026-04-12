@@ -245,7 +245,11 @@ class RestController {
             ] );
 
             // 6. Build context for proxy.
-            $this->prompt_builder->with_store_context( $this->build_store_context() );
+            $store_context = $this->build_store_context();
+            $this->prompt_builder->with_store_context( $store_context );
+
+            // 6b. Feed guardrails with the same store metadata (auto-generated boundaries).
+            $this->prompt_builder->with_guardrails_context( $store_context );
 
             if ( ! empty( $product_results ) ) {
                 $this->prompt_builder->with_product_context( $product_results );

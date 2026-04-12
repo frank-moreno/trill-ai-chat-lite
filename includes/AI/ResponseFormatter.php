@@ -106,15 +106,25 @@ class ResponseFormatter {
                 continue;
             }
 
+            $is_variable  = $product->is_type( 'variable' );
+            $is_grouped   = $product->is_type( 'grouped' );
+            $is_external  = $product->is_type( 'external' );
+            $can_add_directly = $product->is_purchasable()
+                && $product->is_in_stock()
+                && ! $is_variable
+                && ! $is_grouped;
+
             $formatted[] = [
                 'id'          => $product->get_id(),
                 'name'        => $product->get_name(),
+                'type'        => $product->get_type(),
                 'price'       => $product->get_price(),
                 'price_html'  => $product->get_price_html(),
                 'image'       => wp_get_attachment_image_url( $product->get_image_id(), 'woocommerce_thumbnail' ) ?: '',
                 'url'         => $product->get_permalink(),
                 'in_stock'    => $product->is_in_stock(),
-                'add_to_cart' => $product->is_purchasable() && $product->is_in_stock(),
+                'add_to_cart' => $can_add_directly,
+                'external'    => $is_external,
             ];
 
             if ( count( $formatted ) >= self::MAX_PRODUCT_CARDS ) {

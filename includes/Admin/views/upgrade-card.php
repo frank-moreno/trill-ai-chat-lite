@@ -22,8 +22,18 @@ if ( ! defined( 'ABSPATH' ) ) {
             <tr>
                 <th><?php esc_html_e( 'Feature', 'trill-ai-chat-lite' ); ?></th>
                 <th style="text-align: center;"><?php esc_html_e( 'Lite (Free)', 'trill-ai-chat-lite' ); ?></th>
-                <th style="text-align: center; background: #f0f6fc;"><?php esc_html_e( 'Starter', 'trill-ai-chat-lite' ); ?></th>
-                <th style="text-align: center;"><?php esc_html_e( 'Pro', 'trill-ai-chat-lite' ); ?></th>
+                <th style="text-align: center; background: #f0f6fc;">
+                    <?php esc_html_e( 'Starter', 'trill-ai-chat-lite' ); ?>
+                    <br><small style="font-weight: normal; color: #50575e;"><?php esc_html_e( '$19/mo', 'trill-ai-chat-lite' ); ?></small>
+                </th>
+                <th style="text-align: center;">
+                    <?php esc_html_e( 'Pro', 'trill-ai-chat-lite' ); ?>
+                    <br><small style="font-weight: normal; color: #50575e;"><?php esc_html_e( '$39/mo', 'trill-ai-chat-lite' ); ?></small>
+                </th>
+                <th style="text-align: center; background: #f0f6fc;">
+                    <?php esc_html_e( 'Business', 'trill-ai-chat-lite' ); ?>
+                    <br><small style="font-weight: normal; color: #50575e;"><?php esc_html_e( '$99/mo', 'trill-ai-chat-lite' ); ?></small>
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -32,42 +42,49 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <td style="text-align: center;">&#10003;</td>
                 <td style="text-align: center; background: #f9fafb;">&#10003;</td>
                 <td style="text-align: center;">&#10003;</td>
+                <td style="text-align: center; background: #f9fafb;">&#10003;</td>
             </tr>
             <tr>
                 <td><?php esc_html_e( 'Product Search', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center;">&#10003;</td>
                 <td style="text-align: center; background: #f9fafb;">&#10003;</td>
                 <td style="text-align: center;">&#10003;</td>
+                <td style="text-align: center; background: #f9fafb;">&#10003;</td>
             </tr>
             <tr>
                 <td><?php esc_html_e( 'Conversations / month', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center;">50</td>
-                <td style="text-align: center; background: #f9fafb; font-weight: 600;">500</td>
-                <td style="text-align: center; font-weight: 600;">2,000</td>
+                <td style="text-align: center; background: #f9fafb; font-weight: 600;">1,000</td>
+                <td style="text-align: center; font-weight: 600;">5,000</td>
+                <td style="text-align: center; background: #f9fafb; font-weight: 600;"><?php esc_html_e( 'Unlimited', 'trill-ai-chat-lite' ); ?></td>
             </tr>
             <tr>
                 <td><?php esc_html_e( 'Order Tracking', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center; color: #999;">&mdash;</td>
                 <td style="text-align: center; background: #f9fafb;">&#10003;</td>
                 <td style="text-align: center;">&#10003;</td>
+                <td style="text-align: center; background: #f9fafb;">&#10003;</td>
             </tr>
             <tr>
                 <td><?php esc_html_e( 'Analytics', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center; color: #999;">&mdash;</td>
                 <td style="text-align: center; background: #f9fafb;"><?php esc_html_e( 'Basic', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center;"><?php esc_html_e( 'Advanced', 'trill-ai-chat-lite' ); ?></td>
+                <td style="text-align: center; background: #f9fafb;"><?php esc_html_e( 'Advanced', 'trill-ai-chat-lite' ); ?></td>
             </tr>
             <tr>
                 <td><?php esc_html_e( 'Custom Branding', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center; color: #999;">&mdash;</td>
                 <td style="text-align: center; background: #f9fafb; color: #999;">&mdash;</td>
                 <td style="text-align: center;">&#10003;</td>
+                <td style="text-align: center; background: #f9fafb;">&#10003;</td>
             </tr>
             <tr>
                 <td><?php esc_html_e( 'Support', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center;"><?php esc_html_e( 'Forums', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center; background: #f9fafb;"><?php esc_html_e( 'Email', 'trill-ai-chat-lite' ); ?></td>
                 <td style="text-align: center;"><?php esc_html_e( 'Priority', 'trill-ai-chat-lite' ); ?></td>
+                <td style="text-align: center; background: #f9fafb;"><?php esc_html_e( 'Priority', 'trill-ai-chat-lite' ); ?></td>
             </tr>
         </tbody>
     </table>

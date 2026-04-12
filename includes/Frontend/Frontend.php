@@ -150,12 +150,15 @@ class Frontend {
         $inline_css = sprintf(
             ':root { --trcl-primary: %s; }
             .trcl-chat-widget { right: %s; left: %s; }
-            .trcl-chat-window { right: %s; left: %s; }',
+            .trcl-chat-window { right: %s; left: %s; }
+            .trcl-noscript-message { right: %s; left: %s; }',
             esc_attr( $color ),
             $is_left ? 'auto' : '20px',
             $is_left ? '20px' : 'auto',
             $is_left ? 'auto' : '0',
-            $is_left ? '0' : 'auto'
+            $is_left ? '0' : 'auto',
+            $is_left ? 'auto' : '20px',
+            $is_left ? '20px' : 'auto'
         );
 
         \wp_add_inline_style( 'trcl-chat-widget', $inline_css );
@@ -172,7 +175,7 @@ class Frontend {
         // Dynamic CSS is injected via wp_add_inline_style() in enqueue_frontend_assets().
         ?>
         <noscript>
-            <div class="trcl-noscript-message" style="position: fixed; bottom: 20px; right: 20px; background: #10B981; color: white; padding: 15px 20px; border-radius: 8px; font-family: sans-serif; font-size: 14px; z-index: 9999;">
+            <div class="trcl-noscript-message">
                 <?php esc_html_e( 'JavaScript is required for the chat widget.', 'trill-ai-chat-lite' ); ?>
             </div>
         </noscript>
