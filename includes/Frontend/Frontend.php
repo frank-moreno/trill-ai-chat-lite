@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use TrillChatLite\Loader;
 use TrillChatLite\Lite\LiteConfig;
+use TrillChatLite\Utils\AssetVersioner;
+use TrillChatLite\Admin\Settings;
 
 /**
  * Frontend class.
@@ -41,6 +43,13 @@ class Frontend {
     private string $version;
 
     /**
+     * Lazy-built asset versioner.
+     *
+     * @var AssetVersioner|null
+     */
+    private ?AssetVersioner $asset_versioner = null;
+
+    /**
      * Constructor.
      *
      * @param Loader $loader  Plugin loader.
@@ -49,6 +58,23 @@ class Frontend {
     public function __construct( Loader $loader, string $version ) {
         $this->loader  = $loader;
         $this->version = $version;
+    }
+
+    /**
+     * Lazily build (or return) the AssetVersioner instance.
+     *
+     * Kept lazy so the file-hash computations only happen for requests
+     * that actually enqueue frontend assets.
+     */
+    private function get_asset_versioner(): AssetVersioner {
+        if ( null === $this->asset_versioner ) {
+            $this->asset_versioner = new AssetVersioner(
+                TRCL_PLUGIN_DIR,
+                TRCL_PLUGIN_URL,
+                $this->version
+            );
+        }
+        return $this->asset_versioner;
     }
 
     /**
@@ -64,27 +90,114 @@ class Frontend {
     }
 
     /**
+     * Decide whether the chat widget should be enqueued on the current request.
+     *
+     * Skips wp-login, feeds, REST, AJAX, and (optionally) checkout/account pages.
+     * Exposes the `trcl_should_enqueue_widget` filter so developers can override
+     * the decision without modifying the plugin.
+     *
+     * SOLID: Single Responsibility — encapsulates only the enqueue decision.
+     * OWASP: no user input is evaluated here; only stored options and WP context.
+     *
+     * @return bool True if the widget should load on this request.
+     */
+    private function should_enqueue_widget(): bool {
+        // 1. Global kill-switch (admin setting).
+        if ( \get_option( 'trcl_chat_enabled', '1' ) !== '1' ) {
+            return false;
+        }
+
+        // 2. Never on feeds (RSS/Atom).
+        if ( \is_feed() ) {
+            return false;
+        }
+
+        // 3. Never on REST requests.
+        if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+            return false;
+        }
+
+        // 4. Never on AJAX calls.
+        if ( \wp_doing_ajax() ) {
+            return false;
+        }
+
+        // 5. Never on WP cron.
+        if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+            return false;
+        }
+
+        // 6. Never on wp-login / wp-register pages (defence-in-depth; wp_enqueue_scripts
+        //    is not fired there normally, but a theme could mis-hook).
+        global $pagenow;
+        if ( isset( $pagenow ) && in_array( $pagenow, [ 'wp-login.php', 'wp-register.php' ], true ) ) {
+            return false;
+        }
+
+        // 7. Optional skip on WooCommerce checkout (admin opt-in).
+        if ( \get_option( 'trcl_skip_checkout', '0' ) === '1'
+            && function_exists( 'is_checkout' )
+            && \is_checkout() ) {
+            return false;
+        }
+
+        // 8. Optional skip on WooCommerce My Account pages (admin opt-in).
+        if ( \get_option( 'trcl_skip_account', '0' ) === '1'
+            && function_exists( 'is_account_page' )
+            && \is_account_page() ) {
+            return false;
+        }
+
+        /**
+         * Filter whether the Trill Chat widget should enqueue on the current request.
+         *
+         * Developers can return false to skip the widget on specific pages,
+         * or true to force-load it where the default logic would skip.
+         *
+         * @since 1.2.3
+         *
+         * @param bool $should_enqueue Current decision (true = enqueue).
+         */
+        return (bool) \apply_filters( 'trcl_should_enqueue_widget', true );
+    }
+
+    /**
      * Enqueue frontend assets.
+     *
+     * Lazy-load strategy (since 1.2.3):
+     *   - On page load we only ship the launcher bootstrap (`chat-launcher.css`
+     *     + `chat-launcher.js`, ~4–5 KB gzip, no jQuery).
+     *   - The full widget bundle (`chat-widget.css`, `chat-widget.js` and,
+     *     if needed, jQuery) is fetched dynamically by `chat-launcher.js` on
+     *     first user intent (hover / focus / touch / click) or on idle.
+     *   - `trcl_ajax` is localised on the launcher so it is available both
+     *     to the bootstrap AND, later, to the full widget when it executes.
      */
     public function enqueue_frontend_assets(): void {
-        if ( \get_option( 'trcl_chat_enabled', '1' ) !== '1' ) {
+        if ( ! $this->should_enqueue_widget() ) {
             return;
         }
 
-        // Main widget CSS.
+        // Launcher bootstrap — loaded on every eligible page request.
+        //
+        // Asset URLs + cache-busting versions come from AssetVersioner: it
+        // serves the .min.* variant in production (unless SCRIPT_DEBUG is on)
+        // and uses a short content-hash so browsers only re-download a file
+        // when its bytes actually changed.
+        $av = $this->get_asset_versioner();
+
         \wp_enqueue_style(
-            'trcl-chat-widget',
-            TRCL_PLUGIN_URL . 'assets/css/chat-widget.css',
+            'trcl-chat-launcher',
+            $av->url( 'assets/css/chat-launcher.css' ),
             [],
-            $this->version
+            $av->version( 'assets/css/chat-launcher.css' )
         );
 
-        // Main widget JavaScript.
         \wp_enqueue_script(
-            'trcl-chat-widget',
-            TRCL_PLUGIN_URL . 'assets/js/chat-widget.js',
-            [ 'jquery' ],
-            $this->version,
+            'trcl-chat-launcher',
+            $av->url( 'assets/js/chat-launcher.js' ),
+            [], // Vanilla JS — no jQuery dependency at first paint.
+            $av->version( 'assets/js/chat-launcher.js' ),
             true
         );
 
@@ -97,6 +210,13 @@ class Frontend {
             'widget_position' => \get_option( 'trcl_widget_position', 'bottom-right' ),
             'widget_color'    => \get_option( 'trcl_widget_color', '#10B981' ),
             'plugin_url'      => TRCL_PLUGIN_URL,
+            // Lazy-load targets — consumed by chat-launcher.js on first click.
+            // versioned_url() appends ?ver=<content-hash> so the cache is
+            // invalidated per-file when its bytes change, and picks the
+            // .min.* variant automatically in production.
+            'widget_js_url'   => $av->versioned_url( 'assets/js/chat-widget.js' ),
+            'widget_css_url'  => $av->versioned_url( 'assets/css/chat-widget.css' ),
+            'jquery_url'      => \includes_url( 'js/jquery/jquery.min.js' ),
             'strings'  => [
                 'type_message'    => __( 'Type your message...', 'trill-ai-chat-lite' ),
                 'send'            => __( 'Send', 'trill-ai-chat-lite' ),
@@ -133,6 +253,29 @@ class Frontend {
             'show_add_to_cart' => true,
         ];
 
+        // Initial quick replies — starter chips shown when the chat opens.
+        // Delegated to Settings::get_initial_quick_replies() so the parsing +
+        // cap rules live in a single place (SRP). Filter hook lets themes or
+        // other plugins customise per-page.
+        $settings_controller = new Settings();
+        $initial_quick_replies = $settings_controller->get_initial_quick_replies();
+
+        /**
+         * Filter the initial quick-reply chips shown when the chat opens.
+         *
+         * Each entry is an associative array with `label` and `value` keys.
+         * Return an empty array to disable the feature on the current page.
+         *
+         * @since 1.2.3
+         *
+         * @param array<int, array{label:string, value:string}> $initial_quick_replies
+         */
+        $initial_quick_replies = \apply_filters( 'trcl_initial_quick_replies', $initial_quick_replies );
+
+        $localize_data['initial_quick_replies'] = is_array( $initial_quick_replies )
+            ? array_values( $initial_quick_replies )
+            : [];
+
         /**
          * Filter localised script data.
          *
@@ -140,7 +283,7 @@ class Frontend {
          */
         $localize_data = \apply_filters( 'trcl_localize_script_data', $localize_data );
 
-        \wp_localize_script( 'trcl-chat-widget', 'trcl_ajax', $localize_data );
+        \wp_localize_script( 'trcl-chat-launcher', 'trcl_ajax', $localize_data );
 
         // Dynamic widget styles (colour and position).
         $color    = \get_option( 'trcl_widget_color', '#10B981' );
@@ -161,14 +304,18 @@ class Frontend {
             $is_left ? '20px' : 'auto'
         );
 
-        \wp_add_inline_style( 'trcl-chat-widget', $inline_css );
+        // Attach dynamic colour/position CSS to the launcher stylesheet so
+        // `--trcl-primary` and the bottom-left override are available on the
+        // first paint. The `.trcl-chat-window` rules are harmless no-ops until
+        // the full widget CSS loads.
+        \wp_add_inline_style( 'trcl-chat-launcher', $inline_css );
     }
 
     /**
      * Render chat widget in footer.
      */
     public function render_chat_widget(): void {
-        if ( \get_option( 'trcl_chat_enabled', '1' ) !== '1' ) {
+        if ( ! $this->should_enqueue_widget() ) {
             return;
         }
 
@@ -208,7 +355,7 @@ class Frontend {
         if ( $atts['style'] === 'button' ) {
             ?>
             <button type="button" class="trcl-shortcode-trigger button"
-                    onclick="window.TRCLChatWidget && window.TRCLChatWidget.openWidget()">
+                    onclick="window.TRCLChatLauncher && window.TRCLChatLauncher.open()">
                 <?php echo esc_html( $atts['button_text'] ); ?>
             </button>
             <?php
@@ -217,7 +364,7 @@ class Frontend {
             <div class="trcl-shortcode-inline">
                 <p><strong><?php echo esc_html( $atts['title'] ); ?></strong></p>
                 <button type="button" class="trcl-shortcode-trigger button"
-                        onclick="window.TRCLChatWidget && window.TRCLChatWidget.openWidget()">
+                        onclick="window.TRCLChatLauncher && window.TRCLChatLauncher.open()">
                     <?php esc_html_e( 'Start Chat', 'trill-ai-chat-lite' ); ?>
                 </button>
             </div>

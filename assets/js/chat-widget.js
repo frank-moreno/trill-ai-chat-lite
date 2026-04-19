@@ -27,6 +27,37 @@
         isMobile: false,
 
         /**
+         * In-memory conversation transcript for the current tab.
+         *
+         * Mirrors what's rendered in #trcl-chat-messages and is serialised
+         * to sessionStorage so that refreshing the page (or closing and
+         * reopening the widget in the same tab) restores the visible
+         * conversation instead of re-starting with the welcome message.
+         *
+         * @since 1.2.3
+         * @type {Array<{role:string, content:string}>}
+         */
+        messageHistory: [],
+
+        /**
+         * Guard flag set while rehydrateHistory() replays cached messages
+         * through addMessage(). Prevents saveHistory() from writing on
+         * every single replayed message — we save once at the end.
+         *
+         * @since 1.2.3
+         * @type {boolean}
+         */
+        suppressHistory: false,
+
+        /** sessionStorage key + schema version for the transcript cache. */
+        HISTORY_STORAGE_KEY: 'trcl_history',
+        HISTORY_VERSION: 1,
+
+        /** Soft caps applied before persisting, to keep storage bounded. */
+        MAX_HISTORY_MESSAGES: 20,
+        MAX_HISTORY_CHARS: 10000,
+
+        /**
          * Initialise the chat widget.
          */
         init: function () {
@@ -210,10 +241,21 @@
                 $('body').css('overflow', 'hidden');
             }
 
-            // Show welcome message if no messages.
+            // Show welcome message if no messages. If we have a cached
+            // transcript for this tab (same sessionId), replay it instead
+            // so the conversation feels continuous across reloads.
             if ($('#trcl-chat-messages').children().length === 0) {
-                this.addMessage('assistant', this.str('welcome_message'));
+                if (this.messageHistory.length > 0) {
+                    this.rehydrateHistory();
+                } else {
+                    this.addMessage('assistant', this.str('welcome_message'));
+                }
             }
+
+            // Starter chips: shown only when the shopper hasn't spoken yet
+            // in this tab. Once there's at least one user turn, the server's
+            // own quick_replies take over and these stay out of the way.
+            this.renderInitialQuickReplies();
 
             // Focus input (slight delay for animation).
             setTimeout(function () {
@@ -400,6 +442,14 @@
             var $msg = $('<div class="trcl-message trcl-message--' + role + '">' + sanitised + '</div>');
             $messages.append($msg);
             this.scrollToBottom();
+
+            // Track every rendered turn so we can restore it on reload.
+            // During rehydrateHistory() we push but skip the write; the
+            // replay code calls saveHistory() once at the end.
+            this.messageHistory.push({ role: role, content: content });
+            if (!this.suppressHistory) {
+                this.saveHistory();
+            }
         },
 
         /**
@@ -468,6 +518,58 @@
                     '</button>'
                 );
             });
+        },
+
+        /**
+         * Render the admin-configured starter chips.
+         *
+         * Gate conditions (fail silently, never throw):
+         *   - trcl_ajax.initial_quick_replies must be a non-empty array.
+         *   - The shopper must not have sent any message yet in this tab —
+         *     once a user turn exists in messageHistory, the server's own
+         *     per-turn quick_replies take priority.
+         *
+         * SOLID: reuses renderQuickReplies() so chip markup lives in one place.
+         *
+         * @since 1.2.3
+         */
+        renderInitialQuickReplies: function () {
+            var config = (typeof trcl_ajax !== 'undefined') ? trcl_ajax.initial_quick_replies : null;
+            if (!config || !Array.isArray(config) || config.length === 0) {
+                return;
+            }
+
+            // If the shopper has already sent a message in this tab, keep the
+            // conversation clean and defer to server-driven quick_replies.
+            var hasUserTurn = false;
+            for (var i = 0; i < this.messageHistory.length; i++) {
+                if (this.messageHistory[i].role === 'user') {
+                    hasUserTurn = true;
+                    break;
+                }
+            }
+            if (hasUserTurn) {
+                return;
+            }
+
+            // Filter to well-formed entries and cap at 3 as a safety net.
+            var replies = config
+                .filter(function (r) {
+                    return r && typeof r.label === 'string' && r.label.length > 0;
+                })
+                .slice(0, 3)
+                .map(function (r) {
+                    return {
+                        label: r.label,
+                        value: (typeof r.value === 'string' && r.value.length > 0) ? r.value : r.label
+                    };
+                });
+
+            if (replies.length === 0) {
+                return;
+            }
+
+            this.renderQuickReplies(replies);
         },
 
         /**
@@ -587,6 +689,122 @@
             } catch (e) {
                 this.sessionId = null;
             }
+
+            // Transcript cache is read after the session ID so we can
+            // compare and discard stale history from a previous session.
+            this.loadHistory();
+        },
+
+        /**
+         * Persist the in-memory transcript to sessionStorage.
+         *
+         * Applies two caps before writing so the payload stays bounded:
+         *   1. Count cap (MAX_HISTORY_MESSAGES) — keep only the latest N.
+         *   2. Character cap (MAX_HISTORY_CHARS) — drop oldest turns until
+         *      the total content length fits, always keeping at least the
+         *      last message.
+         *
+         * Storage:
+         *   - sessionStorage, not localStorage — the transcript is visible
+         *     only in the tab that produced it and vanishes when the tab
+         *     closes. Minimises the privacy footprint on shared devices.
+         *   - Schema is versioned so we can roll out payload changes
+         *     without corrupting clients mid-upgrade (see loadHistory()).
+         *
+         * @since 1.2.3
+         */
+        saveHistory: function () {
+            try {
+                var messages = this.messageHistory.slice();
+
+                // Cap by count.
+                if (messages.length > this.MAX_HISTORY_MESSAGES) {
+                    messages = messages.slice(messages.length - this.MAX_HISTORY_MESSAGES);
+                }
+
+                // Cap by total characters (drop oldest first).
+                var total = 0;
+                for (var i = 0; i < messages.length; i++) {
+                    total += (messages[i].content || '').length;
+                }
+                while (messages.length > 1 && total > this.MAX_HISTORY_CHARS) {
+                    total -= (messages.shift().content || '').length;
+                }
+
+                var payload = {
+                    version: this.HISTORY_VERSION,
+                    session_id: this.sessionId || null,
+                    messages: messages
+                };
+                window.sessionStorage.setItem(this.HISTORY_STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                // sessionStorage unavailable (private mode, quota) — fail silently.
+            }
+        },
+
+        /**
+         * Load the transcript cache from sessionStorage.
+         *
+         * Discard conditions:
+         *   - No cached payload.
+         *   - Version mismatch (forward/backward compatibility gate).
+         *   - session_id mismatch — the cache belongs to an earlier
+         *     conversation on this tab; starting fresh is safer than
+         *     replaying unrelated turns into the current thread.
+         *   - Shape validation — each entry must have string role + content.
+         *
+         * @since 1.2.3
+         */
+        loadHistory: function () {
+            try {
+                var raw = window.sessionStorage.getItem(this.HISTORY_STORAGE_KEY);
+                if (!raw) {
+                    return;
+                }
+                var data = JSON.parse(raw);
+                if (!data || data.version !== this.HISTORY_VERSION) {
+                    return;
+                }
+                // If both sides carry a session_id and they disagree, bail.
+                if (data.session_id && this.sessionId && data.session_id !== this.sessionId) {
+                    return;
+                }
+                if (Array.isArray(data.messages)) {
+                    this.messageHistory = data.messages.filter(function (m) {
+                        return m && typeof m.role === 'string' && typeof m.content === 'string';
+                    });
+                }
+            } catch (e) {
+                // Storage unavailable or payload corrupted — start clean.
+                this.messageHistory = [];
+            }
+        },
+
+        /**
+         * Replay the cached transcript into the DOM.
+         *
+         * Called from openWidget() when there's cached history for this
+         * tab. Uses the normal addMessage() render path so any formatting
+         * tweaks remain in a single place (SRP). Sets suppressHistory so
+         * addMessage() skips per-message writes; we save once at the end
+         * to persist the post-rehydration (possibly trimmed) state.
+         *
+         * @since 1.2.3
+         */
+        rehydrateHistory: function () {
+            if (!this.messageHistory.length) {
+                return;
+            }
+            var original = this.messageHistory.slice();
+            // Let addMessage() rebuild the list as it renders each turn.
+            this.messageHistory = [];
+            this.suppressHistory = true;
+            for (var i = 0; i < original.length; i++) {
+                this.addMessage(original[i].role, original[i].content);
+            }
+            this.suppressHistory = false;
+            // Single write after the full replay completes.
+            this.saveHistory();
         },
 
         /**

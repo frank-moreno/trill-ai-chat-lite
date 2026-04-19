@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+
+# Local working / non-shipped
+_proxy_fixes/
+wporg-assets/
+*.pdf
+
+# Node (the build script is shell, but terser/cleancss can leave caches)
+node_modules/
+npm-debug.log*
+
+# WordPress junk
+*.log

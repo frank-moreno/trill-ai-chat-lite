@@ -16,6 +16,16 @@ $trcl_widget_position = get_option( 'trcl_widget_position', 'bottom-right' );
 $trcl_widget_color    = get_option( 'trcl_widget_color', '#10B981' );
 $trcl_welcome_message = get_option( 'trcl_welcome_message', '' );
 $trcl_show_powered_by = get_option( 'trcl_show_powered_by', '0' );
+$trcl_skip_checkout   = get_option( 'trcl_skip_checkout', '0' );
+$trcl_skip_account    = get_option( 'trcl_skip_account', '0' );
+
+// Resolve the default at render-time from the Settings class so the UI
+// stays in sync with register_setting() without duplicating the list.
+$trcl_settings_controller = new \TrillChatLite\Admin\Settings();
+$trcl_initial_quick_replies = get_option(
+    'trcl_initial_quick_replies',
+    $trcl_settings_controller->get_default_quick_replies_raw()
+);
 ?>
 
 <div class="wrap tcl-settings-page">
@@ -79,6 +89,33 @@ $trcl_show_powered_by = get_option( 'trcl_show_powered_by', '0' );
                 <td>
                     <textarea name="trcl_welcome_message" rows="3" cols="50" class="large-text"><?php echo esc_textarea( $trcl_welcome_message ); ?></textarea>
                     <p class="description"><?php esc_html_e( 'The first message shown when a visitor opens the chat.', 'trill-ai-chat-lite' ); ?></p>
+                </td>
+            </tr>
+
+            <!-- Initial Quick Replies -->
+            <tr>
+                <th scope="row"><?php esc_html_e( 'Starter Suggestions', 'trill-ai-chat-lite' ); ?></th>
+                <td>
+                    <textarea name="trcl_initial_quick_replies" rows="3" cols="50" class="large-text" placeholder="<?php esc_attr_e( "What's on sale?\nHelp me choose a product\nLabel|Actual value sent", 'trill-ai-chat-lite' ); ?>"><?php echo esc_textarea( $trcl_initial_quick_replies ); ?></textarea>
+                    <p class="description">
+                        <?php esc_html_e( 'Up to three suggested prompts displayed as chips when the chat opens. One per line. Use an optional pipe to split display Label from the actual message Value ("Sale? | Show me discounted items").', 'trill-ai-chat-lite' ); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <!-- Page Visibility -->
+            <tr>
+                <th scope="row"><?php esc_html_e( 'Page Visibility', 'trill-ai-chat-lite' ); ?></th>
+                <td>
+                    <label style="display: block; margin-bottom: 6px;">
+                        <input type="checkbox" name="trcl_skip_checkout" value="1" <?php checked( $trcl_skip_checkout, '1' ); ?> />
+                        <?php esc_html_e( 'Hide widget on the WooCommerce checkout page', 'trill-ai-chat-lite' ); ?>
+                    </label>
+                    <label style="display: block;">
+                        <input type="checkbox" name="trcl_skip_account" value="1" <?php checked( $trcl_skip_account, '1' ); ?> />
+                        <?php esc_html_e( 'Hide widget on the WooCommerce My Account pages', 'trill-ai-chat-lite' ); ?>
+                    </label>
+                    <p class="description"><?php esc_html_e( 'Recommended when you want to minimise distractions during purchase or account management. The widget never loads on feeds, REST or the login page.', 'trill-ai-chat-lite' ); ?></p>
                 </td>
             </tr>
 

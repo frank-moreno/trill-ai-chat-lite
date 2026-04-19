@@ -4,7 +4,7 @@ Tags: ai assistant, product search, customer support, sales, chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -179,6 +179,15 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 1.2.3 =
+* Lazy-loads the chat widget — only a ~4 KB launcher is shipped on first paint; the full chat bundle is fetched on hover, focus or click, improving Core Web Vitals on storefront and product pages
+* Smarter asset loading — the widget no longer enqueues on wp-login, feeds, REST, AJAX or cron, with optional opt-outs for WooCommerce checkout and My Account pages
+* Added `trcl_should_enqueue_widget` filter so developers can force-load or skip the widget on specific pages
+* Ships pre-minified JavaScript and CSS with per-file content-hash cache-busting — browsers only re-download assets whose bytes actually changed
+* Conversation memory across reloads — the visible transcript persists for the current browser tab, so refreshing the page or reopening the widget no longer restarts the conversation
+* Added configurable starter suggestions — show up to three clickable prompt chips (e.g. "What's on sale?", "Help me choose a product") when the chat opens
+* Honours SCRIPT_DEBUG — the unminified source is served automatically for developers with debug mode on
+
 = 1.2.2 =
 * Added automatic usage guardrails — Robin now stays focused on your store's products and services, politely declining off-topic requests (homework, code generation, medical/legal advice, etc.)
 * Guardrails are auto-generated from your store metadata (name, description, categories) — no configuration needed
@@ -213,6 +222,9 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.3 =
+Performance release. Lazy-loads the widget for faster first paint, adds content-hash cache-busting, keeps the conversation alive across page reloads, and lets you configure three starter suggestion chips. Recommended upgrade for all users.
 
 = 1.2.2 =
 Adds automatic guardrails (topic enforcement + prompt injection protection), a refreshed brand launcher icon, clearer admin page names, and hardens admin output escaping. Recommended upgrade for all users.
