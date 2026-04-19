@@ -32,31 +32,56 @@
    Chat Toggle Button
    ======================================== */
 
+/*
+ * Launcher button — no outer circle.
+ * The logo (bubble + tail + graph) floats directly on the page, with a
+ * shape-aware drop-shadow applied to the SVG for depth on light backgrounds.
+ */
 .trcl-chat-toggle {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: var(--trcl-primary, #10B981);
-    color: #fff;
+    width: 52px;
+    height: 52px;
+    border-radius: 0;
+    background: transparent;
     border: none;
+    padding: 0;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: visible;
+    transition: transform 0.2s ease, filter 0.2s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
 .trcl-chat-toggle:hover {
     transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-.trcl-chat-toggle svg {
-    width: 24px;
-    height: 24px;
-    fill: currentColor;
+.trcl-chat-toggle:hover .trcl-launcher-svg {
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.28));
+}
+
+.trcl-chat-toggle:focus-visible {
+    outline: 2px solid var(--trcl-primary, #10B981);
+    outline-offset: 4px;
+    border-radius: 8px;
+}
+
+.trcl-launcher-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* Drop-shadow follows the bubble silhouette (not a rectangular box) */
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22));
+}
+
+/*
+ * The bubble fill inherits the configured widget colour.
+ * Nodes (white) and amber accent are hardcoded in the SVG and stay fixed.
+ */
+.trcl-launcher-bubble {
+    fill: var(--trcl-primary, #10B981);
 }
 
 /* ========================================

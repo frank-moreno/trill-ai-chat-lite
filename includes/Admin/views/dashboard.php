@@ -68,8 +68,8 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
                     printf(
                         /* translators: 1: conversations used, 2: monthly limit */
                         esc_html__( '%1$d of %2$d conversations', 'trill-ai-chat-lite' ),
-                        $trcl_monthly_count,
-                        $trcl_monthly_limit
+                        absint( $trcl_monthly_count ),
+                        absint( $trcl_monthly_limit )
                     );
                     ?>
                 </span>
@@ -93,7 +93,7 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
                     printf(
                         /* translators: %d: remaining conversations */
                         esc_html__( 'You have %d conversations remaining this month.', 'trill-ai-chat-lite' ),
-                        $trcl_monthly_limit - $trcl_monthly_count
+                        absint( $trcl_monthly_limit - $trcl_monthly_count )
                     );
                     ?>
                     <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'usage_warning' ) ); ?>" target="_blank">

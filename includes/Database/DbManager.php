@@ -105,15 +105,13 @@ class DbManager {
      * @return object|null Conversation object or null.
      */
     public function get_conversation( string $session_id ): ?object {
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
-        $result = $this->wpdb->get_row(
-            $this->wpdb->prepare(
-                "SELECT * FROM {$this->conversations_table} WHERE session_id = %s",
-                $session_id
-            )
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        $table = $this->conversations_table;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        $sql = $this->wpdb->prepare( "SELECT * FROM {$table} WHERE session_id = %s", $session_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
+        $result = $this->wpdb->get_row( $sql );
 
         return $result ?: null;
     }
@@ -125,15 +123,13 @@ class DbManager {
      * @return int|null Conversation ID or null.
      */
     public function get_conversation_id( string $session_id ): ?int {
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
-        $id = $this->wpdb->get_var(
-            $this->wpdb->prepare(
-                "SELECT id FROM {$this->conversations_table} WHERE session_id = %s",
-                $session_id
-            )
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        $table = $this->conversations_table;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        $sql = $this->wpdb->prepare( "SELECT id FROM {$table} WHERE session_id = %s", $session_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
+        $id = $this->wpdb->get_var( $sql );
 
         return $id ? (int) $id : null;
     }
@@ -145,15 +141,13 @@ class DbManager {
      * @return bool True if conversation exists.
      */
     public function conversation_exists( string $session_id ): bool {
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
-        $count = $this->wpdb->get_var(
-            $this->wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->conversations_table} WHERE session_id = %s",
-                $session_id
-            )
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        $table = $this->conversations_table;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        $sql = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE session_id = %s", $session_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
+        $count = $this->wpdb->get_var( $sql );
 
         return (int) $count > 0;
     }
@@ -228,20 +222,13 @@ class DbManager {
             return [];
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
-        $results = $this->wpdb->get_results(
-            $this->wpdb->prepare(
-                "SELECT * FROM {$this->messages_table}
-                WHERE conversation_id = %d
-                ORDER BY created_at ASC
-                LIMIT %d OFFSET %d",
-                $conversation_id,
-                $limit,
-                $offset
-            )
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        $table = $this->messages_table;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        $sql = $this->wpdb->prepare( "SELECT * FROM {$table} WHERE conversation_id = %d ORDER BY created_at ASC LIMIT %d OFFSET %d", $conversation_id, $limit, $offset );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
+        $results = $this->wpdb->get_results( $sql );
 
         return $results ?: [];
     }
@@ -257,16 +244,13 @@ class DbManager {
      */
     public function get_monthly_conversation_count(): int {
         $first_day = \gmdate( 'Y-m-01 00:00:00' );
+        $table     = $this->conversations_table;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
-        $count = $this->wpdb->get_var(
-            $this->wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->conversations_table} WHERE started_at >= %s",
-                $first_day
-            )
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        $sql = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE started_at >= %s", $first_day );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table, not cacheable; $sql is prepared above.
+        $count = $this->wpdb->get_var( $sql );
 
         return (int) $count;
     }
@@ -277,23 +261,21 @@ class DbManager {
      * @return array Statistics array.
      */
     public function get_conversation_stats(): array {
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table names from $wpdb->prefix, safe.
-        $total_conversations = (int) $this->wpdb->get_var(
-            "SELECT COUNT(*) FROM {$this->conversations_table}"
-        );
+        $conv_table = $this->conversations_table;
+        $msg_table  = $this->messages_table;
 
-        $total_messages = (int) $this->wpdb->get_var(
-            "SELECT COUNT(*) FROM {$this->messages_table}"
-        );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom table, stats not cacheable; $conv_table from $wpdb->prefix.
+        $total_conversations = (int) $this->wpdb->get_var( "SELECT COUNT(*) FROM {$conv_table}" );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom table; $msg_table from $wpdb->prefix.
+        $total_messages = (int) $this->wpdb->get_var( "SELECT COUNT(*) FROM {$msg_table}" );
 
         $avg_messages = $total_conversations > 0
             ? round( $total_messages / $total_conversations, 2 )
             : 0;
 
-        $active_conversations = (int) $this->wpdb->get_var(
-            "SELECT COUNT(*) FROM {$this->conversations_table} WHERE status = 'active'"
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Custom table; $conv_table from $wpdb->prefix.
+        $active_conversations = (int) $this->wpdb->get_var( "SELECT COUNT(*) FROM {$conv_table} WHERE status = 'active'" );
 
         return [
             'total_conversations' => $total_conversations,
@@ -354,17 +336,15 @@ class DbManager {
      */
     public function cleanup_old_conversations( int $days = 30 ): int {
         $cutoff_date = \gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+        $conv_table  = $this->conversations_table;
+        $msg_table   = $this->messages_table;
 
         // Get conversation IDs to delete.
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
-        $conversation_ids = $this->wpdb->get_col(
-            $this->wpdb->prepare(
-                "SELECT id FROM {$this->conversations_table} WHERE started_at < %s",
-                $cutoff_date
-            )
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $conv_table is built from $wpdb->prefix, not user input.
+        $sql_select = $this->wpdb->prepare( "SELECT id FROM {$conv_table} WHERE started_at < %s", $cutoff_date );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql_select is prepared above.
+        $conversation_ids = $this->wpdb->get_col( $sql_select );
 
         if ( empty( $conversation_ids ) ) {
             return 0;
@@ -373,26 +353,18 @@ class DbManager {
         // Delete messages first.
         $ids_placeholders = implode( ',', array_fill( 0, count( $conversation_ids ), '%d' ) );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Dynamic placeholders.
-        $this->wpdb->query(
-            $this->wpdb->prepare(
-                "DELETE FROM {$this->messages_table} WHERE conversation_id IN ({$ids_placeholders})",
-                ...$conversation_ids
-            )
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $msg_table from $wpdb->prefix; dynamic placeholders for IN clause.
+        $sql_delete_msgs = $this->wpdb->prepare( "DELETE FROM {$msg_table} WHERE conversation_id IN ({$ids_placeholders})", ...$conversation_ids );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql_delete_msgs is prepared above.
+        $this->wpdb->query( $sql_delete_msgs );
 
         // Delete conversations.
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name from $wpdb->prefix, safe.
-        $deleted = $this->wpdb->query(
-            $this->wpdb->prepare(
-                "DELETE FROM {$this->conversations_table} WHERE started_at < %s",
-                $cutoff_date
-            )
-        );
-        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $conv_table is built from $wpdb->prefix, not user input.
+        $sql_delete_convs = $this->wpdb->prepare( "DELETE FROM {$conv_table} WHERE started_at < %s", $cutoff_date );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql_delete_convs is prepared above.
+        $deleted = $this->wpdb->query( $sql_delete_convs );
 
         trcl_log( "Cleaned up {$deleted} old conversations", 'info' );
 
