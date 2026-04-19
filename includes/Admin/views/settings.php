@@ -19,7 +19,7 @@ $trcl_show_powered_by = get_option( 'trcl_show_powered_by', '0' );
 ?>
 
 <div class="wrap tcl-settings-page">
-    <h1><?php esc_html_e( 'Trill AI Chat — Settings', 'trill-ai-chat-lite' ); ?></h1>
+    <h1><?php esc_html_e( 'AI Shopping Assistant — Settings', 'trill-ai-chat-lite' ); ?></h1>
 
     <form method="post" action="options.php">
         <?php settings_fields( 'trcl_settings' ); ?>

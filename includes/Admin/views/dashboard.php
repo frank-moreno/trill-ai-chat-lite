@@ -15,7 +15,7 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
 ?>
 
 <div class="wrap trcl-dashboard">
-    <h1><?php esc_html_e( 'Trill AI Chat — Dashboard', 'trill-ai-chat-lite' ); ?></h1>
+    <h1><?php esc_html_e( 'AI Shopping Assistant — Dashboard', 'trill-ai-chat-lite' ); ?></h1>
 
     <!-- Status Card -->
     <div class="trcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">

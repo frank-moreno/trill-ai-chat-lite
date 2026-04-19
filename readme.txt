@@ -4,7 +4,7 @@ Tags: ai assistant, product search, customer support, sales, chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -81,9 +81,9 @@ Clean PSR-4 architecture, WordPress coding standards, filter hooks for customisa
 = From the WordPress Plugin Directory =
 
 1. Go to **Plugins → Add New** in your WordPress admin
-2. Search for "Trill AI Chat"
+2. Search for "AI Shopping Assistant"
 3. Click "Install Now" and then "Activate"
-4. Visit **Trill AI Chat → Dashboard** to confirm the chat is active
+4. Visit **Trill Chat → Dashboard** to confirm the chat is active
 5. Open your store frontend — the chat widget is already live
 
 = Manual Installation =
@@ -91,7 +91,7 @@ Clean PSR-4 architecture, WordPress coding standards, filter hooks for customisa
 1. Download the plugin ZIP file
 2. Upload to `/wp-content/plugins/trill-ai-chat-lite/`
 3. Activate through the **Plugins** menu in WordPress
-4. Go to **Trill AI Chat → Dashboard** to see your status
+4. Go to **Trill Chat → Dashboard** to see your status
 
 = Requirements =
 
@@ -121,7 +121,7 @@ The chat widget remains visible but new shopper conversations are paused until t
 
 = How do I add AI chat to my WooCommerce store? =
 
-Install Trill AI Chat Lite from the WordPress plugin directory, activate it, and open **Trill AI Chat → Dashboard**. The chat widget appears automatically on every page of your store. No API keys, no OpenAI account, no prompt engineering required — the plugin is ready in under 5 minutes.
+Install Trill AI Chat Lite from the WordPress plugin directory, activate it, and open **Trill Chat → Dashboard**. The chat widget appears automatically on every page of your store. No API keys, no OpenAI account, no prompt engineering required — the plugin is ready in under 5 minutes.
 
 = Is Trill AI Chat Lite GDPR-compliant? =
 
@@ -141,7 +141,7 @@ Yes. The chat widget is rendered as a fixed-position overlay and works with any 
 
 = Can I customise the chat widget appearance? =
 
-Yes. Go to **Trill AI Chat → Settings** to change the widget colour (any hex value), position (bottom-right or bottom-left) and welcome message. The widget adapts to your chosen brand colour automatically.
+Yes. Go to **Trill Chat → Settings** to change the widget colour (any hex value), position (bottom-right or bottom-left) and welcome message. The widget adapts to your chosen brand colour automatically.
 
 = Does the AI see my customer data? =
 
@@ -179,12 +179,13 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
-= 1.2.1 =
+= 1.2.2 =
 * Added automatic usage guardrails — Robin now stays focused on your store's products and services, politely declining off-topic requests (homework, code generation, medical/legal advice, etc.)
 * Guardrails are auto-generated from your store metadata (name, description, categories) — no configuration needed
 * Added prompt injection protection — the assistant will not reveal system instructions or adopt different personas
 * Redesigned the floating launcher icon with the Trill AI brand mark (SVG, respects your widget colour)
 * Reduced launcher footprint by ~19% for a lighter visual presence on the page
+* Renamed admin pages to "AI Shopping Assistant — Dashboard / Settings / Products" for clearer branding
 * Improved PHPCS compliance across database queries for WordPress.org Plugin Check standards
 * Improved output escaping in admin dashboard for enhanced security
 
@@ -213,8 +214,8 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Upgrade Notice ==
 
-= 1.2.1 =
-Adds automatic guardrails (topic enforcement + prompt injection protection), a refreshed brand launcher icon, and hardens admin output escaping. Recommended upgrade for all users.
+= 1.2.2 =
+Adds automatic guardrails (topic enforcement + prompt injection protection), a refreshed brand launcher icon, clearer admin page names, and hardens admin output escaping. Recommended upgrade for all users.
 
 = 1.1.1 =
 Upgraded AI model, fixed variable product add-to-cart, improved widget positioning and AI response quality.
