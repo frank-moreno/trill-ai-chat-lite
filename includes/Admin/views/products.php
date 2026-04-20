@@ -21,7 +21,7 @@ $trcl_is_synced    = ( $trcl_indexed === $trcl_total_wc && $trcl_indexed > 0 );
 ?>
 
 <div class="wrap tcl-products-page">
-	<h1><?php esc_html_e( 'AI Shopping Assistant — Products', 'trill-ai-chat-lite' ); ?></h1>
+	<h1><?php esc_html_e( 'Trill AI Product Chat — Products', 'trill-ai-chat-lite' ); ?></h1>
 
 	<!-- Index Status Card -->
 	<div class="trcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">

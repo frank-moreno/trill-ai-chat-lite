@@ -56,7 +56,7 @@ class UpgradeNotices {
                 <p><strong>%s</strong> %s <a href="%s" target="_blank">%s</a></p>
             </div>',
             esc_attr( \wp_create_nonce( 'trcl_dismiss_notice' ) ),
-            esc_html__( 'AI Shopping Assistant:', 'trill-ai-chat-lite' ),
+            esc_html__( 'Trill AI Product Chat:', 'trill-ai-chat-lite' ),
             esc_html__( 'Unlock unlimited conversations, order tracking, and analytics.', 'trill-ai-chat-lite' ),
             esc_url( LiteConfig::getUpgradeUrl( 'admin_notice' ) ),
             esc_html__( 'Upgrade Now &rarr;', 'trill-ai-chat-lite' )

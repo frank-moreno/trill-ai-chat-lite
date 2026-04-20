@@ -29,7 +29,7 @@ $trcl_initial_quick_replies = get_option(
 ?>
 
 <div class="wrap tcl-settings-page">
-    <h1><?php esc_html_e( 'AI Shopping Assistant — Settings', 'trill-ai-chat-lite' ); ?></h1>
+    <h1><?php esc_html_e( 'Trill AI Product Chat — Settings', 'trill-ai-chat-lite' ); ?></h1>
 
     <form method="post" action="options.php">
         <?php settings_fields( 'trcl_settings' ); ?>

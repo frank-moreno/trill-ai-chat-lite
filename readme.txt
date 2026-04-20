@@ -1,18 +1,18 @@
-=== AI Shopping Assistant for WooCommerce — Trill AI ===
+=== Trill AI Product Chat for WooCommerce ===
 Contributors: trillai
 Tags: ai assistant, product search, customer support, sales, chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.2.3
+Stable tag: 1.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-The WooCommerce AI Shopping Assistant that reads your catalogue. Managed, GDPR-ready. No API keys, no runaway bills. Free forever.
+Trill AI Product Chat: a managed AI chatbot that reads your WooCommerce catalogue. GDPR-ready. No API keys, no runaway bills. Free forever.
 
 == Description ==
 
-**The WooCommerce AI Shopping Assistant built for store owners who want AI that just works.**
+**Trill AI Product Chat for WooCommerce — an AI chatbot built for store owners who want AI that just works.**
 
 Trill AI Chat Lite adds a friendly, product-aware AI chat to your WooCommerce store in under 5 minutes. Shoppers ask questions in natural language — "do you have this jacket in blue, medium?", "what's on sale?", "got anything under £50?" — and Robin, the AI assistant, answers using your real catalogue: stock, variations, prices, categories and attributes. No training, no keyword lists, no scripts.
 
@@ -81,7 +81,7 @@ Clean PSR-4 architecture, WordPress coding standards, filter hooks for customisa
 = From the WordPress Plugin Directory =
 
 1. Go to **Plugins → Add New** in your WordPress admin
-2. Search for "AI Shopping Assistant"
+2. Search for "Trill AI Product Chat"
 3. Click "Install Now" and then "Activate"
 4. Visit **Trill Chat → Dashboard** to confirm the chat is active
 5. Open your store frontend — the chat widget is already live
@@ -169,7 +169,7 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Screenshots ==
 
-1. WooCommerce AI Shopping Assistant widget answering a product question on a storefront — interactive product cards with prices, stock and one-click add-to-cart
+1. Trill AI Product Chat widget answering a product question on a storefront — interactive product cards with prices, stock and one-click add-to-cart
 2. AI chat for WooCommerce understanding variations and stock ("do you have this in blue, medium?") — real-time catalogue search in action
 3. Admin dashboard with conversation analytics, monthly quota usage and product index status
 4. Settings page — customise widget colour, position, welcome message and attribution badge
@@ -178,6 +178,11 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 7. Desktop storefront with the minimal chat toggle in the bottom-right corner
 
 == Changelog ==
+
+= 1.2.4 =
+* Renamed plugin display name to "Trill AI Product Chat for WooCommerce" in accordance with WordPress.org Plugin Directory guidelines on distinctive plugin naming
+* Updated admin page headings, activation notices and accessibility labels to reflect the new name
+* Regenerated translation template (.pot) with the new strings — no functional changes
 
 = 1.2.3 =
 * Lazy-loads the chat widget — only a ~4 KB launcher is shipped on first paint; the full chat bundle is fetched on hover, focus or click, improving Core Web Vitals on storefront and product pages
@@ -222,6 +227,9 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.4 =
+Housekeeping release. The plugin is now listed as "Trill AI Product Chat for WooCommerce" to comply with WordPress.org naming guidelines. No functional changes — safe update for all users.
 
 = 1.2.3 =
 Performance release. Lazy-loads the widget for faster first paint, adds content-hash cache-busting, keeps the conversation alive across page reloads, and lets you configure three starter suggestion chips. Recommended upgrade for all users.

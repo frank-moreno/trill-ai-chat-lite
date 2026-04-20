@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: AI Shopping Assistant for WooCommerce — Trill AI
+ * Plugin Name: Trill AI Product Chat for WooCommerce
  * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically.
- * Version: 1.2.3
+ * Version: 1.2.4
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Trill AI
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // =========================================================================
 // CONSTANTS
 // =========================================================================
-define( 'TRCL_VERSION', '1.2.3' );
+define( 'TRCL_VERSION', '1.2.4' );
 define( 'TRCL_PLUGIN_FILE', __FILE__ );
 define( 'TRCL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TRCL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -56,7 +56,7 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
     add_action( 'admin_notices', function () {
         printf(
             '<div class="error"><p>%s</p></div>',
-            esc_html__( 'AI Shopping Assistant requires PHP 8.0 or higher.', 'trill-ai-chat-lite' )
+            esc_html__( 'Trill AI Product Chat requires PHP 8.0 or higher.', 'trill-ai-chat-lite' )
         );
     } );
     return;
@@ -90,7 +90,7 @@ add_action( 'plugins_loaded', function () {
         add_action( 'admin_notices', function () {
             printf(
                 '<div class="notice notice-warning is-dismissible"><p>%s <a href="%s">%s</a></p></div>',
-                esc_html__( 'AI Shopping Assistant has been deactivated because the full version is installed.', 'trill-ai-chat-lite' ),
+                esc_html__( 'Trill AI Product Chat has been deactivated because the full version is installed.', 'trill-ai-chat-lite' ),
                 esc_url( admin_url( 'plugins.php' ) ),
                 esc_html__( 'Manage plugins', 'trill-ai-chat-lite' )
             );
@@ -115,7 +115,7 @@ add_action( 'plugins_loaded', function () {
         add_action( 'admin_notices', function () {
             printf(
                 '<div class="error"><p>%s</p></div>',
-                esc_html__( 'AI Shopping Assistant requires WooCommerce to be installed and active.', 'trill-ai-chat-lite' )
+                esc_html__( 'Trill AI Product Chat requires WooCommerce to be installed and active.', 'trill-ai-chat-lite' )
             );
         } );
         return;

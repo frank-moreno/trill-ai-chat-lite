@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 
 <div class="trcl-upgrade-card" style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 24px; margin: 20px 0;">
-    <h2 style="margin-top: 0; font-size: 18px;"><?php esc_html_e( 'Unlock More with AI Shopping Assistant', 'trill-ai-chat-lite' ); ?></h2>
+    <h2 style="margin-top: 0; font-size: 18px;"><?php esc_html_e( 'Unlock More with Trill AI Product Chat', 'trill-ai-chat-lite' ); ?></h2>
 
     <table class="widefat" style="margin: 16px 0;">
         <thead>
