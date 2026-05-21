@@ -101,9 +101,10 @@
                     '<div class="trcl-chat-window" id="trcl-chat-window">' +
                         '<!-- Header -->' +
                         '<div class="trcl-chat-header">' +
-                            '<div class="trcl-chat-avatar"><img src="' + trcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + trcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="Robin" width="40" height="40" /></div>' +
+                            '<div class="trcl-chat-avatar"><img src="' + trcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + trcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="' + this.str('assistant_name') + ', ' + this.str('assistant_role') + '" width="40" height="40" /></div>' +
                             '<div class="trcl-chat-header-info">' +
                                 '<div class="trcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
+                                '<div class="trcl-chat-header-role">' + this.str('assistant_role') + '</div>' +
                                 '<div class="trcl-chat-header-status">' +
                                     '<span class="trcl-status-dot"></span> ' + this.str('online') +
                                 '</div>' +
