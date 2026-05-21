@@ -155,22 +155,6 @@ class Admin {
             true
         );
 
-        // Lite upsell assets.
-        \wp_enqueue_style(
-            'trcl-lite-upsell',
-            TRCL_PLUGIN_URL . 'assets/css/lite-upsell.css',
-            [ 'trcl-admin' ],
-            $this->version
-        );
-
-        \wp_enqueue_script(
-            'trcl-lite-upsell',
-            TRCL_PLUGIN_URL . 'assets/js/lite-upsell.js',
-            [ 'jquery' ],
-            $this->version,
-            true
-        );
-
         // Localise script for AJAX.
         \wp_localize_script( 'trcl-admin', 'trclAdmin', [
             'ajaxurl' => \admin_url( 'admin-ajax.php' ),

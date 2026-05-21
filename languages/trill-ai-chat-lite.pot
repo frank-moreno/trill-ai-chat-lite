@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-20T18:23:43+00:00\n"
+"POT-Creation-Date: 2026-05-21T21:18:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: trill-ai-chat-lite\n"
@@ -38,86 +38,86 @@ msgstr ""
 msgid "Trill Chat Lite activation failed: "
 msgstr ""
 
+#: includes/Admin/Admin.php:83
 #: includes/Admin/Admin.php:84
-#: includes/Admin/Admin.php:85
 msgid "Trill Chat"
 msgstr ""
 
+#: includes/Admin/Admin.php:95
 #: includes/Admin/Admin.php:96
-#: includes/Admin/Admin.php:97
 msgid "Dashboard"
 msgstr ""
 
+#: includes/Admin/Admin.php:105
 #: includes/Admin/Admin.php:106
-#: includes/Admin/Admin.php:107
 msgid "Products"
 msgstr ""
 
+#: includes/Admin/Admin.php:115
 #: includes/Admin/Admin.php:116
-#: includes/Admin/Admin.php:117
 msgid "Settings"
 msgstr ""
 
-#: includes/Admin/Admin.php:180
+#: includes/Admin/Admin.php:163
 msgid "Saving..."
 msgstr ""
 
-#: includes/Admin/Admin.php:181
+#: includes/Admin/Admin.php:164
 msgid "Settings saved successfully!"
 msgstr ""
 
-#: includes/Admin/Admin.php:182
+#: includes/Admin/Admin.php:165
 msgid "An error occurred. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php:183
+#: includes/Admin/Admin.php:166
 msgid "Indexing..."
 msgstr ""
 
-#: includes/Admin/Admin.php:184
+#: includes/Admin/Admin.php:167
 msgid "Please wait..."
 msgstr ""
 
-#: includes/Admin/Admin.php:185
+#: includes/Admin/Admin.php:168
 msgid "Indexing failed."
 msgstr ""
 
-#: includes/Admin/Admin.php:186
+#: includes/Admin/Admin.php:169
 msgid "Request failed. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php:187
+#: includes/Admin/Admin.php:170
 #: includes/Admin/views/products.php:64
 msgid "Reindex Products Now"
 msgstr ""
 
-#: includes/Admin/Admin.php:201
-#: includes/Admin/Admin.php:212
-#: includes/Admin/Admin.php:223
+#: includes/Admin/Admin.php:184
+#: includes/Admin/Admin.php:195
+#: includes/Admin/Admin.php:206
 msgid "You do not have sufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:240
-#: includes/Admin/Admin.php:282
+#: includes/Admin/Admin.php:223
+#: includes/Admin/Admin.php:254
 msgid "Insufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:261
+#: includes/Admin/Admin.php:244
 msgid "Settings saved."
 msgstr ""
 
-#: includes/Admin/Admin.php:286
+#: includes/Admin/Admin.php:258
 msgid "WooCommerce is not active."
 msgstr ""
 
 #. translators: %d: number of products indexed
-#: includes/Admin/Admin.php:295
+#: includes/Admin/Admin.php:267
 #, php-format
 msgid "%d products indexed successfully."
 msgstr ""
 
 #: includes/Admin/Settings.php:92
-#: includes/Frontend/Frontend.php:389
+#: includes/Frontend/Frontend.php:387
 #: includes/functions.php:92
 msgid "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?"
 msgstr ""
@@ -174,25 +174,14 @@ msgid "%1$d of %2$d conversations"
 msgstr ""
 
 #: includes/Admin/views/dashboard.php:83
+#: includes/AI/RestController.php:289
 msgid "You have reached your monthly conversation limit. New conversations will be declined until next month."
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:85
-msgid "Upgrade for more conversations &rarr;"
-msgstr ""
-
 #. translators: %d: remaining conversations
-#: includes/Admin/views/dashboard.php:95
+#: includes/Admin/views/dashboard.php:92
 #, php-format
 msgid "You have %d conversations remaining this month."
-msgstr ""
-
-#: includes/Admin/views/dashboard.php:100
-msgid "Upgrade now"
-msgstr ""
-
-#: includes/Admin/views/dashboard.php:107
-msgid "Upgrade for unlimited conversations &rarr;"
 msgstr ""
 
 #: includes/Admin/views/products.php:24
@@ -330,133 +319,6 @@ msgstr ""
 msgid "Recommended when you want to minimise distractions during purchase or account management. The widget never loads on feeds, REST or the login page."
 msgstr ""
 
-#: includes/Admin/views/settings.php:129
-msgid "Lite Version Limitations"
-msgstr ""
-
-#: includes/Admin/views/settings.php:130
-msgid "The free version includes basic chat and product search. Upgrade to unlock:"
-msgstr ""
-
-#: includes/Admin/views/settings.php:132
-msgid "Unlimited conversations"
-msgstr ""
-
-#: includes/Admin/views/settings.php:133
-msgid "Order tracking"
-msgstr ""
-
-#: includes/Admin/views/settings.php:134
-msgid "Advanced analytics"
-msgstr ""
-
-#: includes/Admin/views/settings.php:135
-msgid "Custom branding (remove \"Powered by\" badge)"
-msgstr ""
-
-#: includes/Admin/views/settings.php:136
-msgid "Priority email support"
-msgstr ""
-
-#: includes/Admin/views/settings.php:139
-#: includes/Lite/UpgradeNotices.php:62
-msgid "Upgrade Now &rarr;"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:18
-msgid "Unlock More with Trill AI Product Chat"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:23
-msgid "Feature"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:24
-msgid "Lite (Free)"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:26
-msgid "Starter"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:27
-msgid "$19/mo"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:30
-msgid "Pro"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:31
-msgid "$39/mo"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:34
-msgid "Business"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:35
-msgid "$99/mo"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:41
-msgid "AI Chat Widget"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:48
-msgid "Product Search"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:55
-msgid "Conversations / month"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:59
-msgid "Unlimited"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:62
-msgid "Order Tracking"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:69
-msgid "Analytics"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:71
-msgid "Basic"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:72
-#: includes/Admin/views/upgrade-card.php:73
-msgid "Advanced"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:76
-msgid "Custom Branding"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:83
-msgid "Support"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:84
-msgid "Forums"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:85
-msgid "Email"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:86
-#: includes/Admin/views/upgrade-card.php:87
-msgid "Priority"
-msgstr ""
-
-#: includes/Admin/views/upgrade-card.php:94
-msgid "Compare Plans & Upgrade"
-msgstr ""
-
 #: includes/AI/ProxyClient.php:97
 msgid "Unable to connect to AI service. Please try again later."
 msgstr ""
@@ -469,20 +331,20 @@ msgstr ""
 msgid "Too many requests. Please wait a moment and try again."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:168
-msgid "Monthly conversation limit reached. Upgrade for unlimited conversations."
+#: includes/AI/ProxyClient.php:170
+msgid "Monthly conversation limit reached. New conversations will be declined until next month."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:178
+#: includes/AI/ProxyClient.php:177
 msgid "Access denied. Please check your site configuration."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:187
+#: includes/AI/ProxyClient.php:186
 msgid "AI service is temporarily unavailable. Please try again later."
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/AI/ProxyClient.php:196
+#: includes/AI/ProxyClient.php:195
 #, php-format
 msgid "Unexpected error (HTTP %d). Please try again."
 msgstr ""
@@ -507,34 +369,30 @@ msgstr ""
 msgid "Shipping info"
 msgstr ""
 
-#: includes/AI/RestController.php:170
+#: includes/AI/RestController.php:169
 msgid "Message cannot be empty."
 msgstr ""
 
 #. translators: %d: maximum character length
-#: includes/AI/RestController.php:180
+#: includes/AI/RestController.php:179
 #, php-format
 msgid "Message exceeds maximum length of %d characters."
 msgstr ""
 
-#: includes/AI/RestController.php:198
+#: includes/AI/RestController.php:197
 msgid "Failed to create conversation."
 msgstr ""
 
-#: includes/AI/RestController.php:209
+#: includes/AI/RestController.php:208
 msgid "Invalid session ID format."
 msgstr ""
 
-#: includes/AI/RestController.php:217
+#: includes/AI/RestController.php:216
 msgid "Session not found. Please start a new conversation."
 msgstr ""
 
-#: includes/AI/RestController.php:230
+#: includes/AI/RestController.php:229
 msgid "Failed to store message."
-msgstr ""
-
-#: includes/AI/RestController.php:288
-msgid "You have reached your monthly conversation limit. Upgrade for unlimited conversations."
 msgstr ""
 
 #: includes/AI/RestController.php:295
@@ -624,46 +482,34 @@ msgstr ""
 msgid "Monthly Limit Reached"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:233
-msgid "Upgrade Now"
-msgstr ""
-
-#: includes/Frontend/Frontend.php:326
+#: includes/Frontend/Frontend.php:324
 msgid "JavaScript is required for the chat widget."
 msgstr ""
 
-#: includes/Frontend/Frontend.php:343
+#: includes/Frontend/Frontend.php:341
 msgid "Chat with us"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:344
+#: includes/Frontend/Frontend.php:342
 msgid "Open Chat"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:368
+#: includes/Frontend/Frontend.php:366
 msgid "Start Chat"
 msgstr ""
 
-#: includes/Lite/UpgradeNotices.php:59
-msgid "Trill AI Product Chat:"
-msgstr ""
-
-#: includes/Lite/UpgradeNotices.php:60
-msgid "Unlock unlimited conversations, order tracking, and analytics."
-msgstr ""
-
-#: trill-ai-chat-lite.php:59
+#: trill-ai-chat-lite.php:53
 msgid "Trill AI Product Chat requires PHP 8.0 or higher."
 msgstr ""
 
-#: trill-ai-chat-lite.php:93
+#: trill-ai-chat-lite.php:87
 msgid "Trill AI Product Chat has been deactivated because the full version is installed."
 msgstr ""
 
-#: trill-ai-chat-lite.php:95
+#: trill-ai-chat-lite.php:89
 msgid "Manage plugins"
 msgstr ""
 
-#: trill-ai-chat-lite.php:118
+#: trill-ai-chat-lite.php:112
 msgid "Trill AI Product Chat requires WooCommerce to be installed and active."
 msgstr ""
