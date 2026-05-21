@@ -21,7 +21,6 @@ class LiteConfig {
     public const AI_MODEL        = 'gpt-5.4-nano';
     public const PROXY_BASE_URL  = 'https://api.trillai.io';
     public const PROXY_CHAT_PATH = '/v1/lite/chat';
-    public const UPGRADE_URL     = 'https://trillai.io/pricing/';
     public const SUPPORT_URL     = 'https://trillai.io/support/';
     public const DOCS_URL        = 'https://trillai.io/documentation/';
 
@@ -42,27 +41,6 @@ class LiteConfig {
     public const POWERED_BY_URL  = 'https://trillai.io/?utm_source=widget&utm_medium=badge';
 
     /**
-     * Features included in Lite.
-     */
-    public const FEATURES = [
-        'chat_widget'     => true,
-        'product_search'  => true,
-        'order_tracking'  => false,
-        'analytics'       => false,
-        'custom_branding' => false,
-    ];
-
-    /**
-     * Check if a feature is enabled.
-     *
-     * @param string $feature Feature key.
-     * @return bool
-     */
-    public static function hasFeature( string $feature ): bool {
-        return self::FEATURES[ $feature ] ?? false;
-    }
-
-    /**
      * Whether to show the "Powered by Trill AI" badge.
      *
      * Reads from wp_option. OFF by default (opt-in required per WP.org guidelines).
@@ -80,24 +58,5 @@ class LiteConfig {
      */
     public static function get_powered_by_url(): string {
         return self::POWERED_BY_URL;
-    }
-
-    /**
-     * Get upgrade URL with UTM parameters.
-     *
-     * UTM schema (per Upgrade Path Analysis v1.1):
-     *   utm_source   = lite_plugin (fixed — identifies the origin product)
-     *   utm_medium   = varies by CTA placement (admin_notice, widget, dashboard_cta, etc.)
-     *   utm_campaign = upgrade (fixed)
-     *
-     * @param string $medium The CTA placement context, used as utm_medium value.
-     * @return string Fully-qualified URL with UTM query parameters.
-     */
-    public static function getUpgradeUrl( string $medium = 'generic' ): string {
-        return \add_query_arg( [
-            'utm_source'   => 'lite_plugin',
-            'utm_medium'   => sanitize_key( $medium ),
-            'utm_campaign' => 'upgrade',
-        ], self::UPGRADE_URL );
     }
 }
