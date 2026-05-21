@@ -8,7 +8,7 @@ Stable tag: 1.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Trill AI Product Chat: a managed AI chatbot that reads your WooCommerce catalogue. GDPR-ready. No API keys, no runaway bills. Free forever.
+Trill AI Product Chat: a managed AI chatbot that reads your WooCommerce catalogue. GDPR-ready. Free forever.
 
 == Description ==
 
@@ -18,7 +18,7 @@ Trill AI Chat Lite adds a friendly, product-aware AI chat to your WooCommerce st
 
 Unlike generic WordPress AI chatbots, Trill AI Chat is **WooCommerce-native**: it understands products, variations, stock status, categories and attributes out of the box. Every feature is designed for e-commerce — from interactive product cards with one-click add-to-cart to smart de-pluralisation that matches "t-shirts" with "T-Shirt".
 
-Unlike BYOK (bring-your-own-key) plugins, Trill AI Chat is **managed**: we handle the AI infrastructure on the Trill AI API, so you get a predictable monthly conversation quota — no OpenAI account required, no surprise bills when a viral post sends you traffic. This is a managed AI chatbot for WooCommerce, built for WooCommerce support automation and product recommendation AI.
+The AI infrastructure is handled for you via the Trill AI API, so you get a predictable monthly conversation quota with no OpenAI account required. A managed AI chatbot for WooCommerce, built for WooCommerce support automation and product recommendation AI.
 
 = Why store owners switch to Trill AI Chat =
 
@@ -46,19 +46,6 @@ Unlike BYOK (bring-your-own-key) plugins, Trill AI Chat is **managed**: we handl
 * HPOS (High-Performance Order Storage) compatible
 * Shortcode `[trill_chat]` for embedding the chat trigger on any page or post
 * Translation-ready with `.pot` file (works with Loco Translate, WPML and similar)
-
-= What Lite doesn't include =
-
-For stores that need more, these features live in Starter, Pro and Business plans:
-
-* Order lookup and order status conversations
-* Extended conversation history (30+ days)
-* White-label branding and removal of the "Powered by Trill AI" attribution
-* Advanced analytics and funnel reports
-* Higher or unlimited conversation quotas
-* Priority support
-
-Compare plans at [https://trillai.io/pricing/](https://trillai.io/pricing/?utm_source=lite_plugin&utm_medium=readme&utm_campaign=upgrade).
 
 = Built for WooCommerce, by a UK SME =
 
@@ -109,15 +96,15 @@ Yes. Trill AI Chat Lite is a WooCommerce AI shopping assistant — it reads your
 
 = Do I need an OpenAI or Anthropic API key? =
 
-No. This is the key difference between Trill AI Chat and BYOK (bring-your-own-key) plugins. We manage the AI infrastructure via the Trill AI API — you do not need to create an account with OpenAI, Anthropic or any other provider. Just install, activate and go.
+No. We manage the AI infrastructure via the Trill AI API — you do not need to create an account with OpenAI, Anthropic or any other provider. Just install, activate and go.
 
-= How many conversations does the free Lite tier include? =
+= How many conversations does the plugin include? =
 
-The Lite version includes a generous monthly conversation allowance, enforced server-side. Your admin dashboard shows a usage counter so you can track how many conversations you have used each calendar month. If you need higher limits, [upgrade to a paid plan](https://trillai.io/pricing/?utm_source=lite_plugin&utm_medium=readme_faq&utm_campaign=upgrade) for higher or unlimited quotas.
+The plugin includes a generous monthly conversation allowance, enforced server-side. Your admin dashboard shows a usage counter so you can track how many conversations you have used each calendar month.
 
-= What happens when I exceed the Lite conversation quota? =
+= What happens when I exceed the monthly conversation quota? =
 
-The chat widget remains visible but new shopper conversations are paused until the quota resets at the start of the next calendar month. You can upgrade to a higher tier at any time to lift the limit immediately.
+The chat widget remains visible but new shopper conversations are paused until the quota resets at the start of the next calendar month.
 
 = How do I add AI chat to my WooCommerce store? =
 
@@ -157,11 +144,11 @@ Yes. Use the `[trill_chat]` shortcode to place a chat trigger on any page or pos
 
 = Can I remove the "Powered by Trill AI" badge? =
 
-The badge is **opt-in and off by default**. It only appears if you explicitly enable it in Settings, fully complying with WordPress.org plugin guidelines. White-label removal of the optional badge is available on paid tiers.
+The badge is **opt-in and off by default**. It only appears if you explicitly enable it in Settings, fully complying with WordPress.org plugin guidelines. There is nothing to remove unless you have turned it on.
 
-= What happens if I already have the paid version installed? =
+= What happens if I have another Trill AI plugin installed? =
 
-The Lite plugin automatically detects the paid version and deactivates itself to prevent conflicts. You only need one version active at a time.
+This plugin automatically detects a conflicting Trill AI build (e.g. a legacy full-featured edition) and deactivates itself to prevent conflicts. You only need one version active at a time.
 
 = I found a bug or have a feature request. =
 
