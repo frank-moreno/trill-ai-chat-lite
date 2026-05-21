@@ -20,7 +20,6 @@ use TrillChatLite\Admin\Admin;
 use TrillChatLite\Admin\Settings;
 use TrillChatLite\Frontend\Frontend;
 use TrillChatLite\Database\DbManager;
-use TrillChatLite\Lite\UpgradeNotices;
 use TrillChatLite\AI\ProxyClient;
 use TrillChatLite\WooCommerce\CronManager;
 
@@ -119,7 +118,7 @@ final class Plugin {
         // 2. Settings manager.
         $this->components['settings'] = new Settings();
 
-        // 4. Admin component (always instantiated for AJAX handlers).
+        // 3. Admin component (always instantiated for AJAX handlers).
         $this->components['admin'] = new Admin(
             $this->loader,
             $this->version,
@@ -127,21 +126,17 @@ final class Plugin {
         );
         $this->components['admin']->register_hooks();
 
-        // 5. Frontend component (only on frontend).
+        // 4. Frontend component (only on frontend).
         if ( ! is_admin() ) {
             $this->components['frontend'] = new Frontend( $this->loader, $this->version );
             $this->components['frontend']->register_hooks();
         }
 
-        // 6. Upgrade Notices (Lite CTA system).
-        $this->components['upgrade_notices'] = new UpgradeNotices();
-        $this->components['upgrade_notices']->init();
-
-        // 7. Cron Manager (product indexing + conversation cleanup).
+        // 5. Cron Manager (product indexing + conversation cleanup).
         $this->components['cron_manager'] = new CronManager();
         $this->components['cron_manager']->init();
 
-        // 8. REST API.
+        // 6. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 
         trcl_log( 'All plugin components initialised', 'debug' );

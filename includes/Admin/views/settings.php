@@ -123,20 +123,4 @@ $trcl_initial_quick_replies = get_option(
 
         <?php submit_button(); ?>
     </form>
-
-    <!-- Lite Limitations Notice -->
-    <div class="trcl-card" style="background: #f0f6fc; border: 1px solid #c3c4c7; padding: 16px 20px; border-radius: 4px; margin-top: 20px;">
-        <h3 style="margin-top: 0;"><?php esc_html_e( 'Lite Version Limitations', 'trill-ai-chat-lite' ); ?></h3>
-        <p><?php esc_html_e( 'The free version includes basic chat and product search. Upgrade to unlock:', 'trill-ai-chat-lite' ); ?></p>
-        <ul style="list-style: disc; padding-left: 20px;">
-            <li><?php esc_html_e( 'Unlimited conversations', 'trill-ai-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Order tracking', 'trill-ai-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Advanced analytics', 'trill-ai-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Custom branding (remove "Powered by" badge)', 'trill-ai-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Priority email support', 'trill-ai-chat-lite' ); ?></li>
-        </ul>
-        <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'settings_page' ) ); ?>" target="_blank" class="button button-primary">
-            <?php esc_html_e( 'Upgrade Now &rarr;', 'trill-ai-chat-lite' ); ?>
-        </a>
-    </div>
 </div>

@@ -81,9 +81,6 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
             <div class="notice notice-error inline" style="margin: 16px 0 0;">
                 <p>
                     <?php esc_html_e( 'You have reached your monthly conversation limit. New conversations will be declined until next month.', 'trill-ai-chat-lite' ); ?>
-                    <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'usage_limit' ) ); ?>" target="_blank">
-                        <?php esc_html_e( 'Upgrade for more conversations &rarr;', 'trill-ai-chat-lite' ); ?>
-                    </a>
                 </p>
             </div>
         <?php elseif ( $trcl_usage_percent >= 80 ) : ?>
@@ -96,28 +93,9 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
                         absint( $trcl_monthly_limit - $trcl_monthly_count )
                     );
                     ?>
-                    <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'usage_warning' ) ); ?>" target="_blank">
-                        <?php esc_html_e( 'Upgrade now', 'trill-ai-chat-lite' ); ?>
-                    </a>
                 </p>
             </div>
-        <?php else : ?>
-            <p style="margin: 12px 0 0;">
-                <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'dashboard' ) ); ?>" target="_blank" class="button button-primary">
-                    <?php esc_html_e( 'Upgrade for unlimited conversations &rarr;', 'trill-ai-chat-lite' ); ?>
-                </a>
-            </p>
         <?php endif; ?>
     </div>
-
-    <?php
-    /**
-     * Hook: trcl_after_dashboard_stats
-     *
-     * Fires after the dashboard stats cards.
-     * Used by UpgradeNotices to render the upgrade comparison card.
-     */
-    do_action( 'trcl_after_dashboard_stats' );
-    ?>
 
 </div>

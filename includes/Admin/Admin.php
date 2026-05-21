@@ -71,7 +71,6 @@ class Admin {
 
         // AJAX handlers.
         \add_action( 'wp_ajax_trcl_save_settings', [ $this, 'ajax_save_settings' ] );
-        \add_action( 'wp_ajax_trcl_dismiss_notice', [ $this, 'ajax_dismiss_notice' ] );
         \add_action( 'wp_ajax_trcl_reindex_products', [ $this, 'ajax_reindex_products' ] );
     }
 
@@ -259,17 +258,6 @@ class Admin {
         \update_option( 'trcl_welcome_message', $welcome_message );
 
         \wp_send_json_success( [ 'message' => __( 'Settings saved.', 'trill-ai-chat-lite' ) ] );
-    }
-
-    /**
-     * AJAX: Dismiss upgrade notice.
-     */
-    public function ajax_dismiss_notice(): void {
-        \check_ajax_referer( 'trcl_dismiss_notice', 'nonce' );
-
-        \update_option( 'trcl_upgrade_notice_dismissed', time() );
-
-        \wp_send_json_success();
     }
 
     /**
