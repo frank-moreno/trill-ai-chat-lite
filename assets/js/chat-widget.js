@@ -391,11 +391,6 @@
                         if (response.quick_replies && response.quick_replies.length > 0) {
                             self.renderQuickReplies(response.quick_replies);
                         }
-
-                        // Check proxy meta for upgrade prompt (server-side limits).
-                        if (response.meta && response.meta.upgrade_prompt) {
-                            self.showUpgradePrompt();
-                        }
                     } else {
                         self.handleError(response);
                     }
@@ -406,7 +401,7 @@
                     if (xhr.status === 429) {
                         var body = xhr.responseJSON || {};
                         if (body.code === 'SERVICE_LIMIT_REACHED') {
-                            self.showLimitReached(body.data && body.data.upgrade_url ? body.data.upgrade_url : trcl_ajax.upgrade_url);
+                            self.showLimitReached();
                             return;
                         }
                     }
@@ -610,9 +605,11 @@
         /**
          * Show limit reached banner (triggered by server-side proxy 429).
          *
-         * @param {string} upgradeUrl URL to upgrade page.
+         * TODO(D11): when the wizard 2-path lands, this banner should
+         * surface Cloud (continue with subscription) / BYOK (use your
+         * own API key) options instead of a flat dead-end.
          */
-        showLimitReached: function (upgradeUrl) {
+        showLimitReached: function () {
             this.limitReached = true;
             $('#trcl-chat-input').prop('disabled', true).attr('placeholder', this.str('limit_reached'));
             $('#trcl-chat-send').prop('disabled', true);
@@ -620,24 +617,10 @@
             var $banner = $(
                 '<div class="trcl-limit-banner">' +
                     '<p>' + this.str('limit_reached') + '</p>' +
-                    '<a href="' + (upgradeUrl || trcl_ajax.upgrade_url) + '" target="_blank">' +
-                        this.str('upgrade_now') +
-                    '</a>' +
                 '</div>'
             );
 
             $('.trcl-chat-input-area').before($banner);
-        },
-
-        /**
-         * Show upgrade prompt (soft upsell from proxy meta).
-         */
-        showUpgradePrompt: function () {
-            // Subtle message, not blocking.
-            this.addMessage('assistant',
-                'You\'re approaching your monthly limit. ' +
-                '<a href="' + trcl_ajax.upgrade_url + '" target="_blank">Upgrade for unlimited conversations</a>.'
-            );
         },
 
         /**
@@ -649,7 +632,7 @@
             var errorMsg = response.error || this.str('error_message');
 
             if (response.error_code === 'SERVICE_LIMIT_REACHED' || response.code === 'SERVICE_LIMIT_REACHED') {
-                this.showLimitReached(response.upgrade_url || trcl_ajax.upgrade_url);
+                this.showLimitReached();
                 this.addMessage('assistant', errorMsg);
             } else {
                 this.addMessage('assistant', errorMsg);

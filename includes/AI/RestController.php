@@ -21,7 +21,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use TrillChatLite\Database\DbManager;
-use TrillChatLite\Lite\LiteConfig;
 
 /**
  * REST Controller — Lite API endpoints.
@@ -282,12 +281,13 @@ class RestController {
                 $error_code = $ai_response['error_code'] ?? 'AI_ERROR';
 
                 // Handle proxy 429 (server-side limit reached) gracefully.
+                // TODO(D11): when the wizard 2-path is in place, surface
+                // Cloud/BYOK options here instead of a flat error.
                 if ( $error_code === 'LIMIT_REACHED' ) {
                     return new \WP_REST_Response( [
-                        'success'     => false,
-                        'error'       => __( 'You have reached your monthly conversation limit. Upgrade for unlimited conversations.', 'trill-ai-chat-lite' ),
-                        'error_code'  => 'SERVICE_LIMIT_REACHED',
-                        'upgrade_url' => LiteConfig::getUpgradeUrl( 'api_limit' ),
+                        'success'    => false,
+                        'error'      => __( 'You have reached your monthly conversation limit. New conversations will be declined until next month.', 'trill-ai-chat-lite' ),
+                        'error_code' => 'SERVICE_LIMIT_REACHED',
                     ], 429 );
                 }
 

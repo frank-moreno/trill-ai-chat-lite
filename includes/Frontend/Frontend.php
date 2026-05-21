@@ -230,14 +230,12 @@ class Frontend {
                 'typing'          => __( 'Robin is typing...', 'trill-ai-chat-lite' ),
                 'close_chat'      => __( 'Close chat', 'trill-ai-chat-lite' ),
                 'limit_reached'   => __( 'Monthly Limit Reached', 'trill-ai-chat-lite' ),
-                'upgrade_now'     => __( 'Upgrade Now', 'trill-ai-chat-lite' ),
             ],
             'branding' => [
                 'powered_by_text' => LiteConfig::POWERED_BY_TEXT,
                 'powered_by_url'  => LiteConfig::get_powered_by_url(),
                 'show_powered_by' => LiteConfig::get_show_powered_by(),
             ],
-            'upgrade_url' => LiteConfig::getUpgradeUrl( 'widget' ),
         ];
 
         // WooCommerce data.

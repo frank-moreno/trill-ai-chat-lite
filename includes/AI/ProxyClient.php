@@ -163,13 +163,12 @@ class ProxyClient {
                 ];
 
             case 402:
+                // TODO(D11): when the wizard 2-path is in place, surface
+                // Cloud/BYOK options here instead of a flat error.
                 return [
                     'success'    => false,
-                    'error'      => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-ai-chat-lite' ),
+                    'error'      => __( 'Monthly conversation limit reached. New conversations will be declined until next month.', 'trill-ai-chat-lite' ),
                     'error_code' => 'LIMIT_REACHED',
-                    'meta'       => [
-                        'upgrade_url' => LiteConfig::getUpgradeUrl( 'limit_reached' ),
-                    ],
                 ];
 
             case 403:
