@@ -17,6 +17,3 @@ npm-debug.log*
 
 # WordPress junk
 *.log
-
-
-/bin
