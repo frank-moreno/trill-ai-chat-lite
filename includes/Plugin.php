@@ -22,6 +22,7 @@ use TrillChatLite\Frontend\Frontend;
 use TrillChatLite\Database\DbManager;
 use TrillChatLite\AI\ProxyClient;
 use TrillChatLite\WooCommerce\CronManager;
+use TrillChatLite\Abilities\AbilityRegistrar;
 
 /**
  * Class Plugin
@@ -136,7 +137,12 @@ final class Plugin {
         $this->components['cron_manager'] = new CronManager();
         $this->components['cron_manager']->init();
 
-        // 6. REST API.
+        // 6. Abilities API registrar (WP 7.0+). Guards on its own,
+        // no-op on WP 6.x so this stays safe to call unconditionally.
+        $this->components['abilities'] = new AbilityRegistrar();
+        $this->components['abilities']->init();
+
+        // 7. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 
         trcl_log( 'All plugin components initialised', 'debug' );
