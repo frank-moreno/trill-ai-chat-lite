@@ -3,8 +3,9 @@
 
 /.git
 /.github
-/.DS_Store
+.DS_Store
 /_proxy_fixes
+/bin
 /.distignore
 /.gitignore
 /node_modules

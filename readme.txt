@@ -2,9 +2,9 @@
 Contributors: trillai
 Tags: ai assistant, product search, customer support, sales, chat
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.2.5
+Stable tag: 1.2.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -179,6 +179,9 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 1.2.6 =
+* Housekeeping release. Updates the "Tested up to" header to WordPress 7.0 (released 20 May 2026). Tightens distribution hygiene by adding `/bin` and recursive `.DS_Store` exclusions to `.distignore` so build scripts and macOS metadata never reach the WordPress.org SVN trunk. No functional changes.
+
 = 1.2.5 =
 * Transition release marking the boundary between the v1.x managed-license era and the upcoming 2.0.0 architecture. No code changes — only versioning and an Upgrade Notice signalling the 2.0.0 plans (optional Trill Cloud subscription + optional BYOK mode + WordPress 7.0 Abilities API integration). The pre-pivot codebase is preserved at git tag `v1.2.4-pre-pivot` and branch `archive/managed-license-era`.
 
@@ -230,6 +233,9 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.6 =
+Housekeeping release. Marks the plugin as Tested up to WordPress 7.0 and tightens distribution hygiene. No functional changes — safe upgrade for all users.
 
 = 1.2.5 =
 Transition release. No functional changes. Version 2.0.0 (coming next) introduces a major architecture change: optional Trill Cloud subscription, optional BYOK (bring-your-own-key) mode, and integration with the new WordPress 7.0 Abilities API. Safe upgrade for all users.
