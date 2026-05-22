@@ -28,7 +28,7 @@ The AI infrastructure is handled for you via the Trill AI API, so you get a pred
 * **Topic-safe.** Built-in guardrails auto-generated from your store metadata keep conversations about shopping, politely declining off-topic queries (homework, code generation, medical or legal advice).
 * **Prompt injection protection.** The assistant will not reveal system instructions or adopt different personas.
 * **GDPR-ready.** UK-registered company (Greensolutions Pioneers Limited, Companies House 15693716). HTTPS end-to-end. Chat data is never used to train AI models.
-* **Fast.** Powered by GPT-5.4 Nano for sub-second responses on typical product questions.
+* **Fast.** Sub-second responses on typical product questions.
 
 = What Lite includes (free, forever) =
 

@@ -18,7 +18,6 @@ namespace TrillChatLite\Lite;
  */
 class LiteConfig {
 
-    public const AI_MODEL        = 'gpt-5.4-nano';
     public const PROXY_BASE_URL  = 'https://api.trillai.io';
     public const PROXY_CHAT_PATH = '/v1/lite/chat';
     public const SUPPORT_URL     = 'https://trillai.io/support/';
