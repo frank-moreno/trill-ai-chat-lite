@@ -4,7 +4,7 @@ Tags: ai assistant, product search, customer support, sales, chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.2.4
+Stable tag: 1.2.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -179,6 +179,9 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 1.2.5 =
+* Transition release marking the boundary between the v1.x managed-license era and the upcoming 2.0.0 architecture. No code changes — only versioning and an Upgrade Notice signalling the 2.0.0 plans (optional Trill Cloud subscription + optional BYOK mode + WordPress 7.0 Abilities API integration). The pre-pivot codebase is preserved at git tag `v1.2.4-pre-pivot` and branch `archive/managed-license-era`.
+
 = 1.2.4 =
 * Renamed plugin display name to "Trill AI Product Chat for WooCommerce" in accordance with WordPress.org Plugin Directory guidelines on distinctive plugin naming
 * Updated admin page headings, activation notices and accessibility labels to reflect the new name
@@ -227,6 +230,9 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 * Initial release
 
 == Upgrade Notice ==
+
+= 1.2.5 =
+Transition release. No functional changes. Version 2.0.0 (coming next) introduces a major architecture change: optional Trill Cloud subscription, optional BYOK (bring-your-own-key) mode, and integration with the new WordPress 7.0 Abilities API. Safe upgrade for all users.
 
 = 1.2.4 =
 Housekeeping release. The plugin is now listed as "Trill AI Product Chat for WooCommerce" to comply with WordPress.org naming guidelines. No functional changes — safe update for all users.

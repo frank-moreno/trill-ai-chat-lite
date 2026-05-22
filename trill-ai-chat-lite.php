@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Trill AI Product Chat for WooCommerce
  * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically.
- * Version: 1.2.4
+ * Version: 1.2.5
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Trill AI
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // =========================================================================
 // CONSTANTS
 // =========================================================================
-define( 'TRCL_VERSION', '1.2.4' );
+define( 'TRCL_VERSION', '1.2.5' );
 define( 'TRCL_PLUGIN_FILE', __FILE__ );
 define( 'TRCL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TRCL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
