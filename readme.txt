@@ -46,6 +46,7 @@ The AI infrastructure is handled for you via the Trill AI API, so you get a pred
 * HPOS (High-Performance Order Storage) compatible
 * Shortcode `[trill_chat]` for embedding the chat trigger on any page or post
 * Translation-ready with `.pot` file (works with Loco Translate, WPML and similar)
+* WordPress 7.0 Abilities API integration (optional) — exposes product search, store context, and conversation summary to AI agents and MCP adapters that consume the new API
 
 = Built for WooCommerce, by a UK SME =
 
@@ -149,6 +150,23 @@ The badge is **opt-in and off by default**. It only appears if you explicitly en
 = What happens if I have another Trill AI plugin installed? =
 
 This plugin automatically detects a conflicting Trill AI build (e.g. a legacy full-featured edition) and deactivates itself to prevent conflicts. You only need one version active at a time.
+
+= Does the plugin integrate with the WordPress Abilities API? =
+
+Yes, on WordPress 7.0 and higher. The plugin registers three abilities under the `trill-ai/` namespace in the `ecommerce` category:
+
+* `trill-ai/search-products` — search the WooCommerce catalogue (input: `query`, optional `limit` 1-10). Public read access (mirrors `wc_get_products()`).
+* `trill-ai/get-store-context` — store metadata: name, currency, product count, top categories. Public read access (mirrors `get_bloginfo()`).
+* `trill-ai/get-conversation-summary` — last N messages of a chat session by UUID (input: `session_id`, optional `limit` 1-50). Administrators (`manage_options`) always allowed; visitors must pass a valid UUID, matching the existing `/wp-json/trcl/v1/conversation/{session_id}` REST endpoint posture.
+
+Example usage from another plugin or theme:
+
+`$ability = wp_get_ability( 'trill-ai/search-products' );`
+`if ( $ability ) {`
+`    $results = $ability->execute( [ 'query' => 'blue t-shirt', 'limit' => 5 ] );`
+`}`
+
+On WordPress 6.x the abilities simply do not register and the rest of the plugin works as normal.
 
 = I found a bug or have a feature request. =
 
