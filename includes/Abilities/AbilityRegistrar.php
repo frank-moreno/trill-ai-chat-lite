@@ -27,6 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use TrillChatLite\Database\DbManager;
 use TrillChatLite\Search\ProductSearch;
 
 /**
@@ -69,10 +70,12 @@ class AbilityRegistrar {
             return; // WP < 7.0 — no Abilities API available.
         }
         if ( ! class_exists( 'WooCommerce' ) ) {
-            return; // Plugin requires WooCommerce; without it the ability has nothing to search.
+            return; // Plugin requires WooCommerce; without it the abilities have nothing to expose.
         }
 
         $this->register_search_products_ability();
+        $this->register_get_store_context_ability();
+        $this->register_get_conversation_summary_ability();
     }
 
     /**
@@ -179,6 +182,235 @@ class AbilityRegistrar {
                 // then the ability is only reachable via wp_get_ability()
                 // / $ability->execute() from PHP, which is fine for the
                 // plugin's own consumers. When 7.1 ships we can re-add it.
+            ]
+        );
+    }
+
+    /**
+     * Register `trill-ai/get-store-context`.
+     *
+     * Returns the same store metadata that the chat widget already
+     * sends to the AI proxy on every message: store name, URL, tagline,
+     * currency, total product count, and the top five product
+     * categories. Useful for AI agents that want to introduce
+     * themselves or contextualise their responses without having to
+     * call half a dozen WordPress / WooCommerce functions themselves.
+     *
+     * The logic mirrors RestController::build_store_context() (private)
+     * deliberately — kept inline rather than extracted into a service
+     * class to keep ABL-02 narrow. Consolidation can happen later as
+     * part of a wider cleanup pass.
+     */
+    private function register_get_store_context_ability(): void {
+        \wp_register_ability(
+            'trill-ai/get-store-context',
+            [
+                'label'               => __( 'Get Store Context', 'trill-ai-chat-lite' ),
+                'description'         => __(
+                    'Returns metadata about the WooCommerce store: name, URL, tagline, currency code, currency symbol, total published product count, and up to five top categories ordered by product count. Designed as a one-shot context primer for AI agents before they call other Trill abilities or compose a response.',
+                    'trill-ai-chat-lite'
+                ),
+                'category'            => 'ecommerce',
+                'output_schema'       => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'store_name'        => [ 'type' => 'string', 'description' => 'Site name (get_bloginfo("name")).' ],
+                        'store_url'         => [ 'type' => 'string', 'format' => 'uri', 'description' => 'Site URL.' ],
+                        'store_description' => [ 'type' => 'string', 'description' => 'Site tagline.' ],
+                        'currency'          => [ 'type' => 'string', 'description' => 'Three-letter currency code (e.g. GBP).' ],
+                        'currency_symbol'   => [ 'type' => 'string', 'description' => 'Currency symbol (e.g. £). Decoded plain text, no HTML entities.' ],
+                        'total_products'    => [ 'type' => 'integer', 'description' => 'Number of published products.' ],
+                        'top_categories'    => [
+                            'type'        => 'array',
+                            'description' => 'Up to five top product category names ordered by product count.',
+                            'items'       => [ 'type' => 'string' ],
+                        ],
+                    ],
+                ],
+                'execute_callback'    => static function () {
+                    $context = [
+                        'store_name'        => \get_bloginfo( 'name' ),
+                        'store_url'         => \get_site_url(),
+                        'store_description' => \get_bloginfo( 'description' ),
+                        'currency'          => '',
+                        'currency_symbol'   => '',
+                        'total_products'    => 0,
+                        'top_categories'    => [],
+                    ];
+
+                    if ( ! function_exists( 'WC' ) ) {
+                        return $context;
+                    }
+
+                    $context['currency']        = \get_woocommerce_currency();
+                    $context['currency_symbol'] = html_entity_decode(
+                        \get_woocommerce_currency_symbol(),
+                        ENT_QUOTES | ENT_HTML5,
+                        'UTF-8'
+                    );
+
+                    $product_count             = \wp_count_posts( 'product' );
+                    $context['total_products'] = (int) ( $product_count->publish ?? 0 );
+
+                    $terms = \get_terms( [
+                        'taxonomy'   => 'product_cat',
+                        'orderby'    => 'count',
+                        'order'      => 'DESC',
+                        'number'     => 5,
+                        'hide_empty' => true,
+                    ] );
+
+                    if ( ! \is_wp_error( $terms ) && ! empty( $terms ) ) {
+                        $context['top_categories'] = array_values( \wp_list_pluck( $terms, 'name' ) );
+                    }
+
+                    return $context;
+                },
+                'permission_callback' => '__return_true', // Store metadata is public, mirrors get_bloginfo().
+                'meta'                => [
+                    'annotations'     => [
+                        'readonly'    => true,
+                        'destructive' => false,
+                        'idempotent'  => true,
+                    ],
+                    'requires_plugin' => 'woocommerce',
+                ],
+            ]
+        );
+    }
+
+    /**
+     * Register `trill-ai/get-conversation-summary`.
+     *
+     * Returns the last N messages of a Trill chat session, identified
+     * by its UUID session_id. Used by AI agents that need to follow up
+     * on, summarise, or moderate an ongoing visitor conversation.
+     *
+     * Permission model (intentionally light, matches the existing
+     * GET /trcl/v1/conversation/{session_id} endpoint):
+     *
+     *   - Administrators with `manage_options` are always allowed.
+     *   - Other callers must pass a valid UUID session_id. Anyone
+     *     who knows the UUID can read the conversation, which is
+     *     the same posture as the public REST endpoint today.
+     *
+     * Cookie/fingerprint-based ownership ("only the visitor who owns
+     * the session can read it") is a known gap in the REST surface
+     * and is tracked separately — fixing it here would silently change
+     * the permission model for a second consumer without addressing
+     * the first.
+     */
+    private function register_get_conversation_summary_ability(): void {
+        \wp_register_ability(
+            'trill-ai/get-conversation-summary',
+            [
+                'label'               => __( 'Get Conversation Summary', 'trill-ai-chat-lite' ),
+                'description'         => __(
+                    'Retrieves up to fifty most-recent messages from a Trill chat session identified by its UUID session_id. Each message includes id, role (user or assistant), content, and timestamp. Returns an empty messages array if the session is unknown.',
+                    'trill-ai-chat-lite'
+                ),
+                'category'            => 'ecommerce',
+                'input_schema'        => [
+                    'type'                 => 'object',
+                    'properties'           => [
+                        'session_id' => [
+                            'type'        => 'string',
+                            'description' => 'UUID v4 session identifier (lowercase hex with dashes).',
+                            'pattern'     => '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+                        ],
+                        'limit'      => [
+                            'type'        => 'integer',
+                            'description' => 'Maximum number of messages to return (most recent first by storage order).',
+                            'minimum'     => 1,
+                            'maximum'     => 50,
+                            'default'     => 20,
+                        ],
+                    ],
+                    'required'             => [ 'session_id' ],
+                    'additionalProperties' => false,
+                ],
+                'output_schema'       => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'session_id' => [ 'type' => 'string', 'description' => 'Echo of the requested session_id.' ],
+                        'found'      => [ 'type' => 'boolean', 'description' => 'Whether the session exists in the database.' ],
+                        'messages'   => [
+                            'type'  => 'array',
+                            'items' => [
+                                'type'       => 'object',
+                                'properties' => [
+                                    'id'        => [ 'type' => 'integer', 'description' => 'Internal message ID.' ],
+                                    'role'      => [ 'type' => 'string', 'description' => 'Either "user" or "assistant".' ],
+                                    'content'   => [ 'type' => 'string', 'description' => 'Raw message body.' ],
+                                    'timestamp' => [ 'type' => 'string', 'description' => 'MySQL DATETIME string in UTC.' ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'execute_callback'    => static function ( $input ) {
+                    $session_id = (string) $input['session_id'];
+                    $limit      = isset( $input['limit'] ) ? (int) $input['limit'] : 20;
+                    $limit      = max( 1, min( 50, $limit ) );
+
+                    $db = new DbManager();
+
+                    if ( ! $db->conversation_exists( $session_id ) ) {
+                        return [
+                            'session_id' => $session_id,
+                            'found'      => false,
+                            'messages'   => [],
+                        ];
+                    }
+
+                    $rows      = $db->get_messages( $session_id, $limit );
+                    $formatted = array_map(
+                        static function ( $msg ) {
+                            return [
+                                'id'        => (int) ( $msg->id ?? 0 ),
+                                'role'      => (string) ( $msg->role ?? '' ),
+                                'content'   => (string) ( $msg->content ?? '' ),
+                                'timestamp' => (string) ( $msg->created_at ?? '' ),
+                            ];
+                        },
+                        $rows
+                    );
+
+                    return [
+                        'session_id' => $session_id,
+                        'found'      => true,
+                        'messages'   => $formatted,
+                    ];
+                },
+                'permission_callback' => static function ( $input ) {
+                    // Administrators always allowed.
+                    if ( \current_user_can( 'manage_options' ) ) {
+                        return true;
+                    }
+
+                    // Visitor path: validate UUID format. This matches the existing
+                    // GET /trcl/v1/conversation/{session_id} endpoint posture —
+                    // anyone with the UUID can read. Cookie/fingerprint ownership
+                    // is a known gap to be addressed separately for both surfaces.
+                    $session_id = $input['session_id'] ?? '';
+                    if ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', (string) $session_id ) ) {
+                        return new \WP_Error(
+                            'invalid_session_id',
+                            __( 'Invalid session identifier.', 'trill-ai-chat-lite' ),
+                            [ 'status' => 400 ]
+                        );
+                    }
+
+                    return true;
+                },
+                'meta'                => [
+                    'annotations'     => [
+                        'readonly'    => true,
+                        'destructive' => false,
+                        'idempotent'  => true,
+                    ],
+                    'requires_plugin' => 'woocommerce',
+                ],
             ]
         );
     }
