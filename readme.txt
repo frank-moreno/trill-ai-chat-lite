@@ -4,7 +4,7 @@ Tags: ai assistant, product search, customer support, sales, chat
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.2.4
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -184,6 +184,25 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 2.0.0 =
+**Major release — Trill AI Chat is now open source on a new Cloud backend.**
+
+* Migrated the AI infrastructure from the legacy `api.trillai.io` proxy to the new **Trill Cloud** backend at `api-v2.trillai.io`, with per-site Bearer authentication and a clearer free-trial policy (50 conversations / month / site).
+* The plugin now ships with a **fresh trial registration on activate** — no setup wizard, no account creation. Just install and chat.
+* Removed the legacy site-hash transport in favour of a standard Bearer token model with hashed-at-rest storage on the server.
+* **Stateful conversation context** — the plugin now sends the recent conversation history to the AI on every turn (last 20 messages), so Robin actually remembers what the shopper asked earlier in the same session.
+* New response header `X-Trill-Trial-Remaining` surfaces the live monthly allowance to the dashboard widget without an extra API round trip.
+* Existing v1.x sites that auto-update will see a one-time admin notice explaining the change. No data loss; conversations and message history persist intact.
+* Internal: dedicated `TrialSecretStore`, `TrialRegistration` and `UpgradeManager` classes; all upstream URLs centralised in `LiteConfig`.
+
+Note: sites still running v1.x (and not auto-updating to 2.0) continue to be served by the legacy `api.trillai.io` proxy indefinitely.
+
+= 1.2.6 =
+* Housekeeping release: bumped "Tested up to: 7.0", hardened `.distignore` (recursive `.DS_Store` + defensive `/bin` exclusion). No code changes.
+
+= 1.2.5 =
+* Transitional release while preparing the 2.0 OSS pivot. No user-facing changes.
+
 = 1.2.4 =
 * Renamed plugin display name to "Trill AI Product Chat for WooCommerce" in accordance with WordPress.org Plugin Directory guidelines on distinctive plugin naming
 * Updated admin page headings, activation notices and accessibility labels to reflect the new name
@@ -232,6 +251,9 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.0.0 =
+Major release. The plugin now talks to a brand-new Trill Cloud backend with stateful conversations and a clearer 50 conversations/month free-trial policy. The trial is re-registered automatically on update — no merchant action required. v1.x sites that do not upgrade continue to work against the legacy backend indefinitely.
 
 = 1.2.4 =
 Housekeeping release. The plugin is now listed as "Trill AI Product Chat for WooCommerce" to comply with WordPress.org naming guidelines. No functional changes — safe update for all users.

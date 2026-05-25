@@ -113,6 +113,15 @@ final class Plugin {
      */
     private function init_components(): void {
 
+        // 0. Upgrade detection. Must run BEFORE other components so any
+        //    cleanup of orphan options + trial re-registration is in place
+        //    by the time they boot. The hook for the admin notice + AJAX
+        //    dismiss is registered separately further below.
+        $upgrade_manager = new \TrillChatLite\Lite\UpgradeManager();
+        $upgrade_manager->maybe_run_migration();
+        $upgrade_manager->register_hooks();
+        $this->components['upgrade_manager'] = $upgrade_manager;
+
         // 1. Database Manager.
         $this->components['db_manager'] = new DbManager();
 
@@ -145,7 +154,41 @@ final class Plugin {
         // 7. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 
+        // 8. Trial registration retry on admin page loads.
+        //    The Activator best-effort registers on activate; if the backend
+        //    was unreachable at that moment, TrialRegistration sets a retry
+        //    flag and this admin_init hook keeps re-trying transparently
+        //    until it succeeds — admin only, throttled to once per request.
+        \add_action( 'admin_init', [ $this, 'maybe_retry_trial_registration' ] );
+
         trcl_log( 'All plugin components initialised', 'debug' );
+    }
+
+    /**
+     * Retry trial registration if conditions warrant it.
+     *
+     * Triggers when:
+     *   - A previous attempt left a transient retry flag, OR
+     *   - There's no secret AND no permanent failure recorded
+     *     (auto-heal path for a manually-deleted secret).
+     *
+     * Skips silently when there's already a secret OR when a permanent
+     * failure (409/400) is recorded — that path requires explicit
+     * deactivate+activate to reset.
+     *
+     * Cheap on the happy path: single option read returns true, no HTTP.
+     */
+    public function maybe_retry_trial_registration(): void {
+        if ( ! \TrillChatLite\Lite\TrialRegistration::should_attempt_on_admin_init() ) {
+            return;
+        }
+        try {
+            \TrillChatLite\Lite\TrialRegistration::ensure_registered();
+        } catch ( \Throwable $e ) {
+            trcl_log( 'admin_init retry threw', 'error', [
+                'error' => $e->getMessage(),
+            ] );
+        }
     }
 
     /**

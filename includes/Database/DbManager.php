@@ -234,6 +234,75 @@ class DbManager {
     }
 
     /**
+     * Get the most recent N turns of a conversation in chronological order
+     * (oldest → newest), shaped for the Trill Cloud /v1/trial/chat endpoint.
+     *
+     * Differs from get_messages() in two ways:
+     *
+     *   1. Returns the LAST N messages, not the first N. This is the
+     *      correct semantics for an AI chat history: we want the most
+     *      recent context, not the start of the conversation.
+     *
+     *   2. Returns plain arrays of shape `[ ['role' => 'user'|'assistant',
+     *      'content' => '...'], ... ]` — already serialisable for the
+     *      `messages[]` field of POST /v1/trial/chat.
+     *
+     * @param string $session_id Session UUID.
+     * @param int    $limit      Max turns to return (default 20).
+     * @return array<int, array{role: string, content: string}>
+     */
+    public function get_conversation_history( string $session_id, int $limit = 20 ): array {
+        $conversation_id = $this->get_conversation_id( $session_id );
+        if ( ! $conversation_id ) {
+            return [];
+        }
+
+        $table = $this->messages_table;
+
+        // Subquery: take the N most recent rows, then re-sort ascending
+        // so the result is the conversation in chronological order.
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        $sql = $this->wpdb->prepare(
+            "SELECT role, content
+               FROM (
+                 SELECT id, role, content, created_at
+                   FROM {$table}
+                  WHERE conversation_id = %d
+                  ORDER BY created_at DESC, id DESC
+                  LIMIT %d
+               ) AS recent
+              ORDER BY created_at ASC, id ASC",
+            $conversation_id,
+            $limit
+        );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
+        $rows = $this->wpdb->get_results( $sql, ARRAY_A );
+        if ( ! is_array( $rows ) ) {
+            return [];
+        }
+
+        // Sanitise: drop rows with unexpected roles or empty content.
+        // Backend zod schema accepts 'user'|'assistant'|'system' only.
+        $out = [];
+        foreach ( $rows as $row ) {
+            $role    = isset( $row['role'] ) ? (string) $row['role'] : '';
+            $content = isset( $row['content'] ) ? (string) $row['content'] : '';
+            if ( $content === '' ) {
+                continue;
+            }
+            if ( ! in_array( $role, [ 'user', 'assistant', 'system' ], true ) ) {
+                continue;
+            }
+            $out[] = [
+                'role'    => $role,
+                'content' => $content,
+            ];
+        }
+        return $out;
+    }
+
+    /**
      * Count conversations started in the current calendar month.
      *
      * This is an INFORMATIONAL counter only — the actual conversation limit

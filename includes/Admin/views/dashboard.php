@@ -33,10 +33,26 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
 
     <!-- Monthly Usage Card -->
     <?php
-    $trcl_db             = new \TrillChatLite\Database\DbManager();
-    $trcl_monthly_count  = $trcl_db->get_monthly_conversation_count();
-    $trcl_monthly_limit  = \TrillChatLite\Lite\LiteConfig::MONTHLY_LIMIT;
-    $trcl_usage_percent  = min( 100, round( ( $trcl_monthly_count / max( 1, $trcl_monthly_limit ) ) * 100 ) );
+    $trcl_db            = new \TrillChatLite\Database\DbManager();
+    $trcl_monthly_limit = \TrillChatLite\Lite\LiteConfig::MONTHLY_LIMIT;
+
+    // Prefer the server-authoritative count (X-Trill-Trial-Remaining,
+    // captured on every successful chat). Fall back to the local
+    // conversation-count approximation if the option is not set yet
+    // (first activation, no chats yet, etc.).
+    $trcl_server_remaining = \get_option(
+        \TrillChatLite\Lite\LiteConfig::OPT_TRIAL_REMAINING,
+        null
+    );
+    if ( $trcl_server_remaining !== null && is_numeric( $trcl_server_remaining ) ) {
+        $trcl_monthly_count = max( 0, $trcl_monthly_limit - (int) $trcl_server_remaining );
+        $trcl_count_source  = 'server';
+    } else {
+        $trcl_monthly_count = $trcl_db->get_monthly_conversation_count();
+        $trcl_count_source  = 'local';
+    }
+
+    $trcl_usage_percent = min( 100, round( ( $trcl_monthly_count / max( 1, $trcl_monthly_limit ) ) * 100 ) );
 
     // Determine bar colour class based on thresholds.
     $trcl_bar_class = '';

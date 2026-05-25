@@ -21,6 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use TrillChatLite\Database\DbManager;
+use TrillChatLite\Lite\LiteConfig;
+use TrillChatLite\Lite\TrialRegistration;
 use TrillChatLite\Search\ProductSearch;
 
 /**
@@ -252,34 +254,49 @@ class RestController {
                 'product_names'  => array_column( $product_results, 'name' ),
             ] );
 
-            // 6. Build context for proxy.
+            // 6. Build system prompt with store + product context.
             $store_context = $this->build_store_context();
             $this->prompt_builder->with_store_context( $store_context );
-
-            // 6b. Feed guardrails with the same store metadata (auto-generated boundaries).
             $this->prompt_builder->with_guardrails_context( $store_context );
 
             if ( ! empty( $product_results ) ) {
                 $this->prompt_builder->with_product_context( $product_results );
             } elseif ( $is_product_msg ) {
-                // Search was performed but no products found — inform the AI.
                 $this->prompt_builder->with_empty_search_result();
             }
 
-            // Get conversation history.
-            $history = $this->db->get_messages( $session_id, 10 );
-            $this->prompt_builder->with_history( $history );
+            $system_prompt = $this->prompt_builder->build();
 
-            $proxy_context = $this->prompt_builder->build_context();
+            // 7. Lazy trial registration fallback. The Activator and the
+            //    admin_init retry hook should already have run, but if a
+            //    front-end visitor arrives before either does (rare edge
+            //    case on a fresh activate), try one more time here.
+            TrialRegistration::ensure_registered();
 
-            trcl_log( 'Proxy context built', 'debug', [
-                'has_system_prompt' => ! empty( $proxy_context['system_prompt'] ),
-                'has_products'      => ! empty( $proxy_context['products'] ),
-                'system_prompt_len' => mb_strlen( $proxy_context['system_prompt'] ?? '' ),
+            // 8. Build the messages[] array for the stateless backend.
+            //    - First: system prompt with persona, guardrails, products.
+            //    - Then: last N turns of history (already includes the user
+            //      message we just stored on step 4).
+            $history = $this->db->get_conversation_history(
+                $session_id,
+                LiteConfig::MAX_HISTORY_MESSAGES
+            );
+
+            $messages = array_merge(
+                [ [ 'role' => 'system', 'content' => $system_prompt ] ],
+                $history
+            );
+
+            trcl_log( 'Built messages payload', 'debug', [
+                'session_id'          => $session_id,
+                'message_count'       => count( $messages ),
+                'system_prompt_bytes' => mb_strlen( $system_prompt ),
+                'history_turns'       => count( $history ),
+                'products_found'      => count( $product_results ),
             ] );
 
-            // 7. Send to proxy.
-            $ai_response = $this->proxy->send_message( $message, $session_id, $proxy_context );
+            // 9. Send to Trill Cloud backend.
+            $ai_response = $this->proxy->send_message( $messages, $session_id );
 
             if ( ! $ai_response['success'] ) {
                 trcl_log( 'Proxy request failed', 'error', [
@@ -289,28 +306,47 @@ class RestController {
 
                 $error_code = $ai_response['error_code'] ?? 'AI_ERROR';
 
-                // Handle proxy 429 (server-side limit reached) gracefully.
-                // TODO(D11): when the wizard 2-path is in place, surface
-                // Cloud/BYOK options here instead of a flat error.
-                if ( $error_code === 'LIMIT_REACHED' ) {
+                // Trial monthly cap reached → 429 with upgrade_url for the
+                // widget to render a "Get more conversations" CTA.
+                if ( $error_code === 'TRIAL_EXHAUSTED' ) {
                     return new \WP_REST_Response( [
-                        'success'    => false,
-                        'error'      => __( 'You have reached your monthly conversation limit. New conversations will be declined until next month.', 'trill-ai-chat-lite' ),
-                        'error_code' => 'SERVICE_LIMIT_REACHED',
+                        'success'     => false,
+                        'error'       => $ai_response['error'] ?? __( 'Monthly trial limit reached.', 'trill-ai-chat-lite' ),
+                        'error_code'  => 'TRIAL_EXHAUSTED',
+                        'upgrade_url' => $ai_response['upgrade_url'] ?? LiteConfig::PRICING_URL,
+                        'reset_at'    => $ai_response['reset_at'] ?? '',
                     ], 429 );
                 }
 
+                if ( $error_code === 'RATE_LIMITED' ) {
+                    return new \WP_REST_Response( [
+                        'success'             => false,
+                        'error'               => $ai_response['error'] ?? __( 'Too many requests.', 'trill-ai-chat-lite' ),
+                        'error_code'          => 'RATE_LIMITED',
+                        'retry_after_seconds' => $ai_response['retry_after_seconds'] ?? 0,
+                    ], 429 );
+                }
+
+                // AUTH_INVALID indicates a corrupted local secret. Clear it
+                // so the next admin page load re-registers cleanly. The
+                // current request still fails — UX trade-off accepted.
+                if ( $error_code === 'AUTH_INVALID' ) {
+                    \TrillChatLite\Lite\TrialSecretStore::clear_secret();
+                }
+
+                $http_status = isset( $ai_response['http_status'] )
+                    ? (int) $ai_response['http_status']
+                    : 502;
                 return $this->formatter->format_error(
                     $ai_response['error'] ?? __( 'AI service temporarily unavailable.', 'trill-ai-chat-lite' ),
                     $error_code,
-                    502
+                    $http_status >= 400 ? $http_status : 502
                 );
             }
 
-            // 8. Store AI response.
-            $ai_content    = $ai_response['message']['content'];
+            // 10. Store AI response.
+            $ai_content    = $ai_response['reply'];
             $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content );
-
             if ( ! $ai_message_id ) {
                 trcl_log( 'Failed to store AI message (response still returned)', 'warning', [
                     'session_id' => $session_id,
@@ -318,14 +354,25 @@ class RestController {
                 $ai_message_id = 0;
             }
 
-            // 9. Format and return response.
+            // 11. Stash the X-Trill-Trial-Remaining value for the dashboard
+            //     widget. Don't fail the request if the option write fails.
+            if ( isset( $ai_response['trial_remaining'] ) ) {
+                \update_option(
+                    LiteConfig::OPT_TRIAL_REMAINING,
+                    (int) $ai_response['trial_remaining'],
+                    false
+                );
+            }
+
+            // 12. Format and return.
             $processing_time = microtime( true ) - $start_time;
 
             trcl_log( 'Message processed successfully', 'info', [
-                'session_id'       => $session_id,
-                'processing_time'  => round( $processing_time, 3 ),
-                'is_new'           => $is_new_conversation,
-                'products_found'   => count( $product_results ),
+                'session_id'      => $session_id,
+                'processing_time' => round( $processing_time, 3 ),
+                'is_new'          => $is_new_conversation,
+                'products_found'  => count( $product_results ),
+                'trial_remaining' => $ai_response['trial_remaining'] ?? null,
             ] );
 
             $response_data = $this->formatter->format(
@@ -336,9 +383,10 @@ class RestController {
                 $product_results
             );
 
-            // Add proxy meta if available.
-            if ( ! empty( $ai_response['meta'] ) ) {
-                $response_data['meta'] = $ai_response['meta'];
+            if ( isset( $ai_response['trial_remaining'] ) ) {
+                $response_data['meta'] = [
+                    'trial_remaining' => (int) $ai_response['trial_remaining'],
+                ];
             }
 
             return new \WP_REST_Response( $response_data, 200 );
