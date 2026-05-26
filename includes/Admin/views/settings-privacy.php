@@ -84,8 +84,8 @@ $trcl_wp_policy_url = $trcl_wp_policy_id > 0 ? (string) \get_permalink( $trcl_wp
                 <?php esc_html_e( 'days', 'trill-ai-chat-lite' ); ?>
                 <p class="description">
                     <?php
-                    /* translators: 1: min days, 2: max days */
                     printf(
+                        /* translators: 1: min days, 2: max days */
                         esc_html__( 'Conversations older than this are removed daily by a background job. Clamped to %1$d–%2$d days.', 'trill-ai-chat-lite' ),
                         (int) $trcl_min,
                         (int) $trcl_max
@@ -113,8 +113,8 @@ $trcl_wp_policy_url = $trcl_wp_policy_id > 0 ? (string) \get_permalink( $trcl_wp
                 <?php if ( $trcl_wp_policy_url !== '' && $trcl_wp_policy_url !== $trcl_notice_url ) : ?>
                     <p class="description" style="margin-top: 6px;">
                         <?php
-                        /* translators: %s: privacy page URL */
                         printf(
+                            /* translators: %s: privacy page URL */
                             esc_html__( 'Tip — your WordPress privacy page is %s. Copy it into the field above to link to it.', 'trill-ai-chat-lite' ),
                             '<a href="' . esc_url( $trcl_wp_policy_url ) . '" target="_blank" rel="noopener">'
                                 . esc_html( $trcl_wp_policy_url ) . '</a>'
@@ -145,8 +145,8 @@ $trcl_wp_policy_url = $trcl_wp_policy_id > 0 ? (string) \get_permalink( $trcl_wp
                        class="regular-text" />
                 <p class="description">
                     <?php
-                    /* translators: %s: default notice copy */
                     printf(
+                        /* translators: %s: default notice copy */
                         esc_html__( 'Optional override for the text shown before the policy link. Default: "%s".', 'trill-ai-chat-lite' ),
                         esc_html( \TrillChatLite\Gdpr\GdprSettings::NOTICE_DEFAULT_TEXT )
                     );
@@ -166,8 +166,8 @@ $trcl_wp_policy_url = $trcl_wp_policy_id > 0 ? (string) \get_permalink( $trcl_wp
 
 <p class="description" style="max-width: 720px;">
     <?php
-    /* translators: 1: link to Tools → Export Personal Data, 2: link to Tools → Erase Personal Data */
     printf(
+        /* translators: 1: link to Tools → Export Personal Data, 2: link to Tools → Erase Personal Data */
         esc_html__( 'This plugin integrates with WordPress\'s built-in privacy tools. To handle a Data Subject Access Request, use %1$s. To erase a customer\'s chat data, use %2$s. In both cases enter the customer\'s email — the plugin will include or remove the matching conversations automatically.', 'trill-ai-chat-lite' ),
         '<a href="' . esc_url( \admin_url( 'export-personal-data.php' ) ) . '">'
             . esc_html__( 'Tools → Export Personal Data', 'trill-ai-chat-lite' ) . '</a>',

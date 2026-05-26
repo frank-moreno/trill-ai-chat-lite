@@ -26,6 +26,8 @@ use TrillChatLite\Abilities\AbilityRegistrar;
 use TrillChatLite\Content\ContentIndexer;
 use TrillChatLite\Content\ContentSettings;
 use TrillChatLite\Gdpr\PrivacyHooks;
+use TrillChatLite\Analytics\AnalyticsHooks;
+use TrillChatLite\Analytics\AnalyticsRecorder;
 
 /**
  * Class Plugin
@@ -169,6 +171,16 @@ final class Plugin {
         //     end-to-end through standard WordPress UI.
         $this->components['privacy_hooks'] = new PrivacyHooks();
         $this->components['privacy_hooks']->register_hooks();
+
+        // 6d. Analytics + cart attribution (v2.0 Block 3).
+        //     AnalyticsRecorder owns inserts into trcl_analytics_events;
+        //     AnalyticsHooks wires woocommerce_add_to_cart and
+        //     woocommerce_thankyou. chat_started events are written
+        //     from RestController on conversation creation.
+        $analytics_recorder = new AnalyticsRecorder();
+        $this->components['analytics_recorder'] = $analytics_recorder;
+        $this->components['analytics_hooks']    = new AnalyticsHooks( $analytics_recorder );
+        $this->components['analytics_hooks']->register_hooks();
 
         // 7. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );

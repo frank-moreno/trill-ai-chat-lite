@@ -270,6 +270,7 @@ $trcl_intent_options = [
                         $trcl_base_args['search'] = $trcl_search;
                     }
 
+                    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- paginate_links() returns sanitised <a>/<span> markup; running it through esc_html would double-encode the entities and break the pagination links.
                     echo \paginate_links( [
                         'base'      => \add_query_arg( $trcl_base_args, \admin_url( 'admin.php' ) ) . '%_%',
                         'format'    => '&paged=%#%',
@@ -277,7 +278,7 @@ $trcl_intent_options = [
                         'total'     => $trcl_pages,
                         'prev_text' => '&laquo;',
                         'next_text' => '&raquo;',
-                    ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- WP returns sanitised markup.
+                    ] );
                     ?>
                 </div>
             </div>

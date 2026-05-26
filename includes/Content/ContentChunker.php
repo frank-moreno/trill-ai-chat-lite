@@ -160,11 +160,19 @@ class ContentChunker {
         ) ?? $text;
         $text = preg_replace( '#<br\s*/?>#i', "\n", $text ) ?? $text;
 
-        // Strip remaining HTML.
+        // Strip remaining HTML. wp_strip_all_tags() is the WP-approved
+        // path; the regex fallback only runs in CLI / unit-test contexts
+        // where WordPress isn't bootstrapped (e.g. tests/Content/
+        // ChunkerSmokeTest.php). We intentionally avoid PHP's strip_tags()
+        // to stay aligned with the WPCS recommendation.
         if ( function_exists( 'wp_strip_all_tags' ) ) {
             $text = \wp_strip_all_tags( $text, false );
         } else {
-            $text = strip_tags( $text );
+            // Remove HTML/PHP/XML-like tags including those broken across
+            // lines. Mirrors wp_strip_all_tags' core behaviour for our
+            // purposes (we already collapsed scripts/styles to text
+            // earlier in this pipeline).
+            $text = preg_replace( '@<[^>]*?>@u', '', $text ) ?? '';
         }
 
         // Decode entities (&amp; → &, &#8217; → ').

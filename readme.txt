@@ -2,7 +2,7 @@
 Contributors: trillai
 Tags: ai assistant, product search, customer support, sales, chat
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.0
 Stable tag: 2.0.0
 License: GPLv2 or later
@@ -185,17 +185,39 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 == Changelog ==
 
 = 2.0.0 =
-**Major release — Trill AI Chat is now open source on a new Cloud backend.**
+**Major release — five new user-facing features + a new managed AI backend. Free, open source, GDPR-ready.**
 
-* Migrated the AI infrastructure from the legacy `api.trillai.io` proxy to the new **Trill Cloud** backend at `api-v2.trillai.io`, with per-site Bearer authentication and a clearer free-trial policy (50 conversations / month / site).
-* The plugin now ships with a **fresh trial registration on activate** — no setup wizard, no account creation. Just install and chat.
-* Removed the legacy site-hash transport in favour of a standard Bearer token model with hashed-at-rest storage on the server.
-* **Stateful conversation context** — the plugin now sends the recent conversation history to the AI on every turn (last 20 messages), so Robin actually remembers what the shopper asked earlier in the same session.
-* New response header `X-Trill-Trial-Remaining` surfaces the live monthly allowance to the dashboard widget without an extra API round trip.
+This release turns Trill AI Chat from a product-search chatbot into a full-stack store assistant that the merchant can prove drives revenue.
+
+**New features for shoppers:**
+
+* **Page content indexing** — Robin can now answer questions about your FAQ, shipping, returns, contact and policy pages, not just products. Pick which pages to index from the new **Settings → Content** tab.
+* **Cart-aware chat** — Robin sees the current basket on every message and can answer "what's in my cart", "how much is my total" and guide the shopper straight to checkout.
+* **Verified order tracking** — "Where's my order?" answered safely. Identity is verified by WordPress login or by matching the email used at checkout before any order detail is shared. No leaks.
+* **Smart lead capture** — when a product is out of stock or a shopper hesitates on price, Robin offers to take their email with explicit, audited consent. Manage every lead from a dedicated **Trill Chat → Leads** admin page with CSV export.
+
+**New features for the merchant:**
+
+* **Revenue analytics dashboard** — four KPI cards on the Trill Chat dashboard: chats started, orders completed, orders attributed to chat, revenue attributed to chat. Choose 7 / 30 / 90 day windows. Prove ROI at a glance.
+* **GDPR conversation management** — DSAR exports and right-to-erasure now work end-to-end through WordPress's native Tools → Personal Data screens (the plugin registers itself automatically). New **Settings → Privacy** tab: configurable retention (default 365 days), privacy-policy URL, audited consent text. No IP addresses are ever persisted.
+* **About & Help page** — new submenu with the v2.0 changelog, support links and developer credit.
+
+**Backend + infrastructure (from the May 2026 pivot):**
+
+* Migrated to the new **Trill Cloud** backend at `api-v2.trillai.io` with per-site Bearer authentication and a clearer free-trial policy (50 conversations / month / site).
+* Fresh trial registration on activate — no setup wizard, no account creation.
+* Bearer token model with hashed-at-rest storage, replacing the legacy site-hash transport.
+* **Stateful conversation context** — Robin remembers the last 20 turns of the same session.
+* `X-Trill-Trial-Remaining` response header surfaces the live monthly allowance to the dashboard.
+
+**Database:**
+
+* Schema upgraded from 1.0.0 to 1.3.0. Three new tables: `wp_trcl_content_index` (page chunks with FULLTEXT), `wp_trcl_analytics_events` (chats, orders, attribution), `wp_trcl_leads` (opt-ins). Migrations are additive and idempotent via dbDelta.
+
+**Upgrade path:**
+
 * Existing v1.x sites that auto-update will see a one-time admin notice explaining the change. No data loss; conversations and message history persist intact.
-* Internal: dedicated `TrialSecretStore`, `TrialRegistration` and `UpgradeManager` classes; all upstream URLs centralised in `LiteConfig`.
-
-Note: sites still running v1.x (and not auto-updating to 2.0) continue to be served by the legacy `api.trillai.io` proxy indefinitely.
+* Sites still running v1.x (and not auto-updating) continue to be served by the legacy `api.trillai.io` proxy indefinitely.
 
 = 1.2.6 =
 * Housekeeping release: bumped "Tested up to: 7.0", hardened `.distignore` (recursive `.DS_Store` + defensive `/bin` exclusion). No code changes.
@@ -253,7 +275,7 @@ Note: sites still running v1.x (and not auto-updating to 2.0) continue to be ser
 == Upgrade Notice ==
 
 = 2.0.0 =
-Major release. The plugin now talks to a brand-new Trill Cloud backend with stateful conversations and a clearer 50 conversations/month free-trial policy. The trial is re-registered automatically on update — no merchant action required. v1.x sites that do not upgrade continue to work against the legacy backend indefinitely.
+Major release. Five new user-facing features: page content indexing, cart-aware chat, verified order tracking, smart lead capture, and a revenue analytics dashboard. GDPR-ready (DSAR + erasure via WP Privacy Tools). New Trill Cloud backend with stateful conversations and a clearer 50 conversations/month free trial. Trial is re-registered automatically on update — no merchant action required.
 
 = 1.2.4 =
 Housekeeping release. The plugin is now listed as "Trill AI Product Chat for WooCommerce" to comply with WordPress.org naming guidelines. No functional changes — safe update for all users.

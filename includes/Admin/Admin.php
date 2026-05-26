@@ -137,6 +137,16 @@ class Admin {
             'trcl-settings',
             [ $this, 'render_settings' ]
         );
+
+        // About submenu (v2.0 Block 6 — branding + help anchor).
+        \add_submenu_page(
+            'trcl-chat',
+            __( 'About', 'trill-ai-chat-lite' ),
+            __( 'About', 'trill-ai-chat-lite' ),
+            'manage_trcl_chat',
+            'trcl-about',
+            [ $this, 'render_about' ]
+        );
     }
 
     /**
@@ -226,6 +236,17 @@ class Admin {
         }
 
         include TRCL_PLUGIN_DIR . 'includes/Admin/views/leads.php';
+    }
+
+    /**
+     * Render About page (v2.0 Block 6 — branding + help).
+     */
+    public function render_about(): void {
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ) );
+        }
+
+        include TRCL_PLUGIN_DIR . 'includes/Admin/views/about.php';
     }
 
     /**
@@ -463,18 +484,28 @@ class Admin {
 
         $filename = 'trill-leads-' . \gmdate( 'Y-m-d' ) . '.csv';
 
-        // Stream CSV. No buffering games — wp_die at the end to stop
+        // Stream CSV. No buffering games — exit at the end to stop
         // any trailing admin output from contaminating the file.
+        //
+        // PHPCS suggests WP_Filesystem for file operations, but that
+        // applies to ON-DISK files; here we are writing to the HTTP
+        // response stream (php://output). WP_Filesystem has no
+        // equivalent of fputcsv on a stream, and using it would force
+        // us to buffer the whole CSV into memory before the response —
+        // unsafe for large lead tables.
         \nocache_headers();
         header( 'Content-Type: text/csv; charset=utf-8' );
         header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- streaming HTTP response, not file IO.
         $fh = fopen( 'php://output', 'w' );
 
+        // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- writing to HTTP response stream.
         fputcsv( $fh, [ 'id', 'email', 'intent', 'product_id', 'status', 'captured_at', 'session_id' ] );
 
         if ( is_array( $rows ) ) {
             foreach ( $rows as $row ) {
+                // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- writing to HTTP response stream.
                 fputcsv( $fh, [
                     $row['id'] ?? '',
                     $row['email'] ?? '',
@@ -487,6 +518,7 @@ class Admin {
             }
         }
 
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- closing HTTP response stream opened above.
         fclose( $fh );
         exit;
     }

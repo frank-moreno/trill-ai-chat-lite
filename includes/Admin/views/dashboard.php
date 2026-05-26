@@ -114,4 +114,116 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
         <?php endif; ?>
     </div>
 
+    <?php
+    // -----------------------------------------------------------------
+    // Performance — Block 3 KPIs (chats, orders, attribution, revenue).
+    //
+    // Reads from trcl_analytics_events. Hidden if WooCommerce is not
+    // active — the order-related metrics are meaningless without it.
+    // -----------------------------------------------------------------
+    if ( function_exists( 'wc_get_product' ) ) :
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only period selector.
+        $trcl_range = isset( $_GET['range'] ) ? (int) $_GET['range'] : 30;
+        if ( ! in_array( $trcl_range, [ 7, 30, 90 ], true ) ) {
+            $trcl_range = 30;
+        }
+
+        $trcl_analytics = new \TrillChatLite\Analytics\AnalyticsService();
+        $trcl_summary   = $trcl_analytics->get_summary( $trcl_range );
+
+        $trcl_currency = function_exists( 'get_woocommerce_currency_symbol' )
+            ? html_entity_decode( \get_woocommerce_currency_symbol(), ENT_QUOTES | ENT_HTML5, 'UTF-8' )
+            : '';
+
+        $trcl_dash_base = admin_url( 'admin.php?page=trcl-chat' );
+        $trcl_range_url = static function ( int $n ) use ( $trcl_dash_base ): string {
+            return esc_url( add_query_arg( 'range', $n, $trcl_dash_base ) );
+        };
+        ?>
+        <div class="trcl-perf-card" style="background: #fff; padding: 20px 24px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                <h2 style="margin: 0;"><?php esc_html_e( 'Performance', 'trill-ai-chat-lite' ); ?></h2>
+                <div class="trcl-period-selector" style="font-size: 13px;">
+                    <span style="color: #6b7280; margin-right: 8px;"><?php esc_html_e( 'Last:', 'trill-ai-chat-lite' ); ?></span>
+                    <?php foreach ( [ 7, 30, 90 ] as $trcl_opt ) :
+                        $trcl_active = ( $trcl_opt === $trcl_range );
+                        ?>
+                        <a href="<?php echo $trcl_range_url( $trcl_opt ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-escaped via esc_url() ?>"
+                           style="padding: 4px 10px; margin: 0 2px; text-decoration: none; border-radius: 3px; <?php echo $trcl_active ? 'background:#2271b1;color:#fff;font-weight:600;' : 'color:#2271b1;'; ?>">
+                            <?php
+                            printf(
+                                /* translators: %d: number of days */
+                                esc_html__( '%d days', 'trill-ai-chat-lite' ),
+                                (int) $trcl_opt
+                            );
+                            ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <p style="color: #6b7280; margin: 0 0 18px; max-width: 720px;">
+                <?php esc_html_e( 'Activity over the selected window. An order is "from chat" when the customer had a chat conversation in the 24 hours before placing the order.', 'trill-ai-chat-lite' ); ?>
+            </p>
+
+            <div class="trcl-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+
+                <!-- Card: Chats started -->
+                <div class="trcl-kpi-card" style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 18px 20px; background: #f9fafb;">
+                    <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;">
+                        <?php esc_html_e( 'Chats started', 'trill-ai-chat-lite' ); ?>
+                    </div>
+                    <div style="font-size: 32px; font-weight: 700; color: #111827; line-height: 1;">
+                        <?php echo esc_html( number_format_i18n( (int) $trcl_summary['chats_started'] ) ); ?>
+                    </div>
+                </div>
+
+                <!-- Card: Orders completed -->
+                <div class="trcl-kpi-card" style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 18px 20px; background: #f9fafb;">
+                    <div style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;">
+                        <?php esc_html_e( 'Orders completed', 'trill-ai-chat-lite' ); ?>
+                    </div>
+                    <div style="font-size: 32px; font-weight: 700; color: #111827; line-height: 1;">
+                        <?php echo esc_html( number_format_i18n( (int) $trcl_summary['orders_completed'] ) ); ?>
+                    </div>
+                </div>
+
+                <!-- Card: Orders from chat (attributed) -->
+                <div class="trcl-kpi-card" style="border: 1px solid #c7e9cf; border-radius: 6px; padding: 18px 20px; background: #f0f9f3;">
+                    <div style="font-size: 12px; color: #166534; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;">
+                        <?php esc_html_e( 'Orders from chat', 'trill-ai-chat-lite' ); ?>
+                    </div>
+                    <div style="font-size: 32px; font-weight: 700; color: #14532d; line-height: 1;">
+                        <?php echo esc_html( number_format_i18n( (int) $trcl_summary['orders_attributed'] ) ); ?>
+                    </div>
+                    <div style="font-size: 12px; color: #166534; margin-top: 6px;">
+                        <?php
+                        /* translators: %s: attribution rate as a percentage */
+                        printf( esc_html__( '%s%% attribution rate', 'trill-ai-chat-lite' ), esc_html( (string) $trcl_summary['attribution_rate'] ) );
+                        ?>
+                    </div>
+                </div>
+
+                <!-- Card: Revenue from chat -->
+                <div class="trcl-kpi-card" style="border: 1px solid #c7e9cf; border-radius: 6px; padding: 18px 20px; background: #f0f9f3;">
+                    <div style="font-size: 12px; color: #166534; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;">
+                        <?php esc_html_e( 'Revenue from chat', 'trill-ai-chat-lite' ); ?>
+                    </div>
+                    <div style="font-size: 32px; font-weight: 700; color: #14532d; line-height: 1;">
+                        <?php echo esc_html( $trcl_currency . number_format_i18n( (float) $trcl_summary['revenue_attributed'], 2 ) ); ?>
+                    </div>
+                </div>
+
+            </div>
+
+            <?php if ( (int) $trcl_summary['chats_started'] === 0 ) : ?>
+                <p style="margin: 18px 0 0; font-size: 13px; color: #6b7280;">
+                    <?php esc_html_e( 'No chat activity yet in this window. Once shoppers start chatting, you\'ll see chats, attributed orders, and revenue here.', 'trill-ai-chat-lite' ); ?>
+                </p>
+            <?php endif; ?>
+        </div>
+        <?php
+    endif;
+    ?>
+
 </div>

@@ -24,6 +24,19 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+//
+// Every $wpdb call below uses $wpdb->prepare(). PHPCS flags two
+// patterns it cannot reason about statically:
+//
+//   - Variable-length placeholder strings built from arrays
+//     intval'd / sanitised immediately above the prepare() call.
+//   - {$wpdb->prefix . 'trcl_leads'} interpolation, where $wpdb->prefix
+//     is sourced from wp-config and the table-name suffix is a literal.
+//
+// All user input flows through %s / %d / %f placeholders. No raw
+// concatenation of untrusted values into SQL strings.
+
 /**
  * Class LeadCaptureService
  *

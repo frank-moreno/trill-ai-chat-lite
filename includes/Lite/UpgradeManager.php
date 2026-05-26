@@ -162,6 +162,20 @@ class UpgradeManager {
 
         // We render the markup inline to keep the upgrade flow self-contained
         // (no view file required).
+        //
+        // Every interpolated value is escaped at the source above:
+        //   $message    = esc_html__()
+        //   $docs_url   = esc_url()
+        //   $docs_label = esc_html__()
+        //   $nonce      = wp_create_nonce() (alphanumeric token)
+        //   $ajax       = esc_url()
+        // wp_json_encode() additionally wraps the nonce + ajax URL in
+        // valid JS string literals before they reach the script block.
+        //
+        // PHPCS can't trace the escape chain through printf placeholders,
+        // so we silence the rule across the multi-line call with a
+        // documented reason rather than re-escaping already-safe values.
+        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
         printf(
             '<div class="notice notice-info is-dismissible" data-trcl-upgrade-notice="1">
                 <p><strong>Trill AI Chat</strong> — %1$s <a href="%2$s" target="_blank" rel="noopener">%3$s</a></p>
@@ -184,6 +198,7 @@ class UpgradeManager {
             \wp_json_encode( $nonce ),
             \wp_json_encode( $ajax )
         );
+        // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
     /**

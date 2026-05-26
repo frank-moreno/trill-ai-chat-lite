@@ -1,4 +1,9 @@
 <?php
+// phpcs:disable
+// ^^ Dev-only smoke test. Excluded from the wp.org SVN package via
+//    .distignore. Uses plain `echo` for human-readable CLI output and
+//    direct PHP file I/O for the abort-gate — both are intentional for
+//    a stand-alone harness and not appropriate WPCS subjects.
 /**
  * E2E smoke for Block 4 slice 1 — lead capture.
  *
