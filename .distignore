@@ -26,6 +26,7 @@
 /docs
 /bin
 /_proxy_fixes
+/wporg-assets
 
 # Hidden / OS metadata — recursive
 .DS_Store
