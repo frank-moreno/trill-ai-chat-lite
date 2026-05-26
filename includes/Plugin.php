@@ -23,6 +23,8 @@ use TrillChatLite\Database\DbManager;
 use TrillChatLite\AI\ProxyClient;
 use TrillChatLite\WooCommerce\CronManager;
 use TrillChatLite\Abilities\AbilityRegistrar;
+use TrillChatLite\Content\ContentIndexer;
+use TrillChatLite\Content\ContentSettings;
 
 /**
  * Class Plugin
@@ -150,6 +152,15 @@ final class Plugin {
         // no-op on WP 6.x so this stays safe to call unconditionally.
         $this->components['abilities'] = new AbilityRegistrar();
         $this->components['abilities']->init();
+
+        // 6b. Content indexer (v2.0 Block 1 — page content indexing).
+        //     Listens to save_post / trashed_post / term edits to keep
+        //     the trcl_content_index table in sync with merchant content.
+        //     The daily cron hook is also wired here.
+        $content_settings              = new ContentSettings();
+        $this->components['content_settings'] = $content_settings;
+        $this->components['content_indexer']  = new ContentIndexer( $content_settings );
+        $this->components['content_indexer']->register_hooks();
 
         // 7. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
