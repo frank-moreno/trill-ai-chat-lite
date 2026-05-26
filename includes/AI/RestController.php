@@ -20,11 +20,15 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use TrillChatLite\Analytics\AnalyticsRecorder;
 use TrillChatLite\Content\ContentSearch;
 use TrillChatLite\Database\DbManager;
+use TrillChatLite\Leads\LeadCaptureService;
+use TrillChatLite\Leads\LeadIntentDetector;
 use TrillChatLite\Lite\LiteConfig;
 use TrillChatLite\Lite\TrialRegistration;
 use TrillChatLite\Search\ProductSearch;
+use TrillChatLite\WooCommerce\CartContext;
 
 /**
  * REST Controller — Lite API endpoints.
@@ -92,6 +96,25 @@ class RestController {
     private ContentSearch $content_search;
 
     /**
+     * Cart context provider (v2.0 Block 3 slice 4 — cart-aware chat).
+     *
+     * @var CartContext
+     */
+    private CartContext $cart_context;
+
+    /**
+     * Lead intent detector + capture service (v2.0 Block 4).
+     *
+     * @var LeadIntentDetector
+     */
+    private LeadIntentDetector $lead_detector;
+
+    /**
+     * @var LeadCaptureService
+     */
+    private LeadCaptureService $lead_capture;
+
+    /**
      * Response formatter.
      *
      * @var ResponseFormatter
@@ -110,6 +133,9 @@ class RestController {
         $this->formatter      = new ResponseFormatter();
         $this->search         = new ProductSearch();
         $this->content_search = new ContentSearch();
+        $this->cart_context   = new CartContext();
+        $this->lead_detector  = new LeadIntentDetector();
+        $this->lead_capture   = new LeadCaptureService();
     }
 
     /**
@@ -221,6 +247,11 @@ class RestController {
                 }
 
                 $is_new_conversation = true;
+
+                // Block 3 — record chat_started event so the dashboard
+                // analytics layer can attribute later orders to this
+                // visit. Fire-and-forget; never blocks the chat flow.
+                ( new AnalyticsRecorder() )->record_chat_started( $session_id, $user_id );
             } else {
                 // Validate existing session.
                 if ( ! preg_match( self::UUID_PATTERN, $session_id ) ) {
@@ -294,6 +325,59 @@ class RestController {
                 $this->prompt_builder->with_empty_search_result();
             }
 
+            // 5c. Cart context (v2.0 Block 3 slice 4 — cart-aware chat).
+            //     Always injected when WC is loaded and the visitor has
+            //     anything in their cart. Lets Robin answer "what is in
+            //     my cart", "how much is my total", and suggest items
+            //     that complement what is already added.
+            $cart = $this->cart_context->get_current_cart();
+            if ( ! empty( $cart ) ) {
+                $this->prompt_builder->with_cart_context( $cart );
+            }
+
+            trcl_log( 'Cart context result', 'debug', [
+                'cart_items_count' => isset( $cart['item_count'] ) ? (int) $cart['item_count'] : 0,
+                'cart_total'       => isset( $cart['total'] ) ? (float) $cart['total'] : 0.0,
+            ] );
+
+            // 5d. Lead capture (v2.0 Block 4).
+            //
+            //  - First, if the previous assistant turn carried a
+            //    lead_offer marker AND the current user message
+            //    contains a plausible email, capture the lead
+            //    immediately with the intent stored on that prior
+            //    turn. This handles the visitor replying with
+            //    "yes, francisco@example.com" after Robin offered.
+            //
+            //  - Then, detect a new lead-capture opportunity from
+            //    THIS user message. If matched, instruct Robin to
+            //    offer the email capture and remember the intent so
+            //    the next turn's assistant row gets tagged.
+            $lead_offer_for_this_turn = $this->maybe_capture_lead_from_email_reply( $session_id, $message );
+            $detected_intent          = $this->lead_detector->detect( $message, $product_results );
+
+            $intent_for_storage = '';
+            $intent_product_id  = 0;
+            $consent_text       = '';
+
+            if ( $detected_intent['type'] !== LeadIntentDetector::INTENT_NONE ) {
+                $intent_for_storage = $detected_intent['type'];
+                $intent_product_id  = (int) ( $detected_intent['product_id'] ?? 0 );
+                $consent_text       = $this->build_consent_text( $intent_for_storage );
+
+                $this->prompt_builder->with_lead_offer(
+                    $intent_for_storage,
+                    $intent_product_id,
+                    $consent_text
+                );
+            }
+
+            trcl_log( 'Lead capture state', 'debug', [
+                'detected_intent'   => $intent_for_storage ?: 'none',
+                'product_id'        => $intent_product_id,
+                'captured_on_reply' => $lead_offer_for_this_turn,
+            ] );
+
             $system_prompt = $this->prompt_builder->build();
 
             // 7. Lazy trial registration fallback. The Activator and the
@@ -323,6 +407,7 @@ class RestController {
                 'history_turns'       => count( $history ),
                 'products_found'      => count( $product_results ),
                 'content_found'       => count( $content_results ),
+                'cart_items'          => isset( $cart['item_count'] ) ? (int) $cart['item_count'] : 0,
             ] );
 
             // 9. Send to Trill Cloud backend.
@@ -375,8 +460,21 @@ class RestController {
             }
 
             // 10. Store AI response.
-            $ai_content    = $ai_response['reply'];
-            $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content );
+            //     If we asked Robin to offer a lead capture this turn,
+            //     stamp the assistant message metadata with the intent
+            //     so the next user turn knows the email-reply context.
+            $ai_content   = $ai_response['reply'];
+            $message_meta = [];
+            if ( $intent_for_storage !== '' ) {
+                $message_meta['metadata'] = [
+                    'lead_offer' => [
+                        'type'         => $intent_for_storage,
+                        'product_id'   => $intent_product_id,
+                        'consent_text' => $consent_text,
+                    ],
+                ];
+            }
+            $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content, $message_meta );
             if ( ! $ai_message_id ) {
                 trcl_log( 'Failed to store AI message (response still returned)', 'warning', [
                     'session_id' => $session_id,
@@ -717,6 +815,80 @@ class RestController {
                 'sanitize_callback' => 'sanitize_textarea_field',
             ],
         ];
+    }
+
+    /**
+     * If the previous assistant turn offered a lead-capture and the
+     * current user message contains a plausible email, capture the
+     * lead with the intent stored on that prior turn.
+     *
+     * Idempotent at the DB layer (LeadCaptureService::capture skips
+     * duplicates on email+session+intent).
+     *
+     * @since 2.0.0
+     *
+     * @param string $session_id Current chat session UUID.
+     * @param string $message    The user message we just received.
+     * @return int Lead row id, or 0 if no capture happened.
+     */
+    private function maybe_capture_lead_from_email_reply( string $session_id, string $message ): int {
+        $email = $this->lead_detector->extract_email( $message );
+        if ( $email === '' ) {
+            return 0;
+        }
+
+        $prior = $this->db->get_last_assistant_message( $session_id );
+        if ( ! $prior || empty( $prior->metadata ) ) {
+            return 0;
+        }
+
+        $meta = json_decode( (string) $prior->metadata, true );
+        if ( ! is_array( $meta ) || empty( $meta['lead_offer'] ) ) {
+            return 0;
+        }
+        $offer = $meta['lead_offer'];
+
+        $intent_type = (string) ( $offer['type'] ?? '' );
+        if ( $intent_type === '' ) {
+            return 0;
+        }
+
+        $lead_id = $this->lead_capture->capture( $email, $intent_type, [
+            'session_id'     => $session_id,
+            'product_id'     => (int) ( $offer['product_id'] ?? 0 ),
+            'opt_in_consent' => (string) ( $offer['consent_text'] ?? '' ),
+            'metadata'       => [ 'source' => 'chat_reply' ],
+        ] );
+
+        if ( $lead_id > 0 ) {
+            trcl_log( 'Lead captured from email reply', 'info', [
+                'lead_id'     => $lead_id,
+                'intent_type' => $intent_type,
+            ] );
+        }
+
+        return $lead_id;
+    }
+
+    /**
+     * Produce the exact opt-in consent line Robin should use for a
+     * given intent. Stored verbatim in trcl_leads.opt_in_consent so
+     * the merchant can show in a DSAR audit what the visitor agreed
+     * to.
+     *
+     * @since 2.0.0
+     *
+     * @param string $intent_type
+     * @return string
+     */
+    private function build_consent_text( string $intent_type ): string {
+        if ( $intent_type === LeadIntentDetector::INTENT_OUT_OF_STOCK ) {
+            return __( 'If you give me your email, I\'ll only use it to notify you once when this item is back in stock.', 'trill-ai-chat-lite' );
+        }
+        if ( $intent_type === LeadIntentDetector::INTENT_PRICE_DROP ) {
+            return __( 'If you give me your email, I\'ll only use it to notify you once if there is a sale or price drop on this item.', 'trill-ai-chat-lite' );
+        }
+        return __( 'If you give me your email, I\'ll only use it to send you one follow-up about this item.', 'trill-ai-chat-lite' );
     }
 
     /**

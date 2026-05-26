@@ -76,6 +76,29 @@ class PromptBuilder {
     private array $content_context = [];
 
     /**
+     * Current WooCommerce cart snapshot (v2.0 Block 3 slice 4).
+     *
+     * Shape: see TrillChatLite\WooCommerce\CartContext::get_current_cart().
+     * Empty array = no cart / no items / WC not loaded → section is
+     * not rendered in build().
+     *
+     * @var array
+     */
+    private array $cart_context = [];
+
+    /**
+     * Lead capture intent for this turn (v2.0 Block 4).
+     *
+     * Shape (when set):
+     *   [ 'type' => 'out_of_stock' | 'price_drop',
+     *     'product_id' => int,
+     *     'consent_text' => string ]
+     *
+     * @var array
+     */
+    private array $lead_offer = [];
+
+    /**
      * Set store context.
      *
      * @param array $context Store context data.
@@ -105,6 +128,56 @@ class PromptBuilder {
      */
     public function with_history( array $history ): self {
         $this->history = $history;
+        return $this;
+    }
+
+    /**
+     * Signal to the assistant that this turn is an opt-in opportunity
+     * for a follow-up email (out-of-stock or price-drop).
+     *
+     * Adds an explicit LEAD CAPTURE OFFER block to the system prompt
+     * telling Robin to invite the visitor to leave their email, with
+     * the exact consent line we'll later snapshot into trcl_leads.
+     *
+     * The presence of $type triggers section rendering; empty array
+     * (or never calling this) keeps the prompt unchanged.
+     *
+     * @since 2.0.0
+     *
+     * @param string $type         One of 'out_of_stock' | 'price_drop'.
+     * @param int    $product_id   Product the offer relates to (0 when generic).
+     * @param string $consent_text Exact line Robin should say (used as audit
+     *                              snapshot in the trcl_leads row).
+     * @return self
+     */
+    public function with_lead_offer( string $type, int $product_id = 0, string $consent_text = '' ): self {
+        $this->lead_offer = [
+            'type'         => $type,
+            'product_id'   => max( 0, $product_id ),
+            'consent_text' => $consent_text,
+        ];
+        return $this;
+    }
+
+    /**
+     * Set the customer's current WooCommerce cart snapshot.
+     *
+     * Output of CartContext::get_current_cart() is injected here.
+     * The builder renders a "CUSTOMER'S CURRENT CART" section that
+     * lists items, quantities and totals so Robin can answer "what's
+     * in my cart?", "how much is the total?", "help me checkout" and
+     * can suggest products that complement what's already added.
+     *
+     * Passing an empty array (or never calling this) means no cart
+     * section is rendered.
+     *
+     * @since 2.0.0
+     *
+     * @param array $cart Cart snapshot from CartContext.
+     * @return self
+     */
+    public function with_cart_context( array $cart ): self {
+        $this->cart_context = $cart;
         return $this;
     }
 
@@ -199,6 +272,20 @@ class PromptBuilder {
             $parts[] = $this->build_empty_search_section();
         }
 
+        // Cart context — what the customer currently has in their basket.
+        // Placed AFTER products so the assistant first considers the
+        // discovery context (what the visitor might buy) and then
+        // remembers what they already added (what to checkout).
+        if ( ! empty( $this->cart_context ) ) {
+            $parts[] = $this->build_cart_section();
+        }
+
+        // Lead capture offer (Block 4). Placed near the end so the
+        // assistant treats it as the closing action of this turn.
+        if ( ! empty( $this->lead_offer ) ) {
+            $parts[] = $this->build_lead_offer_section();
+        }
+
         // Guidelines.
         $parts[] = $this->build_guidelines();
 
@@ -285,6 +372,117 @@ class PromptBuilder {
         $lines[] = '- Do NOT list products in numbered format with links — the cards handle that.';
         $lines[] = '- Simply mention product names and prices naturally in your text.';
         $lines[] = '- Always mention current prices and availability.';
+
+        return implode( "\n", $lines );
+    }
+
+    /**
+     * Build the lead-capture-offer section.
+     *
+     * Tells Robin to ask the visitor for their email so we can notify
+     * them when the relevant condition (back-in-stock / sale) is met.
+     * The consent line is the exact text we snapshot into trcl_leads
+     * for GDPR audit, so we instruct Robin to use it verbatim.
+     *
+     * @since 2.0.0
+     *
+     * @return string
+     */
+    private function build_lead_offer_section(): string {
+        $type    = (string) ( $this->lead_offer['type'] ?? '' );
+        $consent = (string) ( $this->lead_offer['consent_text'] ?? '' );
+
+        $lines = [ 'LEAD CAPTURE OPPORTUNITY:' ];
+
+        if ( $type === 'out_of_stock' ) {
+            $lines[] = '- The customer is asking about an item that may be out of stock.';
+            $lines[] = '- Offer to email them when it is back in stock by asking for their email address.';
+        } elseif ( $type === 'price_drop' ) {
+            $lines[] = '- The customer is hesitating on price or asking about discounts.';
+            $lines[] = '- Offer to email them if the price drops or a sale starts, by asking for their email address.';
+        } else {
+            $lines[] = '- The customer may want to be kept informed about updates.';
+            $lines[] = '- Offer to email them by asking for their email address.';
+        }
+
+        if ( $consent !== '' ) {
+            $lines[] = '- Use this exact sentence (or a very close paraphrase) so the consent record stays accurate: "' . $consent . '"';
+        }
+
+        $lines[] = '- Be polite and explicit: make clear the email is OPTIONAL and that you will only use it for this notification.';
+        $lines[] = '- Do NOT ask for any other personal data (no phone, no address, no name).';
+        $lines[] = '- If the visitor declines or ignores the offer, do not insist.';
+
+        return implode( "\n", $lines );
+    }
+
+    /**
+     * Build the customer-cart section.
+     *
+     * Renders the current cart contents (qty x name @ unit = line),
+     * cart subtotal + total, and the cart / checkout URLs so the
+     * assistant can guide the customer to checkout when appropriate.
+     *
+     * @since 2.0.0
+     *
+     * @return string
+     */
+    private function build_cart_section(): string {
+        if ( empty( $this->cart_context ) ) {
+            return '';
+        }
+
+        $sym       = (string) ( $this->cart_context['currency_symbol'] ?? '' );
+        $items     = is_array( $this->cart_context['items'] ?? null ) ? $this->cart_context['items'] : [];
+        $subtotal  = (float) ( $this->cart_context['subtotal'] ?? 0 );
+        $total     = (float) ( $this->cart_context['total'] ?? 0 );
+        $count     = (int) ( $this->cart_context['item_count'] ?? 0 );
+        $checkout  = (string) ( $this->cart_context['checkout_url'] ?? '' );
+        $cart_url  = (string) ( $this->cart_context['cart_url'] ?? '' );
+        $has_more  = ! empty( $this->cart_context['has_more'] );
+
+        $fmt = static function ( float $value ) use ( $sym ): string {
+            return $sym . number_format( $value, 2 );
+        };
+
+        $lines = [ 'CUSTOMER\'S CURRENT CART:' ];
+
+        foreach ( $items as $item ) {
+            $name       = (string) ( $item['name'] ?? 'Item' );
+            $qty        = (int) ( $item['qty'] ?? 1 );
+            $unit_price = (float) ( $item['unit_price'] ?? 0 );
+            $line_total = (float) ( $item['line_total'] ?? ( $unit_price * $qty ) );
+            $lines[]    = sprintf(
+                '- %d x %s @ %s each = %s',
+                $qty,
+                $name,
+                $fmt( $unit_price ),
+                $fmt( $line_total )
+            );
+        }
+
+        if ( $has_more ) {
+            $lines[] = sprintf( '- ...and %d more line(s) not shown.', max( 1, count( $items ) ) );
+        }
+
+        $lines[] = '';
+        $lines[] = sprintf( 'Cart subtotal (pre-tax): %s', $fmt( $subtotal ) );
+        $lines[] = sprintf( 'Cart total (incl. tax + shipping when known): %s', $fmt( $total ) );
+        $lines[] = sprintf( 'Total items in cart: %d', $count );
+
+        if ( $cart_url !== '' ) {
+            $lines[] = sprintf( 'Cart page: %s', $cart_url );
+        }
+        if ( $checkout !== '' ) {
+            $lines[] = sprintf( 'Checkout page: %s', $checkout );
+        }
+
+        $lines[] = '';
+        $lines[] = 'CART USAGE RULES:';
+        $lines[] = '- The customer can ask "what is in my cart?", "what is my total?", "help me checkout".';
+        $lines[] = '- When suggesting products, prefer items that complement (not duplicate) what is already in the cart.';
+        $lines[] = '- When the customer asks to checkout, point them to the Checkout page URL above. Do not pretend to place the order yourself.';
+        $lines[] = '- Never invent items or amounts that are not listed above.';
 
         return implode( "\n", $lines );
     }

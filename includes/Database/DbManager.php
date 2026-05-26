@@ -303,6 +303,40 @@ class DbManager {
     }
 
     /**
+     * Get the most recent assistant message for a session, including
+     * its metadata column. Used by the lead-capture flow to read the
+     * lead_offer flag that the previous turn attached to Robin's
+     * response (see RestController slice 5d).
+     *
+     * @since 2.0.0
+     *
+     * @param string $session_id Session UUID.
+     * @return object|null The full message row, or null if none.
+     */
+    public function get_last_assistant_message( string $session_id ): ?object {
+        $conversation_id = $this->get_conversation_id( $session_id );
+        if ( ! $conversation_id ) {
+            return null;
+        }
+
+        $table = $this->messages_table;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        $sql = $this->wpdb->prepare(
+            "SELECT * FROM {$table}
+              WHERE conversation_id = %d AND role = 'assistant'
+              ORDER BY created_at DESC, id DESC
+              LIMIT 1",
+            $conversation_id
+        );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+        $row = $this->wpdb->get_row( $sql );
+
+        return $row ?: null;
+    }
+
+    /**
      * Count conversations started in the current calendar month.
      *
      * This is an INFORMATIONAL counter only — the actual conversation limit

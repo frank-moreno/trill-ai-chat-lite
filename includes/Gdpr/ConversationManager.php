@@ -138,6 +138,25 @@ class ConversationManager {
     }
 
     /**
+     * Find every lead record opted into by the given email.
+     *
+     * Delegated to LeadCaptureService so the trcl_leads table stays
+     * owned by its own service; this method only adapts the result
+     * shape for the privacy exporter / eraser flows.
+     *
+     * @since 2.0.0
+     *
+     * @param string $email
+     * @return array
+     */
+    public function find_leads_by_email( string $email ): array {
+        if ( ! class_exists( '\TrillChatLite\Leads\LeadCaptureService' ) ) {
+            return [];
+        }
+        return ( new \TrillChatLite\Leads\LeadCaptureService() )->find_by_email( $email );
+    }
+
+    /**
      * Build a WP Privacy API exporter payload for the given email.
      *
      * Each conversation is a separate "item" inside the
@@ -153,8 +172,42 @@ class ConversationManager {
     public function export_for_email( string $email, int $page = 1 ): array {
         unset( $page ); // single-page export.
         $conversations = $this->find_by_email( $email );
+        $leads         = $this->find_leads_by_email( $email );
 
         $items = [];
+
+        // 1) Lead opt-ins (Block 4).
+        foreach ( $leads as $lead ) {
+            $items[] = [
+                'group_id'    => 'trill-ai-chat-lite-leads',
+                'group_label' => __( 'Trill AI Chat — Lead opt-ins', 'trill-ai-chat-lite' ),
+                'item_id'     => 'trill-lead-' . (int) $lead->id,
+                'data'        => [
+                    [
+                        'name'  => __( 'Captured at', 'trill-ai-chat-lite' ),
+                        'value' => (string) ( $lead->captured_at ?? '' ),
+                    ],
+                    [
+                        'name'  => __( 'Intent', 'trill-ai-chat-lite' ),
+                        'value' => (string) ( $lead->intent_type ?? '' ),
+                    ],
+                    [
+                        'name'  => __( 'Product ID', 'trill-ai-chat-lite' ),
+                        'value' => (string) ( (int) ( $lead->product_id ?? 0 ) ),
+                    ],
+                    [
+                        'name'  => __( 'Status', 'trill-ai-chat-lite' ),
+                        'value' => (string) ( $lead->status ?? '' ),
+                    ],
+                    [
+                        'name'  => __( 'Consent text shown at capture', 'trill-ai-chat-lite' ),
+                        'value' => (string) ( $lead->opt_in_consent ?? '' ),
+                    ],
+                ],
+            ];
+        }
+
+        // 2) Conversations (existing).
         foreach ( $conversations as $conv ) {
             $messages   = $this->get_messages_for_conversation( (int) $conv->id );
             $msg_lines  = [];
@@ -232,9 +285,12 @@ class ConversationManager {
             ];
         }
 
-        $conversations = $this->find_by_email( $email );
-        if ( empty( $conversations ) ) {
-            trcl_log( 'GDPR erase: no conversations found', 'info', [
+        // Cascade across both Block 2 (conversations) and Block 4 (leads).
+        $conversations  = $this->find_by_email( $email );
+        $leads_removed  = $this->erase_leads_for_email( $email );
+
+        if ( empty( $conversations ) && $leads_removed === 0 ) {
+            trcl_log( 'GDPR erase: nothing to remove', 'info', [
                 'email' => self::mask_email( $email ),
             ] );
             return [
@@ -246,21 +302,40 @@ class ConversationManager {
         }
 
         $conv_ids = array_map( static fn( $c ): int => (int) $c->id, $conversations );
-
-        $removed = $this->delete_cascade( $conv_ids );
+        $removed  = $this->delete_cascade( $conv_ids );
 
         trcl_log( 'GDPR erase complete', 'info', [
             'email_masked'      => self::mask_email( $email ),
             'conversations'     => count( $conv_ids ),
             'rows_deleted'      => $removed,
+            'leads_removed'     => $leads_removed,
         ] );
 
         return [
-            'items_removed'  => count( $conv_ids ),
+            'items_removed'  => count( $conv_ids ) + $leads_removed,
             'items_retained' => 0,
             'messages'       => [],
             'done'           => true,
         ];
+    }
+
+    /**
+     * Hard-delete leads associated with the given email.
+     *
+     * Wrapper around LeadCaptureService::erase_by_email so the GDPR
+     * eraser stays in one place. Returns 0 silently when the leads
+     * service isn't available (uninstall partway, etc).
+     *
+     * @since 2.0.0
+     *
+     * @param string $email
+     * @return int Rows deleted.
+     */
+    private function erase_leads_for_email( string $email ): int {
+        if ( ! class_exists( '\TrillChatLite\Leads\LeadCaptureService' ) ) {
+            return 0;
+        }
+        return ( new \TrillChatLite\Leads\LeadCaptureService() )->erase_by_email( $email );
     }
 
     // =========================================================================

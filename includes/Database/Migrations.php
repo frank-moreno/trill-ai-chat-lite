@@ -3,11 +3,15 @@
  * Database Migrations.
  *
  * Creates and manages database schema for the Lite plugin.
- * Tables: trcl_conversations, trcl_messages, trcl_feedback, trcl_content_index.
+ * Tables: trcl_conversations, trcl_messages, trcl_feedback,
+ *         trcl_content_index, trcl_analytics_events.
  *
  * Schema history:
  *   1.0.0 — initial release (conversations, messages, feedback)
  *   1.1.0 — page content indexing (adds trcl_content_index, v2.0 Block 1)
+ *   1.2.0 — analytics + cart attribution (adds trcl_analytics_events,
+ *           v2.0 Block 3)
+ *   1.3.0 — lead capture (adds trcl_leads, v2.0 Block 4)
  *
  * @package TrillChatLite\Database
  * @since 1.0.0
@@ -30,7 +34,7 @@ class Migrations {
     /**
      * Current schema version.
      */
-    private const SCHEMA_VERSION = '1.1.0';
+    private const SCHEMA_VERSION = '1.3.0';
 
     /**
      * Run all migrations.
@@ -57,6 +61,8 @@ class Migrations {
         self::create_messages_table( $wpdb, $charset_collate );
         self::create_feedback_table( $wpdb, $charset_collate );
         self::create_content_index_table( $wpdb, $charset_collate );
+        self::create_analytics_events_table( $wpdb, $charset_collate );
+        self::create_leads_table( $wpdb, $charset_collate );
 
         \update_option( 'trcl_db_version', self::SCHEMA_VERSION );
 
@@ -187,6 +193,119 @@ class Migrations {
     }
 
     /**
+     * Create analytics events table (v1.2.0 — Block 3 cart + analytics).
+     *
+     * Append-only event log used by the dashboard to derive ROI metrics:
+     * conversations started, items added to cart, orders completed, and
+     * orders attributed to a chat session.
+     *
+     * Attribution links a chat to an order through `wc_customer_id` —
+     * WooCommerce's per-visit customer identifier returned by
+     * `WC()->session->get_customer_id()`. It is set for both logged-in
+     * users (where it equals the WP user ID) and guests (where it is
+     * a long opaque string set by WC for the session). Recording it
+     * on every chat-started + thank-you event lets us correlate the
+     * two without storing any extra PII.
+     *
+     * Column purpose:
+     *   - event_type     One of: chat_started, add_to_cart,
+     *                    order_completed, order_attributed.
+     *   - session_id     Chat session UUID, when relevant. NULL on
+     *                    cart events that pre-date a chat session.
+     *   - wc_customer_id WC()->session->get_customer_id() at event time.
+     *   - user_id        WP user ID (0 for guests).
+     *   - order_id       WC order ID for order_* events; 0 otherwise.
+     *   - value          Monetary value associated with the event
+     *                    (cart line price, order total, etc.).
+     *   - metadata       JSON for extra context (product_id, qty, …).
+     *
+     * @since 2.0.0
+     *
+     * @param \wpdb  $wpdb
+     * @param string $charset_collate
+     */
+    private static function create_analytics_events_table( \wpdb $wpdb, string $charset_collate ): void {
+        $table_name = $wpdb->prefix . 'trcl_analytics_events';
+
+        $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            event_type varchar(40) NOT NULL,
+            session_id varchar(36) DEFAULT NULL,
+            wc_customer_id varchar(64) DEFAULT NULL,
+            user_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+            order_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+            value decimal(10,2) NOT NULL DEFAULT 0,
+            metadata text DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_type (event_type),
+            KEY idx_session (session_id),
+            KEY idx_wc_customer (wc_customer_id),
+            KEY idx_order (order_id),
+            KEY idx_created (created_at)
+        ) {$charset_collate};";
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table creation DDL.
+        dbDelta( $sql );
+    }
+
+    /**
+     * Create leads table (v1.3.0 — Block 4 lead capture).
+     *
+     * Stores email opt-ins captured proactively by Robin during chat
+     * conversations (e.g. "notify me when the red shirt is back in
+     * stock", "let me know if you run a sale"). Every row records the
+     * exact consent text the visitor was shown so the merchant has an
+     * audit trail in case a DSAR challenges the legitimate-interest
+     * basis later.
+     *
+     * Column purpose:
+     *   - session_id        Chat session UUID that produced the lead.
+     *   - email             Visitor's email (sanitised before insert).
+     *   - intent_type       out_of_stock | price_drop | generic.
+     *   - product_id        WC product ID when intent is product-bound
+     *                       (out_of_stock / price_drop); 0 otherwise.
+     *   - status            new | contacted | erased.
+     *   - opt_in_consent    Snapshot of the consent text Robin showed
+     *                       at capture time (for GDPR audit).
+     *   - metadata          JSON for extra context.
+     *
+     * Erasure is owned by GDPR\ConversationManager::erase_for_email
+     * — when a DSAR comes in, the same email cascade also nukes any
+     * lead rows so the WP Privacy flow stays consistent.
+     *
+     * @since 2.0.0
+     *
+     * @param \wpdb  $wpdb
+     * @param string $charset_collate
+     */
+    private static function create_leads_table( \wpdb $wpdb, string $charset_collate ): void {
+        $table_name = $wpdb->prefix . 'trcl_leads';
+
+        $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            session_id varchar(36) DEFAULT NULL,
+            email varchar(255) NOT NULL,
+            intent_type varchar(40) NOT NULL DEFAULT 'generic',
+            product_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+            status varchar(20) NOT NULL DEFAULT 'new',
+            opt_in_consent text DEFAULT NULL,
+            metadata text DEFAULT NULL,
+            captured_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_email (email),
+            KEY idx_status (status),
+            KEY idx_intent (intent_type),
+            KEY idx_session (session_id),
+            KEY idx_product (product_id),
+            KEY idx_captured (captured_at)
+        ) {$charset_collate};";
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table creation DDL.
+        dbDelta( $sql );
+    }
+
+    /**
      * Drop all plugin tables.
      *
      * Called during uninstall.
@@ -195,6 +314,8 @@ class Migrations {
         global $wpdb;
 
         $tables = [
+            $wpdb->prefix . 'trcl_leads',
+            $wpdb->prefix . 'trcl_analytics_events',
             $wpdb->prefix . 'trcl_content_index',
             $wpdb->prefix . 'trcl_feedback',
             $wpdb->prefix . 'trcl_messages',
