@@ -236,6 +236,10 @@ class Frontend {
                 'powered_by_url'  => LiteConfig::get_powered_by_url(),
                 'show_powered_by' => LiteConfig::get_show_powered_by(),
             ],
+            // Privacy notice — slim footer link rendered in the widget
+            // when the merchant has configured a privacy policy URL on
+            // Settings → Privacy. Empty url means "do not render".
+            'privacy' => $this->build_privacy_localize_block(),
         ];
 
         // WooCommerce data.
@@ -370,6 +374,36 @@ class Frontend {
         }
 
         return ob_get_clean();
+    }
+
+    /**
+     * Build the privacy block exposed to the widget via wp_localize_script.
+     *
+     * Returns three keys:
+     *   show  string '1' | '0' — whether the widget should render the link.
+     *   text  string           — leading copy ("By chatting, you accept our")
+     *   url   string           — destination URL (empty when show='0')
+     *
+     * Determined by GdprSettings:
+     *   - show='1' only when a privacy_notice_url is configured.
+     *   - text falls back to GdprSettings::NOTICE_DEFAULT_TEXT when the
+     *     merchant has not overridden it.
+     *
+     * Themes and other plugins can short-circuit rendering by hooking the
+     * `trcl_localize_script_data` filter and clearing the `privacy` block.
+     *
+     * @since 2.0.0
+     *
+     * @return array{show:string, text:string, url:string, link_label:string}
+     */
+    private function build_privacy_localize_block(): array {
+        $gdpr = new \TrillChatLite\Gdpr\GdprSettings();
+        return [
+            'show'       => $gdpr->should_render_widget_notice() ? '1' : '0',
+            'text'       => $gdpr->get_privacy_notice_text(),
+            'url'        => $gdpr->get_privacy_notice_url(),
+            'link_label' => __( 'Privacy Policy', 'trill-ai-chat-lite' ),
+        ];
     }
 
     /**

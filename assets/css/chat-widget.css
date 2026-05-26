@@ -434,6 +434,31 @@
 }
 
 /* ========================================
+   Privacy Notice (v2.0)
+   ======================================== */
+
+.trcl-privacy-notice {
+    display: block;
+    text-align: center;
+    padding: 6px 12px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #6b7280;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.trcl-privacy-notice a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.trcl-privacy-notice a:hover {
+    color: #374151;
+}
+
+/* ========================================
    Powered By Badge
    ======================================== */
 
@@ -642,6 +667,12 @@
     /* Powered by: safe area bottom */
     .trcl-powered-by {
         padding-bottom: max(6px, env(safe-area-inset-bottom));
+    }
+
+    /* Privacy notice: safe area bottom + slightly tighter on mobile */
+    .trcl-privacy-notice {
+        padding-bottom: max(6px, env(safe-area-inset-bottom));
+        font-size: 10px;
     }
 
     /* Limit banner */

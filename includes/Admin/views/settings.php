@@ -1,6 +1,19 @@
 <?php
 /**
- * Settings admin view.
+ * Settings admin view (tabbed).
+ *
+ * Tabs:
+ *   - General  — chat widget appearance + behaviour (chat enabled,
+ *                position, colour, welcome message, quick replies,
+ *                page visibility).
+ *   - Content  — page indexing controls for the AI assistant
+ *                (which post types to index, per-page selection,
+ *                auto-reindex, manual reindex button, status).
+ *
+ * Both tabs render their own <form> posting to options.php with the
+ * same nonce / option group (`trcl_settings`). Each form only includes
+ * the fields it owns; WordPress's Settings API saves them per-field
+ * without disturbing settings from the other tab.
  *
  * @package TrillChatLite\Admin
  * @since 1.0.0
@@ -21,15 +34,52 @@ $trcl_skip_account    = get_option( 'trcl_skip_account', '0' );
 
 // Resolve the default at render-time from the Settings class so the UI
 // stays in sync with register_setting() without duplicating the list.
-$trcl_settings_controller = new \TrillChatLite\Admin\Settings();
+$trcl_settings_controller   = new \TrillChatLite\Admin\Settings();
 $trcl_initial_quick_replies = get_option(
     'trcl_initial_quick_replies',
     $trcl_settings_controller->get_default_quick_replies_raw()
 );
+
+// Tab selector — defaults to General.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab routing.
+$trcl_active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
+if ( ! in_array( $trcl_active_tab, [ 'general', 'content', 'privacy' ], true ) ) {
+    $trcl_active_tab = 'general';
+}
+
+$trcl_base_url    = admin_url( 'admin.php?page=trcl-settings' );
+$trcl_general_url = add_query_arg( 'tab', 'general', $trcl_base_url );
+$trcl_content_url = add_query_arg( 'tab', 'content', $trcl_base_url );
+$trcl_privacy_url = add_query_arg( 'tab', 'privacy', $trcl_base_url );
 ?>
 
 <div class="wrap tcl-settings-page">
     <h1><?php esc_html_e( 'Trill AI Product Chat — Settings', 'trill-ai-chat-lite' ); ?></h1>
+
+    <h2 class="nav-tab-wrapper">
+        <a href="<?php echo esc_url( $trcl_general_url ); ?>"
+           class="nav-tab <?php echo $trcl_active_tab === 'general' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e( 'General', 'trill-ai-chat-lite' ); ?>
+        </a>
+        <a href="<?php echo esc_url( $trcl_content_url ); ?>"
+           class="nav-tab <?php echo $trcl_active_tab === 'content' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e( 'Content', 'trill-ai-chat-lite' ); ?>
+        </a>
+        <a href="<?php echo esc_url( $trcl_privacy_url ); ?>"
+           class="nav-tab <?php echo $trcl_active_tab === 'privacy' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e( 'Privacy', 'trill-ai-chat-lite' ); ?>
+        </a>
+    </h2>
+
+    <?php if ( $trcl_active_tab === 'content' ) : ?>
+
+        <?php include __DIR__ . '/settings-content.php'; ?>
+
+    <?php elseif ( $trcl_active_tab === 'privacy' ) : ?>
+
+        <?php include __DIR__ . '/settings-privacy.php'; ?>
+
+    <?php else : ?>
 
     <form method="post" action="options.php">
         <?php settings_fields( 'trcl_settings' ); ?>
@@ -123,4 +173,6 @@ $trcl_initial_quick_replies = get_option(
 
         <?php submit_button(); ?>
     </form>
+
+    <?php endif; ?>
 </div>

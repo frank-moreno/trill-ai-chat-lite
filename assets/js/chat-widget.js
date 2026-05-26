@@ -128,6 +128,14 @@
                                 '</svg>' +
                             '</button>' +
                         '</div>' +
+                        '<!-- Privacy notice -->' +
+                        (trcl_ajax.privacy && trcl_ajax.privacy.show === '1' && trcl_ajax.privacy.url ?
+                            '<div class="trcl-privacy-notice">' +
+                                this.escapeHtml(trcl_ajax.privacy.text) + ' ' +
+                                '<a href="' + this.escapeAttr(trcl_ajax.privacy.url) + '" target="_blank" rel="noopener">' +
+                                    this.escapeHtml(trcl_ajax.privacy.link_label || 'Privacy Policy') +
+                                '</a>' +
+                            '</div>' : '') +
                         '<!-- Powered By -->' +
                         (trcl_ajax.branding && trcl_ajax.branding.show_powered_by ?
                             '<a href="' + trcl_ajax.branding.powered_by_url + '" target="_blank" rel="noopener" class="trcl-powered-by">' +
@@ -799,6 +807,42 @@
          */
         str: function (key) {
             return (trcl_ajax.strings && trcl_ajax.strings[key]) || key;
+        },
+
+        /**
+         * HTML-escape a string for safe insertion into innerHTML / string-
+         * concatenated markup. Used by render() for merchant-supplied values
+         * (e.g. privacy notice text + URL) so a stray "<" / "&" / quote can
+         * never break out of the surrounding markup.
+         *
+         * @since 2.0.0
+         * @param {string|*} s
+         * @returns {string}
+         */
+        escapeHtml: function (s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[c];
+            });
+        },
+
+        /**
+         * Attribute-safe escape. Identical surface to escapeHtml; kept
+         * as a separate symbol so the call sites read like the HTML spec
+         * (text contexts vs attribute contexts) and so we can tighten one
+         * without disturbing the other.
+         *
+         * @since 2.0.0
+         * @param {string|*} s
+         * @returns {string}
+         */
+        escapeAttr: function (s) {
+            return this.escapeHtml(s);
         }
     };
 
