@@ -66,6 +66,16 @@ class PromptBuilder {
     private array $guardrails_context = [];
 
     /**
+     * Content snippets injected from ContentSearch (v2.0 Block 1).
+     *
+     * Each entry is shaped:
+     *   [ 'title' => string, 'snippet' => string, 'url' => string, 'score' => float ]
+     *
+     * @var array
+     */
+    private array $content_context = [];
+
+    /**
      * Set store context.
      *
      * @param array $context Store context data.
@@ -95,6 +105,27 @@ class PromptBuilder {
      */
     public function with_history( array $history ): self {
         $this->history = $history;
+        return $this;
+    }
+
+    /**
+     * Set content context (page / FAQ / policy snippets).
+     *
+     * Output of ContentSearch::search() is injected here. The builder
+     * renders the top-N matches as a `RELEVANT STORE CONTENT` section
+     * placed BEFORE the products section so policy / FAQ info anchors
+     * the response while commercial intent (products) closes it.
+     *
+     * Passing an empty array (or never calling this) means no content
+     * section is rendered — the rest of the prompt is unchanged.
+     *
+     * @since 2.0.0
+     *
+     * @param array $matches ContentSearch matches.
+     * @return self
+     */
+    public function with_content_context( array $matches ): self {
+        $this->content_context = $matches;
         return $this;
     }
 
@@ -152,6 +183,14 @@ class PromptBuilder {
 
         // Guardrails — scope and boundary enforcement.
         $parts[] = $this->build_guardrails_section();
+
+        // Content context (FAQ / policies / page snippets).
+        // Placed BEFORE products so policy/factual content anchors the
+        // response; the assistant naturally weights commercial intent
+        // (products) last to close the interaction.
+        if ( ! empty( $this->content_context ) ) {
+            $parts[] = $this->build_content_section();
+        }
 
         // Product context.
         if ( ! empty( $this->product_context ) ) {
@@ -246,6 +285,47 @@ class PromptBuilder {
         $lines[] = '- Do NOT list products in numbered format with links — the cards handle that.';
         $lines[] = '- Simply mention product names and prices naturally in your text.';
         $lines[] = '- Always mention current prices and availability.';
+
+        return implode( "\n", $lines );
+    }
+
+    /**
+     * Build the relevant-store-content section.
+     *
+     * Emits a deterministic `RELEVANT STORE CONTENT:` block with one
+     * bullet per match: source title plus a truncated snippet. The
+     * assistant is instructed to cite the title and to refuse to
+     * invent details outside the provided snippets.
+     *
+     * @since 2.0.0
+     *
+     * @return string
+     */
+    private function build_content_section(): string {
+        if ( empty( $this->content_context ) ) {
+            return '';
+        }
+
+        $lines = [ 'RELEVANT STORE CONTENT:' ];
+
+        foreach ( $this->content_context as $match ) {
+            $title   = isset( $match['title'] ) ? (string) $match['title'] : 'Untitled';
+            $snippet = isset( $match['snippet'] ) ? (string) $match['snippet'] : '';
+            // Collapse internal newlines so each bullet stays on a
+            // single rendered line — easier on the model.
+            $snippet = trim( preg_replace( '/\s+/', ' ', $snippet ) ?? $snippet );
+            if ( $snippet === '' ) {
+                continue;
+            }
+            $lines[] = sprintf( '- From "%s": "%s"', $title, $snippet );
+        }
+
+        $lines[] = '';
+        $lines[] = 'CONTENT USAGE RULES:';
+        $lines[] = '- Use these snippets to answer questions about store policies, FAQs, services, or general store information.';
+        $lines[] = '- Cite the page title when quoting or paraphrasing this content (e.g. "according to our Shipping page...").';
+        $lines[] = '- Do NOT invent details that are not present in the provided snippets.';
+        $lines[] = '- If the snippets do not contain the answer, say so plainly and offer to direct the customer to the relevant page or to human support.';
 
         return implode( "\n", $lines );
     }

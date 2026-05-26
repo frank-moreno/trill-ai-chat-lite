@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use TrillChatLite\Content\ContentSearch;
 use TrillChatLite\Database\DbManager;
 use TrillChatLite\Lite\LiteConfig;
 use TrillChatLite\Lite\TrialRegistration;
@@ -84,6 +85,13 @@ class RestController {
     private ProductSearch $search;
 
     /**
+     * Content search service (v2.0 Block 1 — page indexing).
+     *
+     * @var ContentSearch
+     */
+    private ContentSearch $content_search;
+
+    /**
      * Response formatter.
      *
      * @var ResponseFormatter
@@ -101,6 +109,7 @@ class RestController {
         $this->prompt_builder = new PromptBuilder();
         $this->formatter      = new ResponseFormatter();
         $this->search         = new ProductSearch();
+        $this->content_search = new ContentSearch();
     }
 
     /**
@@ -254,10 +263,30 @@ class RestController {
                 'product_names'  => array_column( $product_results, 'name' ),
             ] );
 
-            // 6. Build system prompt with store + product context.
+            // 5b. Search relevant page / FAQ / policy content
+            //     (v2.0 Block 1 — page indexing). Intent gated:
+            //     skipped for greetings and when product search
+            //     succeeded unless the message clearly asks about
+            //     a store policy / FAQ.
+            $content_results = [];
+            if ( $this->content_search->should_search( $message, ! empty( $product_results ) ) ) {
+                $content_results = $this->content_search->search( $message, 3 );
+            }
+
+            trcl_log( 'Content search result', 'debug', [
+                'message'         => $message,
+                'content_found'   => count( $content_results ),
+                'content_titles'  => array_column( $content_results, 'title' ),
+            ] );
+
+            // 6. Build system prompt with store + content + product context.
             $store_context = $this->build_store_context();
             $this->prompt_builder->with_store_context( $store_context );
             $this->prompt_builder->with_guardrails_context( $store_context );
+
+            if ( ! empty( $content_results ) ) {
+                $this->prompt_builder->with_content_context( $content_results );
+            }
 
             if ( ! empty( $product_results ) ) {
                 $this->prompt_builder->with_product_context( $product_results );
@@ -293,6 +322,7 @@ class RestController {
                 'system_prompt_bytes' => mb_strlen( $system_prompt ),
                 'history_turns'       => count( $history ),
                 'products_found'      => count( $product_results ),
+                'content_found'       => count( $content_results ),
             ] );
 
             // 9. Send to Trill Cloud backend.
