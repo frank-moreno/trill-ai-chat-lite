@@ -134,7 +134,143 @@ class Settings {
             ]
         );
 
+        // Content indexing settings (v2.0 Block 1).
+        // Nested array — the sanitizer enforces structure + types.
+        \register_setting(
+            self::SETTINGS_GROUP,
+            \TrillChatLite\Content\ContentSettings::OPTION_KEY,
+            [
+                'type'              => 'array',
+                'sanitize_callback' => [ $this, 'sanitize_content_settings' ],
+                'default'           => [],
+            ]
+        );
+
+        // GDPR settings (v2.0 Block 2).
+        \register_setting(
+            self::SETTINGS_GROUP,
+            \TrillChatLite\Gdpr\GdprSettings::OPT_RETENTION_DAYS,
+            [
+                'type'              => 'integer',
+                'sanitize_callback' => [ $this, 'sanitize_retention_days' ],
+                'default'           => \TrillChatLite\Gdpr\GdprSettings::RETENTION_DEFAULT_DAYS,
+            ]
+        );
+
+        \register_setting(
+            self::SETTINGS_GROUP,
+            \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_URL,
+            [
+                'type'              => 'string',
+                'sanitize_callback' => 'esc_url_raw',
+                'default'           => '',
+            ]
+        );
+
+        \register_setting(
+            self::SETTINGS_GROUP,
+            \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_TEXT,
+            [
+                'type'              => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'default'           => '',
+            ]
+        );
+
         trcl_log( 'Settings registered with WordPress', 'debug' );
+    }
+
+    /**
+     * Sanitize the retention_days setting.
+     *
+     * Clamps the merchant's input to [RETENTION_MIN_DAYS, RETENTION_MAX_DAYS]
+     * so typos can't disable the cleanup cron or set a 1-day window that
+     * deletes legitimate active conversations.
+     *
+     * @since 2.0.0
+     *
+     * @param mixed $value Raw input.
+     * @return int Clamped integer.
+     */
+    public function sanitize_retention_days( $value ): int {
+        $n = (int) $value;
+        if ( $n < \TrillChatLite\Gdpr\GdprSettings::RETENTION_MIN_DAYS ) {
+            return \TrillChatLite\Gdpr\GdprSettings::RETENTION_MIN_DAYS;
+        }
+        if ( $n > \TrillChatLite\Gdpr\GdprSettings::RETENTION_MAX_DAYS ) {
+            return \TrillChatLite\Gdpr\GdprSettings::RETENTION_MAX_DAYS;
+        }
+        return $n;
+    }
+
+    /**
+     * Sanitize the trcl_content_settings nested-array payload coming
+     * from the Content tab form.
+     *
+     * The form POSTs a structure like:
+     *
+     *   trcl_content_settings[enabled]                = '1'
+     *   trcl_content_settings[auto_reindex]           = '1'
+     *   trcl_content_settings[post_types][page]       = '1'
+     *   trcl_content_settings[post_types][post]       = '1'
+     *   trcl_content_settings[post_types][product_cat]= '1'
+     *   trcl_content_settings[included_ids][page][]   = 12
+     *   trcl_content_settings[included_ids][page][]   = 34
+     *
+     * Unchecked checkboxes are absent. Defaults: enabled OFF when not
+     * checked, post_types OFF when not checked. Included IDs are
+     * intval'd and deduped; empty array means "all published of that
+     * post type". Unknown post_type keys are silently dropped to keep
+     * the schema clean.
+     *
+     * Read-only meta (last_indexed, total_chunks) is preserved from
+     * the existing option value — we never let the form overwrite
+     * the indexer's runtime state.
+     *
+     * @since 2.0.0
+     *
+     * @param mixed $value Raw value from $_POST (expected: array, can be string).
+     * @return array Sanitised, structured array.
+     */
+    public function sanitize_content_settings( $value ): array {
+        if ( ! is_array( $value ) ) {
+            $value = [];
+        }
+
+        // Preserve the indexer-managed status fields from the existing
+        // stored option — the form never submits these.
+        $existing     = \get_option( \TrillChatLite\Content\ContentSettings::OPTION_KEY, [] );
+        $last_indexed = isset( $existing['last_indexed'] ) ? (string) $existing['last_indexed'] : '';
+        $total_chunks = isset( $existing['total_chunks'] ) ? (int) $existing['total_chunks'] : 0;
+
+        // Allowed post_type keys for the form. We deliberately ignore
+        // unexpected keys (no surprises in the option payload).
+        $allowed_types = [ 'page', 'post', 'product_cat' ];
+
+        $clean = [
+            'enabled'      => ( isset( $value['enabled'] ) && (string) $value['enabled'] === '1' ) ? '1' : '0',
+            'auto_reindex' => ( isset( $value['auto_reindex'] ) && (string) $value['auto_reindex'] === '1' ) ? '1' : '0',
+            'post_types'   => [],
+            'included_ids' => [],
+            'last_indexed' => $last_indexed,
+            'total_chunks' => $total_chunks,
+        ];
+
+        foreach ( $allowed_types as $type ) {
+            $checked = isset( $value['post_types'][ $type ] ) && (string) $value['post_types'][ $type ] === '1';
+            $clean['post_types'][ $type ] = $checked ? '1' : '0';
+        }
+
+        foreach ( $allowed_types as $type ) {
+            $ids = $value['included_ids'][ $type ] ?? [];
+            if ( ! is_array( $ids ) ) {
+                $ids = [];
+            }
+            $ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ), static fn( int $id ): bool => $id > 0 ) ) );
+            $clean['included_ids'][ $type ] = $ids;
+        }
+
+        return $clean;
     }
 
     /**

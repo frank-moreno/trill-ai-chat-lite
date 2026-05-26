@@ -25,6 +25,7 @@ use TrillChatLite\WooCommerce\CronManager;
 use TrillChatLite\Abilities\AbilityRegistrar;
 use TrillChatLite\Content\ContentIndexer;
 use TrillChatLite\Content\ContentSettings;
+use TrillChatLite\Gdpr\PrivacyHooks;
 
 /**
  * Class Plugin
@@ -161,6 +162,13 @@ final class Plugin {
         $this->components['content_settings'] = $content_settings;
         $this->components['content_indexer']  = new ContentIndexer( $content_settings );
         $this->components['content_indexer']->register_hooks();
+
+        // 6c. GDPR — WP Privacy API exporter + eraser for conversations
+        //     (v2.0 Block 2). Wires our hooks into WP's native Tools →
+        //     Export / Erase Personal Data flow so DSAR requests work
+        //     end-to-end through standard WordPress UI.
+        $this->components['privacy_hooks'] = new PrivacyHooks();
+        $this->components['privacy_hooks']->register_hooks();
 
         // 7. REST API.
         add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );

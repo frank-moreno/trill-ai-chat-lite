@@ -90,16 +90,25 @@ class CronManager {
     }
 
     /**
-     * Run conversation cleanup.
+     * Run conversation cleanup using the GDPR-configured retention
+     * window (default 365 days, clamped to [7, 3650]).
+     *
+     * @see \TrillChatLite\Gdpr\GdprSettings::get_retention_days()
      */
     public function run_cleanup(): void {
-        trcl_log( 'Cron: starting conversation cleanup', 'info' );
+        $gdpr           = new \TrillChatLite\Gdpr\GdprSettings();
+        $retention_days = $gdpr->get_retention_days();
+
+        trcl_log( 'Cron: starting conversation cleanup', 'info', [
+            'retention_days' => $retention_days,
+        ] );
 
         $db      = new DbManager();
-        $deleted = $db->cleanup_old_conversations( 30 );
+        $deleted = $db->cleanup_old_conversations( $retention_days );
 
         trcl_log( 'Cron: cleanup complete', 'info', [
-            'deleted' => $deleted,
+            'deleted'        => $deleted,
+            'retention_days' => $retention_days,
         ] );
     }
 }
