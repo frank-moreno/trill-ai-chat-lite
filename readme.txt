@@ -1,6 +1,6 @@
 === Trill AI Product Chat for WooCommerce ===
 Contributors: trillai
-Tags: ai assistant, product search, customer support, sales, chat
+Tags: woocommerce, ai chatbot, product search, order tracking, cart recovery
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
@@ -8,45 +8,59 @@ Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Trill AI Product Chat: a managed AI chatbot that reads your WooCommerce catalogue. GDPR-ready. Free forever.
+AI chatbot for WooCommerce: cart-aware shopping, verified order tracking, smart lead capture, revenue analytics. GDPR-ready. Free forever.
 
 == Description ==
 
-**Trill AI Product Chat for WooCommerce — an AI chatbot built for store owners who want AI that just works.**
+**Trill AI Product Chat for WooCommerce — the AI shopping assistant that turns chat into measurable revenue.**
 
-Trill AI Chat Lite adds a friendly, product-aware AI chat to your WooCommerce store in under 5 minutes. Shoppers ask questions in natural language — "do you have this jacket in blue, medium?", "what's on sale?", "got anything under £50?" — and Robin, the AI assistant, answers using your real catalogue: stock, variations, prices, categories and attributes. No training, no keyword lists, no scripts.
+Trill AI Chat Lite adds a friendly, store-aware AI chat to your WooCommerce site in under 5 minutes. Robin — the AI assistant — answers shoppers in natural language using your real catalogue, your real page content, the current cart, and verified order data. The merchant gets a dashboard that proves revenue from chat. Free forever, open source, GDPR-ready.
 
-Unlike generic WordPress AI chatbots, Trill AI Chat is **WooCommerce-native**: it understands products, variations, stock status, categories and attributes out of the box. Every feature is designed for e-commerce — from interactive product cards with one-click add-to-cart to smart de-pluralisation that matches "t-shirts" with "T-Shirt".
+= New in 2.0 — five user-facing features =
 
-The AI infrastructure is handled for you via the Trill AI API, so you get a predictable monthly conversation quota with no OpenAI account required. A managed AI chatbot for WooCommerce, built for WooCommerce support automation and product recommendation AI.
+* **Page content indexing.** Robin reads your FAQ, shipping, returns, contact and policy pages and answers questions about them — not just products. Pick which pages to index from the Settings → Content tab.
+* **Cart-aware shopping assistant.** Robin sees the current basket on every message. Answers "what's in my cart", "what's my total", "help me checkout" and recommends products that complement what is already added.
+* **Verified order tracking.** "Where's my order?" answered safely. Identity is verified by WordPress login or by matching the email used at checkout before any order detail is shared. No leaks.
+* **Smart lead capture.** When a product is out of stock or a shopper hesitates on price, Robin offers to take their email — with explicit, audited consent. Manage every lead from a dedicated Trill Chat → Leads admin page with CSV export.
+* **Revenue analytics dashboard.** Four KPI cards on the Trill Chat dashboard: chats started, orders completed, orders attributed to chat, revenue from chat. Choose 7 / 30 / 90 day windows. Prove ROI at a glance.
 
-= Why store owners switch to Trill AI Chat =
+Plus **GDPR conversation management** wired into WordPress's native Tools → Personal Data flow: DSAR export, right-to-erasure, configurable retention, audited consent snapshots. No IP addresses are ever persisted.
 
-* **5-minute install.** No API keys. No external account signup required — your WordPress admin is the only login you need.
-* **Reads your real catalogue.** Real-time product search across name, description, categories and tags. Variations, stock and prices all native — true AI chat for WooCommerce.
-* **Managed AI, predictable cost.** Lite includes a generous monthly conversation allowance managed server-side. Track usage from the admin dashboard.
-* **Topic-safe.** Built-in guardrails auto-generated from your store metadata keep conversations about shopping, politely declining off-topic queries (homework, code generation, medical or legal advice).
-* **Prompt injection protection.** The assistant will not reveal system instructions or adopt different personas.
-* **GDPR-ready.** UK-registered company (Greensolutions Pioneers Limited, Companies House 15693716). HTTPS end-to-end. Chat data is never used to train AI models.
+= Why store owners pick Trill AI Chat over generic AI plugins =
+
+* **WooCommerce-native, not bolted on.** Understands products, variations, stock, categories, carts and orders out of the box — every code path is designed for e-commerce.
+* **5-minute install.** No API keys. No external account signup — your WordPress admin is the only login you need.
+* **Reads your real catalogue + your real pages.** Real-time product search **and** page content indexing. Robin can answer "do you have red dresses?" *and* "what's your return policy?" from the same conversation.
+* **Knows the cart.** Robin sees what shoppers already added and helps them checkout instead of forgetting state.
+* **Privacy-first order lookup.** Identity verified before any order detail is shared. WordPress login for registered customers, email-match for guests, silent fall-through on mismatch.
+* **Revenue attribution built in.** Orders placed within 24h of a chat are tagged as "from chat" and surface on the dashboard with attributed revenue.
+* **Managed AI, predictable cost.** Generous monthly conversation allowance on Trill Cloud. Track usage from the admin dashboard. No OpenAI account required.
+* **Topic-safe.** Built-in guardrails auto-generated from your store metadata keep conversations about shopping, politely declining homework, code generation, medical or legal advice.
+* **Prompt-injection-protected.** The assistant will not reveal system instructions or adopt different personas.
+* **GDPR-ready.** UK-registered company (Greensolutions Pioneers Limited, Companies House 15693716). HTTPS end-to-end. Chat data is never used to train AI models. DSAR + erasure via WP Privacy Tools.
 * **Fast.** Sub-second responses on typical product questions.
 
 = What Lite includes (free, forever) =
 
 * AI shopping assistant widget on every page of your store
-* Generous monthly managed conversation quota (tracked in dashboard)
+* **Page content indexing** for FAQ, shipping, returns, contact and policy pages
+* **Cart-aware chat** that sees the current basket and guides to checkout
+* **Verified order tracking** with login or email-match identity check
+* **Smart lead capture** for out-of-stock and price-drop opt-ins, with audited consent
+* **Revenue analytics dashboard** — orders and revenue attributed to chat, 7/30/90-day windows
+* **GDPR conversation management** — DSAR + erasure via WP Privacy Tools, configurable retention
 * Real-time product search across your WooCommerce catalogue
 * Interactive product cards with one-click AJAX add-to-cart
 * Natural language understanding — over 50 shopping phrases recognised
 * Smart English de-pluralisation ("t-shirts" → "T-Shirt", "accessories" → "Accessory")
-* Topic enforcement and prompt injection protection (guardrails)
-* Non-product query handling for shipping, returns, payment and order status (AI customer service for WooCommerce)
-* Customisable widget colour, position and welcome message
-* Basic conversation analytics dashboard
+* Topic enforcement and prompt-injection protection (guardrails)
+* Generous monthly managed conversation quota on Trill Cloud (tracked in dashboard)
+* Customisable widget colour, position, welcome message, starter chips, privacy notice
 * WordPress 6.0+ and WooCommerce 8.0+ compatible
 * HPOS (High-Performance Order Storage) compatible
 * Shortcode `[trill_chat]` for embedding the chat trigger on any page or post
 * Translation-ready with `.pot` file (works with Loco Translate, WPML and similar)
-* WordPress 7.0 Abilities API integration (optional) — exposes product search, store context, and conversation summary to AI agents and MCP adapters that consume the new API
+* WordPress 7.0 Abilities API integration (optional) — exposes product search, store context, and conversation summary to AI agents and MCP adapters
 
 = Built for WooCommerce, by a UK SME =
 
@@ -93,11 +107,27 @@ No OpenAI, Anthropic or Google API key is required. Trill AI manages the AI prov
 
 = Do I need a WooCommerce store to use this plugin? =
 
-Yes. Trill AI Chat Lite is a WooCommerce AI shopping assistant — it reads your WooCommerce product catalogue to answer shopper questions about stock, variations, prices and categories. It will not do anything useful on a WordPress site without WooCommerce installed and active.
+Yes. Trill AI Chat Lite is a WooCommerce AI shopping assistant — it reads your WooCommerce product catalogue, your published pages, the current cart and the order history to answer shopper questions. It will not do anything useful on a WordPress site without WooCommerce installed and active.
 
 = Do I need an OpenAI or Anthropic API key? =
 
-No. We manage the AI infrastructure via the Trill AI API — you do not need to create an account with OpenAI, Anthropic or any other provider. Just install, activate and go.
+No. We manage the AI infrastructure via Trill Cloud — you do not need to create an account with OpenAI, Anthropic or any other provider. Just install, activate and go.
+
+= How does the cart-aware feature work? =
+
+On every chat turn the plugin reads the visitor's WooCommerce cart (items, quantities, line totals, cart subtotal and total) and injects a compact summary into the AI's context. Robin can then answer "what's in my cart", "what's my total", or "help me checkout" using real cart state — no hallucination, no asking the shopper to repeat what they already added. The cart context is sent fresh on every message, so it stays accurate even if the visitor adds or removes items mid-conversation.
+
+= How is order tracking kept private? =
+
+For registered customers, identity is verified through their WordPress login — they only see orders bound to their `wp_users.ID`. For guests, the plugin requires both the order number **and** an email that matches the order's billing email. A mismatch silently falls through to "I need to verify your email" instead of confirming or denying the order's existence, so the plugin never leaks order data to an unverified caller.
+
+= How is the lead capture consent stored? =
+
+When Robin offers to take the visitor's email (out-of-stock notification, price-drop alert, etc.) the exact consent line shown to the visitor is snapshotted into the `wp_trcl_leads` row alongside the email. If a future DSAR challenges the legitimate-interest basis the merchant can show what the visitor agreed to, verbatim, at capture time. Leads are managed from the Trill Chat → Leads admin page with CSV export.
+
+= How are orders attributed to chat conversations? =
+
+When `woocommerce_thankyou` fires, the plugin records an `order_completed` event and looks up any `chat_started` events that share the same WooCommerce session customer ID within the last 24 hours. On a match, an `order_attributed` event is written linking the order to the chat session. The dashboard then surfaces "Orders from chat" and "Revenue from chat" KPIs over a configurable 7/30/90-day window.
 
 = How many conversations does the plugin include? =
 
@@ -113,7 +143,7 @@ Install Trill AI Chat Lite from the WordPress plugin directory, activate it, and
 
 = Is Trill AI Chat Lite GDPR-compliant? =
 
-Yes. Greensolutions Pioneers Limited is a UK-registered company (Companies House 15693716) subject to UK GDPR and EU GDPR. All messages are transmitted over encrypted HTTPS connections. Chat data is never used to train AI models. See our [Privacy Policy](https://trillai.io/privacy/) for full details.
+Yes, fully wired in. Greensolutions Pioneers Limited is a UK-registered company (Companies House 15693716) subject to UK GDPR and EU GDPR. The plugin auto-registers with WordPress's native **Tools → Export Personal Data** (DSAR) and **Tools → Erase Personal Data** (right to be forgotten) — so any data subject request from a visitor flows through the standard WP admin, with conversations + messages + leads cascaded automatically. Retention is configurable (default 365 days, clamped 7-3650). All messages are transmitted over HTTPS. No IP addresses are ever persisted. Chat data is never used to train AI models. See our [Privacy Policy](https://trillai.io/privacy/) for full details.
 
 = Does it work with HPOS (High-Performance Order Storage)? =
 
@@ -174,13 +204,14 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Screenshots ==
 
-1. Trill AI Product Chat widget answering a product question on a storefront — interactive product cards with prices, stock and one-click add-to-cart
-2. AI chat for WooCommerce understanding variations and stock ("do you have this in blue, medium?") — real-time catalogue search in action
-3. Admin dashboard with conversation analytics, monthly quota usage and product index status
-4. Settings page — customise widget colour, position, welcome message and attribution badge
-5. Topic enforcement (guardrails) keeping conversations focused on shopping — polite decline of off-topic requests
-6. Mobile chat — Robin answering product questions with cards and add-to-cart buttons
-7. Desktop storefront with the minimal chat toggle in the bottom-right corner
+1. Cart-aware chat — Robin sees the basket on every message. The visitor asks "what's in my cart?" and gets an accurate, real-time summary with totals and a checkout shortcut.
+2. Revenue analytics dashboard — four KPI cards on the Trill Chat dashboard: chats started, orders completed, orders attributed to chat, revenue from chat. Switch between 7 / 30 / 90 day windows.
+3. Page content indexing — the new Settings → Content tab. Pick which pages Robin reads (FAQ, shipping, returns, contact, custom). Auto-reindex on save, plus a manual "Reindex now" button.
+4. Verified order tracking — Robin answers "Where's my order?" only after verifying identity (WordPress login or email match) and returns plain-language status with a view-order link.
+5. Smart lead capture — when a product is out of stock or a shopper hesitates on price, Robin offers to take their email with an audited consent line.
+6. Leads admin page — every captured email with intent, status, captured-at, mark-contacted and erase actions. Includes a one-click CSV export for downstream tools.
+7. Settings → Privacy tab — configurable retention (default 365 days), privacy policy URL, custom notice text. DSAR + erasure links to WordPress's native Tools → Personal Data screens.
+8. Storefront chat widget answering a product query — interactive product cards with prices, stock and one-click AJAX add-to-cart. Mobile-friendly, theme-agnostic.
 
 == Changelog ==
 
