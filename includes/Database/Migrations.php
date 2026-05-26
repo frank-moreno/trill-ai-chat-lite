@@ -3,7 +3,11 @@
  * Database Migrations.
  *
  * Creates and manages database schema for the Lite plugin.
- * Tables: trcl_conversations, trcl_messages, trcl_feedback.
+ * Tables: trcl_conversations, trcl_messages, trcl_feedback, trcl_content_index.
+ *
+ * Schema history:
+ *   1.0.0 — initial release (conversations, messages, feedback)
+ *   1.1.0 — page content indexing (adds trcl_content_index, v2.0 Block 1)
  *
  * @package TrillChatLite\Database
  * @since 1.0.0
@@ -26,7 +30,7 @@ class Migrations {
     /**
      * Current schema version.
      */
-    private const SCHEMA_VERSION = '1.0.0';
+    private const SCHEMA_VERSION = '1.1.0';
 
     /**
      * Run all migrations.
@@ -52,6 +56,7 @@ class Migrations {
         self::create_conversations_table( $wpdb, $charset_collate );
         self::create_messages_table( $wpdb, $charset_collate );
         self::create_feedback_table( $wpdb, $charset_collate );
+        self::create_content_index_table( $wpdb, $charset_collate );
 
         \update_option( 'trcl_db_version', self::SCHEMA_VERSION );
 
@@ -141,6 +146,47 @@ class Migrations {
     }
 
     /**
+     * Create content index table (v1.1.0 — Block 1 page indexing).
+     *
+     * Stores pre-chunked snippets from WordPress pages, posts, and
+     * product category descriptions for retrieval by ContentSearch.
+     * Each row is a single chunk (~400 chars) tied to its source post.
+     *
+     * Uses a FULLTEXT index on (title, snippet) for MATCH AGAINST
+     * relevance scoring. Requires InnoDB (default since WP 4.2).
+     *
+     * Reusable columns:
+     *  - `post_id` holds the term_id when `post_type = 'product_cat'`.
+     *  - `chunk_index` is 0 for single-chunk sources (taxonomy terms).
+     *
+     * @since 2.0.0
+     *
+     * @param \wpdb  $wpdb            WordPress database object.
+     * @param string $charset_collate Charset and collation.
+     */
+    private static function create_content_index_table( \wpdb $wpdb, string $charset_collate ): void {
+        $table_name = $wpdb->prefix . 'trcl_content_index';
+
+        $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            post_id bigint(20) UNSIGNED NOT NULL,
+            post_type varchar(20) NOT NULL,
+            chunk_index smallint(5) UNSIGNED NOT NULL DEFAULT 0,
+            title varchar(255) NOT NULL,
+            snippet text NOT NULL,
+            url varchar(500) NOT NULL,
+            last_indexed datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_post (post_id, chunk_index),
+            KEY idx_type (post_type),
+            FULLTEXT KEY ft_snippet (title, snippet)
+        ) ENGINE=InnoDB {$charset_collate};";
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table creation DDL.
+        dbDelta( $sql );
+    }
+
+    /**
      * Drop all plugin tables.
      *
      * Called during uninstall.
@@ -149,6 +195,7 @@ class Migrations {
         global $wpdb;
 
         $tables = [
+            $wpdb->prefix . 'trcl_content_index',
             $wpdb->prefix . 'trcl_feedback',
             $wpdb->prefix . 'trcl_messages',
             $wpdb->prefix . 'trcl_conversations',

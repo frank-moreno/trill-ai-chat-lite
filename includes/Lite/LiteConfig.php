@@ -132,13 +132,25 @@ class LiteConfig {
     public const OPT_TRIAL_REGISTER_PERMA_FAIL = 'trcl_trial_register_perma_fail';
 
     /**
-     * wp_option tracking the last plugin version that ran the boot path.
+     * wp_option tracking the last plugin code version that ran the boot path.
      *
-     * Used by the upgrade-detection hook to identify v1.x → 2.0 jumps
-     * and trigger one-time migration (clear legacy options + show
-     * admin notice + auto-register trial).
+     * Used by the upgrade-detection hook (UpgradeManager) to identify
+     * v1.x → 2.0 jumps and trigger one-time migration (clear legacy
+     * options + show admin notice + auto-register trial).
+     *
+     * NOTE: This is the PLUGIN code version, NOT the DB schema version.
+     * The DB schema version is owned independently by
+     * `TrillChatLite\Database\Migrations::SCHEMA_VERSION` and stored in
+     * the option key `trcl_db_version`. The two were originally aliased
+     * onto the same key in the v2.0 wiring commit (5dd2bc7) which caused
+     * UpgradeManager to overwrite Migrations' schema version with the
+     * plugin code version, making Migrations::run() early-return on
+     * subsequent activations. Fix: split into two distinct option keys
+     * (this one, `trcl_plugin_version`, owned by UpgradeManager).
+     *
+     * @since 2.0.0
      */
-    public const OPT_DB_VERSION = 'trcl_db_version';
+    public const OPT_PLUGIN_VERSION = 'trcl_plugin_version';
 
     /**
      * wp_option flagging that the post-upgrade admin notice should be

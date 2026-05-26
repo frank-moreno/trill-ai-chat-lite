@@ -11,8 +11,15 @@
  *      explaining the migration.
  *   3. Trigger a trial registration so the plugin works immediately,
  *      without requiring the merchant to deactivate/reactivate.
- *   4. Store the new version in trcl_db_version so this branch only
- *      runs once.
+ *   4. Store the new version in trcl_plugin_version so this branch
+ *      only runs once.
+ *
+ * NOTE on option keys: the plugin CODE version tracked here is stored
+ * in `trcl_plugin_version`. The DB SCHEMA version is independently
+ * tracked by `TrillChatLite\Database\Migrations` in `trcl_db_version`.
+ * The two were aliased onto the same key in an earlier draft which
+ * caused UpgradeManager to overwrite the schema version; this is now
+ * fixed by splitting the keys.
  *
  * "Hard cutover" by design — see the project decision doc for why we
  * chose this over a soft migration with cross-backend bridging.
@@ -58,12 +65,12 @@ class UpgradeManager {
      */
     public function maybe_run_migration(): void {
         $current_version = defined( 'TRCL_VERSION' ) ? TRCL_VERSION : '0.0.0';
-        $stored_version  = (string) \get_option( LiteConfig::OPT_DB_VERSION, '' );
+        $stored_version  = (string) \get_option( LiteConfig::OPT_PLUGIN_VERSION, '' );
 
         // First-ever install (no stored version yet) — just record current.
         // Activator already handled migrations + trial register on activate.
         if ( $stored_version === '' ) {
-            \update_option( LiteConfig::OPT_DB_VERSION, $current_version, false );
+            \update_option( LiteConfig::OPT_PLUGIN_VERSION, $current_version, false );
             return;
         }
 
@@ -86,7 +93,7 @@ class UpgradeManager {
         }
 
         // Always advance the stored version after any forward upgrade.
-        \update_option( LiteConfig::OPT_DB_VERSION, $current_version, false );
+        \update_option( LiteConfig::OPT_PLUGIN_VERSION, $current_version, false );
     }
 
     /**
