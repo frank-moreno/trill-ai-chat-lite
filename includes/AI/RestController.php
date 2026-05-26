@@ -29,6 +29,8 @@ use TrillChatLite\Lite\LiteConfig;
 use TrillChatLite\Lite\TrialRegistration;
 use TrillChatLite\Search\ProductSearch;
 use TrillChatLite\WooCommerce\CartContext;
+use TrillChatLite\WooCommerce\OrderIntentDetector;
+use TrillChatLite\WooCommerce\OrderLookup;
 
 /**
  * REST Controller — Lite API endpoints.
@@ -115,6 +117,18 @@ class RestController {
     private LeadCaptureService $lead_capture;
 
     /**
+     * Order tracking services (v2.0 Block 5).
+     *
+     * @var OrderIntentDetector
+     */
+    private OrderIntentDetector $order_intent;
+
+    /**
+     * @var OrderLookup
+     */
+    private OrderLookup $order_lookup;
+
+    /**
      * Response formatter.
      *
      * @var ResponseFormatter
@@ -136,6 +150,8 @@ class RestController {
         $this->cart_context   = new CartContext();
         $this->lead_detector  = new LeadIntentDetector();
         $this->lead_capture   = new LeadCaptureService();
+        $this->order_intent   = new OrderIntentDetector();
+        $this->order_lookup   = new OrderLookup();
     }
 
     /**
@@ -378,6 +394,42 @@ class RestController {
                 'captured_on_reply' => $lead_offer_for_this_turn,
             ] );
 
+            // 5e. Order tracking (v2.0 Block 5).
+            //
+            //  Three resolution paths, in priority order:
+            //    (A) Logged-in user with an explicit order id in their
+            //        message → verified by user_id, inject order.
+            //    (B) Logged-in user with intent but no id → return
+            //        their most recent orders for context.
+            //    (C) Guest with order_id AND email in the same message
+            //        → verified via OrderLookup::find_by_id_and_email.
+            //    (D) Guest with an "email reply" to a previous
+            //        "verification needed" assistant turn → re-attempt
+            //        verification using the email + remembered order_id.
+            //    (E) Guest with intent but no email yet → render the
+            //        ORDER VERIFICATION NEEDED section so Robin asks.
+            //
+            //  Any verification failure (mismatched email, missing
+            //  order) collapses to (E) silently — we never leak the
+            //  existence of an order to an unverified caller.
+            $order_pending_for_storage = 0;
+            $verified_orders           = $this->resolve_order_context(
+                $session_id,
+                $message,
+                $order_pending_for_storage
+            );
+
+            if ( ! empty( $verified_orders ) ) {
+                $this->prompt_builder->with_order_context( $verified_orders );
+            } elseif ( $order_pending_for_storage > 0 || $this->order_intent->is_order_status_intent( $message ) ) {
+                $this->prompt_builder->with_order_email_required( $order_pending_for_storage );
+            }
+
+            trcl_log( 'Order tracking state', 'debug', [
+                'verified_orders'   => count( $verified_orders ),
+                'pending_order_id'  => $order_pending_for_storage,
+            ] );
+
             $system_prompt = $this->prompt_builder->build();
 
             // 7. Lazy trial registration fallback. The Activator and the
@@ -460,20 +512,36 @@ class RestController {
             }
 
             // 10. Store AI response.
-            //     If we asked Robin to offer a lead capture this turn,
-            //     stamp the assistant message metadata with the intent
-            //     so the next user turn knows the email-reply context.
+            //     Stamp the assistant message metadata with any pending
+            //     state the next user turn will need:
+            //       - lead_offer       (Block 4): intent we asked Robin
+            //                                     to surface this turn.
+            //       - order_pending    (Block 5): unverified order id
+            //                                     the visitor referenced
+            //                                     so we can resume
+            //                                     verification when
+            //                                     they reply with email.
             $ai_content   = $ai_response['reply'];
             $message_meta = [];
+            $meta_payload = [];
+
             if ( $intent_for_storage !== '' ) {
-                $message_meta['metadata'] = [
-                    'lead_offer' => [
-                        'type'         => $intent_for_storage,
-                        'product_id'   => $intent_product_id,
-                        'consent_text' => $consent_text,
-                    ],
+                $meta_payload['lead_offer'] = [
+                    'type'         => $intent_for_storage,
+                    'product_id'   => $intent_product_id,
+                    'consent_text' => $consent_text,
                 ];
             }
+            if ( $order_pending_for_storage > 0 && empty( $verified_orders ) ) {
+                $meta_payload['order_pending'] = [
+                    'order_id' => $order_pending_for_storage,
+                ];
+            }
+
+            if ( ! empty( $meta_payload ) ) {
+                $message_meta['metadata'] = $meta_payload;
+            }
+
             $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content, $message_meta );
             if ( ! $ai_message_id ) {
                 trcl_log( 'Failed to store AI message (response still returned)', 'warning', [
@@ -868,6 +936,97 @@ class RestController {
         }
 
         return $lead_id;
+    }
+
+    /**
+     * Resolve the order context for this turn.
+     *
+     * Returns an array of formatted orders ready for PromptBuilder, OR
+     * empty + sets `$pending_order_id_out` to the order id we noticed
+     * but couldn't verify yet (so the caller can ask Robin to request
+     * email confirmation).
+     *
+     * Privacy invariants enforced here:
+     *   - Logged-in users only ever see orders bound to their own
+     *     wp_users.ID — checked at the lookup layer.
+     *   - Guests must supply email + order id in the same chat session
+     *     for any order to be exposed. find_by_id_and_email() enforces
+     *     the strict billing-email match.
+     *   - Any failure to verify silently collapses to "ask for email" —
+     *     we never reveal whether an order id exists in the system.
+     *
+     * @param string $session_id          Current chat session UUID.
+     * @param string $message             Current user message.
+     * @param int    $pending_order_id_out Set by reference when we
+     *                                     observed an order id but
+     *                                     couldn't verify it.
+     * @return array Orders formatted by OrderLookup::format_for_prompt.
+     */
+    private function resolve_order_context( string $session_id, string $message, int &$pending_order_id_out ): array {
+        $pending_order_id_out = 0;
+
+        $has_intent = $this->order_intent->is_order_status_intent( $message );
+        $msg_order  = $this->order_intent->extract_order_id( $message );
+        $msg_email  = $this->lead_detector->extract_email( $message );
+
+        // Path A & B — logged-in user.
+        $user_id = (int) \get_current_user_id();
+        if ( $user_id > 0 && ( $has_intent || $msg_order > 0 ) ) {
+            $orders = $this->order_lookup->find_for_logged_in_user( $user_id );
+            if ( ! empty( $orders ) ) {
+                $formatted = [];
+                foreach ( $orders as $order ) {
+                    // If the visitor referenced a specific order, prefer
+                    // showing that one rather than the latest few.
+                    if ( $msg_order > 0 && method_exists( $order, 'get_id' ) && (int) $order->get_id() === $msg_order ) {
+                        return [ $this->order_lookup->format_for_prompt( $order ) ];
+                    }
+                    $formatted[] = $this->order_lookup->format_for_prompt( $order );
+                }
+                return $formatted;
+            }
+            // Logged-in but no orders — fall through; nothing to leak.
+            return [];
+        }
+
+        // Path C — guest with order_id + email in the same message.
+        if ( $msg_order > 0 && $msg_email !== '' ) {
+            $order = $this->order_lookup->find_by_id_and_email( $msg_order, $msg_email );
+            if ( $order ) {
+                return [ $this->order_lookup->format_for_prompt( $order ) ];
+            }
+            // Email/order mismatch — pretend we don't know which order
+            // they meant. Re-prompt as if no email had been supplied.
+            $pending_order_id_out = $msg_order;
+            return [];
+        }
+
+        // Path D — guest email reply to a previous "verification needed" turn.
+        if ( $msg_email !== '' ) {
+            $prior = $this->db->get_last_assistant_message( $session_id );
+            if ( $prior && ! empty( $prior->metadata ) ) {
+                $prior_meta = json_decode( (string) $prior->metadata, true );
+                $remembered = is_array( $prior_meta )
+                    ? (int) ( $prior_meta['order_pending']['order_id'] ?? 0 )
+                    : 0;
+                if ( $remembered > 0 ) {
+                    $order = $this->order_lookup->find_by_id_and_email( $remembered, $msg_email );
+                    if ( $order ) {
+                        return [ $this->order_lookup->format_for_prompt( $order ) ];
+                    }
+                    $pending_order_id_out = $remembered;
+                    return [];
+                }
+            }
+        }
+
+        // Path E — guest with intent but no enough info yet.
+        if ( $has_intent ) {
+            $pending_order_id_out = $msg_order;
+            return [];
+        }
+
+        return [];
     }
 
     /**

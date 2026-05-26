@@ -99,6 +99,31 @@ class PromptBuilder {
     private array $lead_offer = [];
 
     /**
+     * Verified customer orders to expose to the assistant (Block 5).
+     *
+     * Each entry follows the shape returned by
+     * `TrillChatLite\WooCommerce\OrderLookup::format_for_prompt()`.
+     * Empty array = no orders rendered.
+     *
+     * @var array
+     */
+    private array $order_context = [];
+
+    /**
+     * Pending order-tracking verification (Block 5).
+     *
+     * When the visitor asked about an order but we cannot yet verify
+     * their identity (guest without email-in-message), this carries
+     * the unverified order_id we noticed so Robin can ask the visitor
+     * to confirm the email used at checkout.
+     *
+     * Shape: [ 'order_id' => int ] or [].
+     *
+     * @var array
+     */
+    private array $order_email_required = [];
+
+    /**
      * Set store context.
      *
      * @param array $context Store context data.
@@ -128,6 +153,39 @@ class PromptBuilder {
      */
     public function with_history( array $history ): self {
         $this->history = $history;
+        return $this;
+    }
+
+    /**
+     * Supply verified customer orders for the order-tracking flow.
+     *
+     * The caller is responsible for verifying ownership BEFORE handing
+     * orders to this method — we render whatever we receive. Empty
+     * array (or omitted call) leaves the prompt unchanged.
+     *
+     * @since 2.0.0
+     *
+     * @param array $orders Output of OrderLookup::format_for_prompt() for each.
+     * @return self
+     */
+    public function with_order_context( array $orders ): self {
+        $this->order_context = $orders;
+        return $this;
+    }
+
+    /**
+     * Tell the assistant the visitor needs to confirm an email before
+     * we can show their order. Renders an "ORDER VERIFICATION NEEDED"
+     * block instructing Robin to politely request the email.
+     *
+     * @since 2.0.0
+     *
+     * @param int $order_id Optional. The unverified order id the
+     *                       visitor referenced (0 if none captured).
+     * @return self
+     */
+    public function with_order_email_required( int $order_id = 0 ): self {
+        $this->order_email_required = [ 'order_id' => max( 0, $order_id ) ];
         return $this;
     }
 
@@ -280,6 +338,15 @@ class PromptBuilder {
             $parts[] = $this->build_cart_section();
         }
 
+        // Verified customer orders (Block 5). Rendered just before the
+        // lead-capture / guidelines block so it reads as concrete data
+        // for the assistant to ground its answer in.
+        if ( ! empty( $this->order_context ) ) {
+            $parts[] = $this->build_order_section();
+        } elseif ( ! empty( $this->order_email_required ) ) {
+            $parts[] = $this->build_order_email_required_section();
+        }
+
         // Lead capture offer (Block 4). Placed near the end so the
         // assistant treats it as the closing action of this turn.
         if ( ! empty( $this->lead_offer ) ) {
@@ -372,6 +439,101 @@ class PromptBuilder {
         $lines[] = '- Do NOT list products in numbered format with links — the cards handle that.';
         $lines[] = '- Simply mention product names and prices naturally in your text.';
         $lines[] = '- Always mention current prices and availability.';
+
+        return implode( "\n", $lines );
+    }
+
+    /**
+     * Build the verified-orders section.
+     *
+     * Lists each order with status, date, total, line items, and the
+     * "view order" URL the customer can click. Intentionally narrow:
+     * no shipping address, no internal notes, no IP — the prompt
+     * only carries what the visitor needs to answer "where's my order".
+     *
+     * @since 2.0.0
+     *
+     * @return string
+     */
+    private function build_order_section(): string {
+        if ( empty( $this->order_context ) ) {
+            return '';
+        }
+
+        $lines = [ 'CUSTOMER ORDERS (verified):' ];
+
+        foreach ( $this->order_context as $order ) {
+            $number   = (string) ( $order['number'] ?? ( '#' . ( $order['id'] ?? '?' ) ) );
+            $status   = (string) ( $order['status'] ?? 'unknown' );
+            $date     = (string) ( $order['date'] ?? '' );
+            $currency = (string) ( $order['currency'] ?? '' );
+            $total    = (float) ( $order['total'] ?? 0 );
+            $items    = is_array( $order['items'] ?? null ) ? $order['items'] : [];
+            $view_url = (string) ( $order['view_url'] ?? '' );
+
+            $lines[] = sprintf(
+                '- Order #%s — placed %s, status: %s, total: %s%s',
+                $number,
+                $date !== '' ? $date : 'unknown date',
+                $status,
+                $currency,
+                number_format( $total, 2 )
+            );
+
+            if ( ! empty( $items ) ) {
+                $item_summary = [];
+                foreach ( $items as $line ) {
+                    $name = (string) ( $line['name'] ?? 'Item' );
+                    $qty  = (int) ( $line['qty'] ?? 1 );
+                    $item_summary[] = $qty . ' x ' . $name;
+                }
+                $lines[] = '    Items: ' . implode( ', ', $item_summary );
+            }
+            if ( $view_url !== '' ) {
+                $lines[] = '    View URL: ' . $view_url;
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = 'ORDER USAGE RULES:';
+        $lines[] = '- This data is verified for the current visitor — answer their questions directly.';
+        $lines[] = '- Report status in plain language (e.g. "your order is currently being prepared" rather than "wc-processing").';
+        $lines[] = '- When the customer wants more detail, send them to the View URL above instead of repeating addresses or tracking codes.';
+        $lines[] = '- NEVER mention orders, names, or amounts that are not listed in this section.';
+
+        return implode( "\n", $lines );
+    }
+
+    /**
+     * Build the "ORDER VERIFICATION NEEDED" section.
+     *
+     * Triggered when the visitor asked about an order but we don't
+     * have verified identity yet (guest without matching email).
+     * Robin should ask for the email used at checkout; the next turn
+     * will re-attempt verification.
+     *
+     * @since 2.0.0
+     *
+     * @return string
+     */
+    private function build_order_email_required_section(): string {
+        $order_id = (int) ( $this->order_email_required['order_id'] ?? 0 );
+
+        $lines = [ 'ORDER VERIFICATION NEEDED:' ];
+
+        if ( $order_id > 0 ) {
+            $lines[] = sprintf(
+                '- The customer is asking about order #%d but you have not verified their identity yet.',
+                $order_id
+            );
+        } else {
+            $lines[] = '- The customer is asking about an order but you have neither the order number nor verified identity yet.';
+        }
+
+        $lines[] = '- Politely ask them to confirm the email address used at checkout so the order can be verified.';
+        $lines[] = '- If the order number is missing, ALSO ask for it.';
+        $lines[] = '- Do NOT share any order details until verification is complete.';
+        $lines[] = '- Reassure the visitor that the email is only used to confirm ownership of the order.';
 
         return implode( "\n", $lines );
     }
