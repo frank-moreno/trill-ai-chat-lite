@@ -92,6 +92,15 @@ class UpgradeManager {
             $this->run_cutover_migration();
         }
 
+        // Any forward upgrade: bring the DB schema up to date. Plugin
+        // updates do NOT fire the activation hook, so without this call
+        // schema bumps (e.g. 1.4.0's FULLTEXT index for the v2.2
+        // Conversations page) would only ever apply on fresh installs
+        // or manual re-activation. Migrations::run() early-returns when
+        // the stored schema version is already current, so this is a
+        // no-op on upgrades that ship no schema change.
+        \TrillChatLite\Database\Migrations::run();
+
         // Always advance the stored version after any forward upgrade.
         \update_option( LiteConfig::OPT_PLUGIN_VERSION, $current_version, false );
     }
