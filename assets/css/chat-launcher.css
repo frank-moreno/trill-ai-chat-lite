@@ -107,3 +107,26 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     z-index: 99999;
 }
+
+/* ========================================
+   Classic bubble launcher (v2.1)
+   ======================================== */
+
+.trcl-chat-toggle--bubble {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--trcl-primary, #10B981);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.trcl-chat-toggle--bubble:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.trcl-chat-toggle--bubble .trcl-bubble-icon {
+    width: 26px;
+    height: 26px;
+    display: block;
+}

@@ -4,7 +4,7 @@ Tags: woocommerce, ai chatbot, product search, order tracking, cart recovery
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ AI chatbot for WooCommerce: cart-aware shopping, verified order tracking, smart 
 **Trill AI Product Chat for WooCommerce — the AI shopping assistant that turns chat into measurable revenue.**
 
 Trill AI Chat Lite adds a friendly, store-aware AI chat to your WooCommerce site in under 5 minutes. Robin — the AI assistant — answers shoppers in natural language using your real catalogue, your real page content, the current cart, and verified order data. The merchant gets a dashboard that proves revenue from chat. Free forever, open source, GDPR-ready.
+
+= New in 2.1 — make the widget yours =
+
+* **Full appearance control.** New **Settings → Appearance** tab: 7-colour palette, 4 corner positions, width / height / corner radius sliders, custom assistant name, custom avatar from your media library, and a curated font picker — with a live preview that updates as you type.
+* **Expandable chat on desktop.** Shoppers can grow the chat window with one click for longer conversations.
+* **Two launcher styles.** Keep the floating Trill logo or switch to a classic round chat bubble tinted with your brand colour.
 
 = New in 2.0 — five user-facing features =
 
@@ -215,6 +221,23 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 2.1.0 =
+**Appearance release — full visual control over the chat widget.**
+
+* **New Settings → Appearance tab** with a live preview that updates as you type.
+* **7-colour palette** — primary, primary hover, user bubble, AI bubble, header text, body text and window background, each with a colour picker.
+* **4 corner positions** — the widget can now also sit top-left or top-right.
+* **Width, height and corner radius sliders** (280–600px / 350–800px / 0–50px).
+* **Custom assistant name** — rename Robin to match your brand; the greeting and "is typing..." follow automatically.
+* **Custom avatar** — pick any image from your media library (falls back safely to the default if the image is later deleted).
+* **Curated font picker** — system font stacks only; the plugin never makes external font requests.
+* **Expandable chat window on desktop** — a new header button grows the chat for longer conversations; hidden on mobile where the chat is already full-screen.
+* **Two launcher styles** — the floating Trill logo (default) or a classic round bubble tinted with your primary colour.
+* **Reset to Defaults** button — one click restores the original look; your welcome message is kept.
+* Upgrades are visually silent: every new setting defaults to the exact pre-2.1 look until you change it.
+* Fixed: the chat window could snap back to the right edge after the full widget bundle lazy-loaded on bottom-left installs.
+* Hardened: assistant name is re-sanitised on output; avatar alt text is now attribute-escaped.
+
 = 2.0.0 =
 **Major release — five new user-facing features + a new managed AI backend. Free, open source, GDPR-ready.**
 
@@ -304,6 +327,9 @@ This release turns Trill AI Chat from a product-search chatbot into a full-stack
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Appearance release. Full visual control: 7-colour palette, 4 positions, size sliders, custom assistant name + avatar, font picker, live preview, desktop expand button and a configurable launcher. Your widget looks exactly the same until you change something — safe update for all users.
 
 = 2.0.0 =
 Major release. Five new user-facing features: page content indexing, cart-aware chat, verified order tracking, smart lead capture, and a revenue analytics dashboard. GDPR-ready (DSAR + erasure via WP Privacy Tools). New Trill Cloud backend with stateful conversations and a clearer 50 conversations/month free trial. Trial is re-registered automatically on update — no merchant action required.
