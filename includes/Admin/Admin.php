@@ -81,6 +81,9 @@ class Admin {
         // Leads admin actions (Block 4): mark contacted, erase, export.
         \add_action( 'admin_post_trcl_lead_action', [ $this, 'handle_lead_action_post' ] );
         \add_action( 'admin_post_trcl_leads_export', [ $this, 'handle_leads_export_post' ] );
+
+        // Appearance reset (v2.1).
+        \add_action( 'admin_post_trcl_reset_appearance', [ $this, 'handle_reset_appearance_post' ] );
     }
 
     /**
@@ -175,13 +178,14 @@ class Admin {
             $this->version
         );
 
-        // Colour pickers — only needed by the Settings → Appearance tab
-        // (v2.1). wp-color-picker ships with core, so this adds no
+        // Colour pickers + media uploader — only needed by the Settings →
+        // Appearance tab (v2.1). Both ship with core, so this adds no
         // external requests.
         $script_deps = [ 'jquery' ];
         if ( strpos( $hook, 'trcl-settings' ) !== false ) {
             \wp_enqueue_style( 'wp-color-picker' );
             $script_deps[] = 'wp-color-picker';
+            \wp_enqueue_media();
         }
 
         // Admin JavaScript.
@@ -529,6 +533,58 @@ class Admin {
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- closing HTTP response stream opened above.
         fclose( $fh );
+        exit;
+    }
+
+    /**
+     * admin-post handler: reset all Appearance settings to defaults (v2.1).
+     *
+     * Deletes the appearance option rows so the registered defaults take
+     * over again. Deliberately does NOT touch the welcome message — it is
+     * authored content, not look & feel, and losing it on an accidental
+     * click would hurt. PRG pattern with a transient-backed notice.
+     *
+     * @since 2.1.0
+     */
+    public function handle_reset_appearance_post(): void {
+        \check_admin_referer( 'trcl_reset_appearance' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        $appearance_options = array_merge(
+            array_keys( Settings::COLOR_DEFAULTS ),
+            [
+                'trcl_widget_position',
+                'trcl_widget_width',
+                'trcl_widget_height',
+                'trcl_widget_border_radius',
+                'trcl_assistant_name',
+                'trcl_widget_font',
+                'trcl_custom_avatar_id',
+            ]
+        );
+
+        foreach ( $appearance_options as $option ) {
+            \delete_option( $option );
+        }
+
+        \set_transient( 'trcl_appearance_notice', [
+            'type'    => 'success',
+            'message' => __( 'Appearance settings reset to defaults. Your welcome message was kept.', 'trill-ai-chat-lite' ),
+        ], 60 );
+
+        \wp_safe_redirect(
+            \add_query_arg(
+                [ 'page' => 'trcl-settings', 'tab' => 'appearance' ],
+                \admin_url( 'admin.php' )
+            )
+        );
         exit;
     }
 

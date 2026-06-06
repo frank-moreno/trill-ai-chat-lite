@@ -204,6 +204,7 @@ class Frontend {
         // Assistant identity (v2.1 — merchant-customisable, default "Robin").
         $settings_controller = new Settings();
         $assistant_name      = $settings_controller->get_assistant_name();
+        $avatar_url          = $settings_controller->get_avatar_url();
 
         // Build localisation data.
         $localize_data = [
@@ -213,6 +214,9 @@ class Frontend {
             'enabled'         => \get_option( 'trcl_chat_enabled', '1' ),
             'widget_position' => \get_option( 'trcl_widget_position', 'bottom-right' ),
             'widget_color'    => \get_option( 'trcl_widget_color', '#10B981' ),
+            // Custom avatar URL (v2.1) — '' means "use the bundled default".
+            // Already esc_url()'d and re-validated against the media library.
+            'avatar_url'      => $avatar_url,
             'plugin_url'      => TRCL_PLUGIN_URL,
             // Lazy-load targets — consumed by chat-launcher.js on first click.
             // versioned_url() appends ?ver=<content-hash> so the cache is

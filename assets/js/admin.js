@@ -27,24 +27,178 @@
         },
 
         /**
+         * Map of colour field IDs to the CSS custom property each one
+         * drives in the live preview (v2.1).
+         */
+        colorVarMap: {
+            trcl_widget_color:       '--trcl-primary',
+            trcl_widget_color_hover: '--trcl-primary-hover',
+            trcl_user_bubble_color:  '--trcl-user-bubble',
+            trcl_ai_bubble_color:    '--trcl-ai-bubble',
+            trcl_header_text_color:  '--trcl-header-text',
+            trcl_body_text_color:    '--trcl-body-text',
+            trcl_widget_bg_color:    '--trcl-window-bg'
+        },
+
+        /**
+         * Map of range slider IDs to preview CSS custom properties (px).
+         */
+        rangeVarMap: {
+            trcl_widget_width:         '--trcl-widget-width',
+            trcl_widget_height:        '--trcl-widget-height',
+            trcl_widget_border_radius: '--trcl-radius'
+        },
+
+        /**
+         * Set a CSS custom property on the live preview container.
+         *
+         * @param {string} prop  Custom property name (--trcl-*).
+         * @param {string} value Value, or empty string to remove.
+         */
+        setPreviewVar: function (prop, value) {
+            var pv = document.getElementById('trcl-pv');
+            if (!pv) {
+                return;
+            }
+            if (value) {
+                pv.style.setProperty(prop, value);
+            } else {
+                pv.style.removeProperty(prop);
+            }
+        },
+
+        /**
          * Initialise the Appearance tab controls (v2.1):
-         * wp-color-picker on colour fields and live px read-outs
-         * next to the range sliders.
+         * wp-color-picker on colour fields, live px read-outs next to the
+         * range sliders, media-library avatar picker, and live preview
+         * bindings for every control.
          */
         initAppearanceControls: function () {
+            var self = this;
+
             // Colour pickers (wp-color-picker is enqueued only on the
             // settings screen; guard so other admin pages don't error).
             var $colors = $('.trcl-color-field');
             if ($colors.length && typeof $.fn.wpColorPicker === 'function') {
-                $colors.wpColorPicker();
+                $colors.each(function () {
+                    var id = this.id;
+                    var cssVar = self.colorVarMap[id];
+
+                    $(this).wpColorPicker({
+                        change: function (event, ui) {
+                            if (cssVar && ui && ui.color) {
+                                self.setPreviewVar(cssVar, ui.color.toString());
+                            }
+                        },
+                        clear: function () {
+                            var fallback = $('#' + id).data('default-color');
+                            if (cssVar && fallback) {
+                                self.setPreviewVar(cssVar, String(fallback));
+                            }
+                        }
+                    });
+                });
             }
 
-            // Range sliders — live value display.
+            // Range sliders — live value display + preview var.
             $(document).on('input change', '.trcl-range', function () {
                 var $out = $(this).siblings('.trcl-range-value').first();
                 if ($out.length) {
                     $out.text($(this).val() + ($out.data('suffix') || ''));
                 }
+                var cssVar = self.rangeVarMap[this.id];
+                if (cssVar) {
+                    self.setPreviewVar(cssVar, $(this).val() + 'px');
+                }
+            });
+
+            // Assistant name → preview header (text node, jQuery .text()
+            // escapes by design).
+            $(document).on('input', '#trcl_assistant_name', function () {
+                var name = $.trim($(this).val()) || $(this).attr('placeholder') || 'Robin';
+                $('.trcl-pv-name').text(name);
+            });
+
+            // Welcome message → first AI bubble.
+            $(document).on('input', '#trcl_welcome_message', function () {
+                var $bubble = $('#trcl-pv-welcome');
+                if (!$bubble.length) {
+                    return;
+                }
+                var text = $.trim($(this).val());
+                if (text) {
+                    $bubble.text(text);
+                } else if ($bubble.data('fallback')) {
+                    $bubble.text($bubble.data('fallback'));
+                }
+            });
+
+            // Stash the server-rendered default greeting so clearing the
+            // textarea restores it in the preview.
+            var $welcomeBubble = $('#trcl-pv-welcome');
+            if ($welcomeBubble.length) {
+                $welcomeBubble.data('fallback', $welcomeBubble.text());
+            }
+
+            // Font select → preview font-family (stacks come from the
+            // server-side whitelist via data-stack, never typed by hand).
+            $(document).on('change', '#trcl_widget_font', function () {
+                var stack = $(this).find('option:selected').data('stack') || '';
+                var pv = document.getElementById('trcl-pv');
+                if (pv) {
+                    pv.style.fontFamily = stack ? String(stack) : '';
+                }
+            });
+
+            // Avatar — media library picker.
+            this.initAvatarPicker();
+        },
+
+        /**
+         * Media-library avatar picker (v2.1 APP-03).
+         */
+        initAvatarPicker: function () {
+            var frame = null;
+
+            $(document).on('click', '#trcl-avatar-upload', function (e) {
+                e.preventDefault();
+
+                if (typeof wp === 'undefined' || !wp.media) {
+                    return;
+                }
+
+                if (!frame) {
+                    frame = wp.media({
+                        title: 'Select an avatar',
+                        library: { type: 'image' },
+                        multiple: false
+                    });
+
+                    frame.on('select', function () {
+                        var att = frame.state().get('selection').first().toJSON();
+                        var url = (att.sizes && att.sizes.thumbnail) ? att.sizes.thumbnail.url : att.url;
+
+                        $('#trcl_custom_avatar_id').val(att.id);
+                        $('#trcl-avatar-preview img').attr('src', url);
+                        $('.trcl-pv-avatar img').attr('src', url);
+                        $('#trcl-avatar-remove').show();
+                    });
+                }
+
+                frame.open();
+            });
+
+            $(document).on('click', '#trcl-avatar-remove', function (e) {
+                e.preventDefault();
+
+                var fallback = $('#trcl-avatar-preview').data('default');
+
+                $('#trcl_custom_avatar_id').val('0');
+                if (fallback) {
+                    $('#trcl-avatar-preview img').attr('src', fallback);
+                    $('.trcl-pv-avatar img').attr('src', fallback);
+                }
+                $(this).hide();
             });
         },
 

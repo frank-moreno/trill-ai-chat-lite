@@ -76,6 +76,15 @@
          * Render the widget HTML.
          */
         render: function () {
+            // Avatar (v2.1): custom media-library image when configured,
+            // bundled default (with 2x variant) otherwise. The custom URL
+            // is server-validated + esc_url()'d before localisation; we
+            // still attribute-escape defensively.
+            var avatarAlt = this.escapeAttr(this.str('assistant_name') + ', ' + this.str('assistant_role'));
+            var avatarImg = trcl_ajax.avatar_url
+                ? '<img src="' + this.escapeAttr(trcl_ajax.avatar_url) + '" alt="' + avatarAlt + '" width="40" height="40" />'
+                : '<img src="' + trcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + trcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="' + avatarAlt + '" width="40" height="40" />';
+
             var html = '' +
                 '<div class="trcl-chat-widget" id="trcl-chat-widget">' +
                     '<!-- Toggle Button — Trill AI brand launcher -->' +
@@ -101,7 +110,7 @@
                     '<div class="trcl-chat-window" id="trcl-chat-window">' +
                         '<!-- Header -->' +
                         '<div class="trcl-chat-header">' +
-                            '<div class="trcl-chat-avatar"><img src="' + trcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + trcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="' + this.str('assistant_name') + ', ' + this.str('assistant_role') + '" width="40" height="40" /></div>' +
+                            '<div class="trcl-chat-avatar">' + avatarImg + '</div>' +
                             '<div class="trcl-chat-header-info">' +
                                 '<div class="trcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
                                 '<div class="trcl-chat-header-role">' + this.str('assistant_role') + '</div>' +

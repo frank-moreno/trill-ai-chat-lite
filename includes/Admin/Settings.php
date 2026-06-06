@@ -185,6 +185,18 @@ class Settings {
             ]
         );
 
+        // Custom avatar (v2.1) — media library attachment ID; 0 means
+        // "use the bundled default avatar".
+        \register_setting(
+            self::SETTINGS_GROUP,
+            'trcl_custom_avatar_id',
+            [
+                'type'              => 'integer',
+                'sanitize_callback' => [ $this, 'sanitize_avatar_id' ],
+                'default'           => 0,
+            ]
+        );
+
         // Widget font (v2.1) — whitelisted key into FONT_CHOICES.
         \register_setting(
             self::SETTINGS_GROUP,
@@ -566,6 +578,51 @@ class Settings {
         );
 
         return ( '' !== $custom ) ? $custom : __( 'Robin', 'trill-ai-chat-lite' );
+    }
+
+    /**
+     * Sanitize the custom avatar attachment ID.
+     *
+     * Accepts only IDs that resolve to an actual image attachment in the
+     * media library — anything else collapses to 0 (default avatar).
+     *
+     * @since 2.1.0
+     *
+     * @param mixed $value Raw input.
+     * @return int Valid image attachment ID, or 0.
+     */
+    public function sanitize_avatar_id( $value ): int {
+        $id = \absint( $value );
+
+        if ( $id > 0 && ! \wp_attachment_is_image( $id ) ) {
+            return 0;
+        }
+
+        return $id;
+    }
+
+    /**
+     * Return the custom avatar URL, or '' when the bundled default
+     * should be used.
+     *
+     * Re-validates the attachment on read: if the image was deleted from
+     * the media library since it was selected, we fall back to default
+     * instead of emitting a broken <img>.
+     *
+     * @since 2.1.0
+     *
+     * @return string Escaped URL, or '' for default.
+     */
+    public function get_avatar_url(): string {
+        $id = \absint( \get_option( 'trcl_custom_avatar_id', 0 ) );
+
+        if ( $id <= 0 || ! \wp_attachment_is_image( $id ) ) {
+            return '';
+        }
+
+        $url = \wp_get_attachment_image_url( $id, 'thumbnail' );
+
+        return is_string( $url ) ? \esc_url( $url ) : '';
     }
 
     /**
