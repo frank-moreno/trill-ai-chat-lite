@@ -23,6 +23,29 @@
         init: function () {
             this.bindEvents();
             this.initColourPreview();
+            this.initAppearanceControls();
+        },
+
+        /**
+         * Initialise the Appearance tab controls (v2.1):
+         * wp-color-picker on colour fields and live px read-outs
+         * next to the range sliders.
+         */
+        initAppearanceControls: function () {
+            // Colour pickers (wp-color-picker is enqueued only on the
+            // settings screen; guard so other admin pages don't error).
+            var $colors = $('.trcl-color-field');
+            if ($colors.length && typeof $.fn.wpColorPicker === 'function') {
+                $colors.wpColorPicker();
+            }
+
+            // Range sliders — live value display.
+            $(document).on('input change', '.trcl-range', function () {
+                var $out = $(this).siblings('.trcl-range-value').first();
+                if ($out.length) {
+                    $out.text($(this).val() + ($out.data('suffix') || ''));
+                }
+            });
         },
 
         /**

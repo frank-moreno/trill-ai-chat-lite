@@ -180,3 +180,43 @@
     font-size: 12px;
     color: #787c82;
 }
+
+/* ========================================
+   Appearance Tab (v2.1)
+   ======================================== */
+
+.trcl-position-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 160px));
+    gap: 8px;
+}
+
+.trcl-position-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #fff;
+}
+
+.trcl-position-option:has(input:checked) {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.trcl-range {
+    vertical-align: middle;
+    width: 220px;
+    max-width: 60%;
+}
+
+.trcl-range-value {
+    display: inline-block;
+    min-width: 52px;
+    margin-left: 10px;
+    font-weight: 600;
+    color: #1d2327;
+}

@@ -3,12 +3,13 @@
  * Settings admin view (tabbed).
  *
  * Tabs:
- *   - General  — chat widget appearance + behaviour (chat enabled,
- *                position, colour, welcome message, quick replies,
- *                page visibility).
- *   - Content  — page indexing controls for the AI assistant
- *                (which post types to index, per-page selection,
- *                auto-reindex, manual reindex button, status).
+ *   - General    — behaviour (chat enabled, attribution badge,
+ *                  quick replies, page visibility).
+ *   - Appearance — widget look & feel (colours, position, dimensions,
+ *                  assistant name, welcome message, font). v2.1.
+ *   - Content    — page indexing controls for the AI assistant
+ *                  (which post types to index, per-page selection,
+ *                  auto-reindex, manual reindex button, status).
  *
  * Both tabs render their own <form> posting to options.php with the
  * same nonce / option group (`trcl_settings`). Each form only includes
@@ -25,9 +26,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $trcl_chat_enabled    = get_option( 'trcl_chat_enabled', '1' );
-$trcl_widget_position = get_option( 'trcl_widget_position', 'bottom-right' );
-$trcl_widget_color    = get_option( 'trcl_widget_color', '#10B981' );
-$trcl_welcome_message = get_option( 'trcl_welcome_message', '' );
 $trcl_show_powered_by = get_option( 'trcl_show_powered_by', '0' );
 $trcl_skip_checkout   = get_option( 'trcl_skip_checkout', '0' );
 $trcl_skip_account    = get_option( 'trcl_skip_account', '0' );
@@ -43,14 +41,15 @@ $trcl_initial_quick_replies = get_option(
 // Tab selector — defaults to General.
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab routing.
 $trcl_active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
-if ( ! in_array( $trcl_active_tab, [ 'general', 'content', 'privacy' ], true ) ) {
+if ( ! in_array( $trcl_active_tab, [ 'general', 'appearance', 'content', 'privacy' ], true ) ) {
     $trcl_active_tab = 'general';
 }
 
-$trcl_base_url    = admin_url( 'admin.php?page=trcl-settings' );
-$trcl_general_url = add_query_arg( 'tab', 'general', $trcl_base_url );
-$trcl_content_url = add_query_arg( 'tab', 'content', $trcl_base_url );
-$trcl_privacy_url = add_query_arg( 'tab', 'privacy', $trcl_base_url );
+$trcl_base_url       = admin_url( 'admin.php?page=trcl-settings' );
+$trcl_general_url    = add_query_arg( 'tab', 'general', $trcl_base_url );
+$trcl_appearance_url = add_query_arg( 'tab', 'appearance', $trcl_base_url );
+$trcl_content_url    = add_query_arg( 'tab', 'content', $trcl_base_url );
+$trcl_privacy_url    = add_query_arg( 'tab', 'privacy', $trcl_base_url );
 ?>
 
 <div class="wrap tcl-settings-page">
@@ -60,6 +59,10 @@ $trcl_privacy_url = add_query_arg( 'tab', 'privacy', $trcl_base_url );
         <a href="<?php echo esc_url( $trcl_general_url ); ?>"
            class="nav-tab <?php echo $trcl_active_tab === 'general' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e( 'General', 'trill-ai-chat-lite' ); ?>
+        </a>
+        <a href="<?php echo esc_url( $trcl_appearance_url ); ?>"
+           class="nav-tab <?php echo $trcl_active_tab === 'appearance' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e( 'Appearance', 'trill-ai-chat-lite' ); ?>
         </a>
         <a href="<?php echo esc_url( $trcl_content_url ); ?>"
            class="nav-tab <?php echo $trcl_active_tab === 'content' ? 'nav-tab-active' : ''; ?>">
@@ -71,7 +74,11 @@ $trcl_privacy_url = add_query_arg( 'tab', 'privacy', $trcl_base_url );
         </a>
     </h2>
 
-    <?php if ( $trcl_active_tab === 'content' ) : ?>
+    <?php if ( $trcl_active_tab === 'appearance' ) : ?>
+
+        <?php include __DIR__ . '/settings-appearance.php'; ?>
+
+    <?php elseif ( $trcl_active_tab === 'content' ) : ?>
 
         <?php include __DIR__ . '/settings-content.php'; ?>
 
@@ -97,29 +104,8 @@ $trcl_privacy_url = add_query_arg( 'tab', 'privacy', $trcl_base_url );
                 </td>
             </tr>
 
-            <!-- Widget Position -->
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Widget Position', 'trill-ai-chat-lite' ); ?></th>
-                <td>
-                    <select name="trcl_widget_position">
-                        <option value="bottom-right" <?php selected( $trcl_widget_position, 'bottom-right' ); ?>>
-                            <?php esc_html_e( 'Bottom Right', 'trill-ai-chat-lite' ); ?>
-                        </option>
-                        <option value="bottom-left" <?php selected( $trcl_widget_position, 'bottom-left' ); ?>>
-                            <?php esc_html_e( 'Bottom Left', 'trill-ai-chat-lite' ); ?>
-                        </option>
-                    </select>
-                </td>
-            </tr>
-
-            <!-- Widget Colour -->
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Widget Colour', 'trill-ai-chat-lite' ); ?></th>
-                <td>
-                    <input type="color" name="trcl_widget_color" value="<?php echo esc_attr( $trcl_widget_color ); ?>" />
-                    <p class="description"><?php esc_html_e( 'Primary colour for the chat widget.', 'trill-ai-chat-lite' ); ?></p>
-                </td>
-            </tr>
+            <!-- Position, colours, dimensions, assistant name and welcome
+                 message moved to the Appearance tab in 2.1. -->
 
             <!-- Show "Powered by Trill AI" badge -->
             <tr>
@@ -130,15 +116,6 @@ $trcl_privacy_url = add_query_arg( 'tab', 'privacy', $trcl_base_url );
                         <?php esc_html_e( 'Display "Powered by Trill AI" in the chat widget footer', 'trill-ai-chat-lite' ); ?>
                     </label>
                     <p class="description"><?php esc_html_e( 'Optional. Show a small attribution link in the chat widget.', 'trill-ai-chat-lite' ); ?></p>
-                </td>
-            </tr>
-
-            <!-- Welcome Message -->
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Welcome Message', 'trill-ai-chat-lite' ); ?></th>
-                <td>
-                    <textarea name="trcl_welcome_message" rows="3" cols="50" class="large-text"><?php echo esc_textarea( $trcl_welcome_message ); ?></textarea>
-                    <p class="description"><?php esc_html_e( 'The first message shown when a visitor opens the chat.', 'trill-ai-chat-lite' ); ?></p>
                 </td>
             </tr>
 

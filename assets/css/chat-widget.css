@@ -90,10 +90,10 @@
 
 .trcl-chat-window {
     display: none;
-    width: 370px;
-    height: 520px;
-    background: #fff;
-    border-radius: 12px;
+    width: var(--trcl-widget-width, 370px);
+    height: var(--trcl-widget-height, 520px);
+    background: var(--trcl-window-bg, #fff);
+    border-radius: var(--trcl-radius, 12px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
     overflow: hidden;
     flex-direction: column;
@@ -114,7 +114,7 @@
 
 .trcl-chat-header {
     background: var(--trcl-primary, #10B981);
-    color: #fff;
+    color: var(--trcl-header-text, #fff);
     padding: 16px;
     display: flex;
     align-items: center;
@@ -181,7 +181,7 @@
 .trcl-chat-close {
     background: none;
     border: none;
-    color: #fff;
+    color: var(--trcl-header-text, #fff);
     cursor: pointer;
     padding: 8px;
     opacity: 0.8;
@@ -224,21 +224,21 @@
 }
 
 .trcl-message--user {
-    background: var(--trcl-primary, #10B981);
+    background: var(--trcl-user-bubble, var(--trcl-primary, #10B981));
     color: #fff;
     align-self: flex-end;
     border-bottom-right-radius: 4px;
 }
 
 .trcl-message--assistant {
-    background: #f3f4f6;
-    color: #1f2937;
+    background: var(--trcl-ai-bubble, #f3f4f6);
+    color: var(--trcl-body-text, #1f2937);
     align-self: flex-start;
     border-bottom-left-radius: 4px;
 }
 
 .trcl-message--assistant a {
-    color: var(--trcl-primary, #059669);
+    color: var(--trcl-primary-hover, #059669);
     text-decoration: underline;
 }
 
@@ -248,7 +248,7 @@
     align-items: center;
     gap: 4px;
     padding: 10px 14px;
-    background: #f3f4f6;
+    background: var(--trcl-ai-bubble, #f3f4f6);
     border-radius: 12px;
     border-bottom-left-radius: 4px;
     align-self: flex-start;
@@ -286,7 +286,7 @@
 .trcl-quick-reply {
     background: #fff;
     border: 1px solid var(--trcl-primary, #10B981);
-    color: var(--trcl-primary, #059669);
+    color: var(--trcl-primary-hover, #059669);
     padding: 6px 12px;
     border-radius: 16px;
     font-size: 13px;
@@ -349,7 +349,7 @@
 .trcl-product-card-price {
     font-size: 13px;
     font-weight: 700;
-    color: var(--trcl-primary, #059669);
+    color: var(--trcl-primary-hover, #059669);
 }
 
 .trcl-product-card-action {
@@ -420,7 +420,7 @@
 }
 
 .trcl-chat-send:hover {
-    opacity: 0.9;
+    background: var(--trcl-primary-hover, var(--trcl-primary, #059669));
 }
 
 .trcl-chat-send:disabled {

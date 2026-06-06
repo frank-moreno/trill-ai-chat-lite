@@ -175,11 +175,20 @@ class Admin {
             $this->version
         );
 
+        // Colour pickers — only needed by the Settings → Appearance tab
+        // (v2.1). wp-color-picker ships with core, so this adds no
+        // external requests.
+        $script_deps = [ 'jquery' ];
+        if ( strpos( $hook, 'trcl-settings' ) !== false ) {
+            \wp_enqueue_style( 'wp-color-picker' );
+            $script_deps[] = 'wp-color-picker';
+        }
+
         // Admin JavaScript.
         \wp_enqueue_script(
             'trcl-admin',
             TRCL_PLUGIN_URL . 'assets/js/admin.js',
-            [ 'jquery' ],
+            $script_deps,
             $this->version,
             true
         );
