@@ -277,7 +277,17 @@ class ConversationQueryService {
         $search = isset( $args['search'] ) ? \sanitize_text_field( (string) $args['search'] ) : '';
         $search = mb_substr( $search, 0, 100 );
 
-        $page     = isset( $args['page'] ) ? max( 1, (int) $args['page'] ) : 1;
+        // Pagination: prefer 'paged' (the admin list-screen convention —
+        // in wp-admin, $_GET['page'] is the page SLUG, not a number).
+        // 'page' is honoured only when numeric, for programmatic callers
+        // like the CSV exporter.
+        if ( isset( $args['paged'] ) ) {
+            $page = max( 1, (int) $args['paged'] );
+        } elseif ( isset( $args['page'] ) && is_numeric( $args['page'] ) ) {
+            $page = max( 1, (int) $args['page'] );
+        } else {
+            $page = 1;
+        }
         $per_page = isset( $args['per_page'] ) ? (int) $args['per_page'] : self::PER_PAGE_DEFAULT;
         $per_page = max( 1, min( self::PER_PAGE_MAX, $per_page ) );
 

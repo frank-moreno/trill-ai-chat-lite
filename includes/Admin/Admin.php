@@ -84,6 +84,11 @@ class Admin {
 
         // Appearance reset (v2.1).
         \add_action( 'admin_post_trcl_reset_appearance', [ $this, 'handle_reset_appearance_post' ] );
+
+        // Conversations admin (v2.2): transcript modal + CSV exports.
+        \add_action( 'wp_ajax_trcl_get_transcript', [ $this, 'ajax_get_transcript' ] );
+        \add_action( 'admin_post_trcl_conversations_export', [ $this, 'handle_conversations_export_post' ] );
+        \add_action( 'admin_post_trcl_transcript_export', [ $this, 'handle_transcript_export_post' ] );
     }
 
     /**
@@ -119,6 +124,16 @@ class Admin {
             'manage_trcl_chat',
             'trcl-products',
             [ $this, 'render_products' ]
+        );
+
+        // Conversations submenu (v2.2 CNV-03).
+        \add_submenu_page(
+            'trcl-chat',
+            __( 'Conversations', 'trill-ai-chat-lite' ),
+            __( 'Conversations', 'trill-ai-chat-lite' ),
+            'manage_trcl_chat',
+            'trcl-conversations',
+            [ $this, 'render_conversations' ]
         );
 
         // Leads submenu (v2.0 Block 4).
@@ -166,7 +181,10 @@ class Admin {
      */
     public function enqueue_admin_assets( string $hook ): void {
         // Only load on our plugin pages.
-        if ( strpos( $hook, 'trcl-chat' ) === false && strpos( $hook, 'trcl-settings' ) === false && strpos( $hook, 'trcl-products' ) === false ) {
+        if ( strpos( $hook, 'trcl-chat' ) === false
+            && strpos( $hook, 'trcl-settings' ) === false
+            && strpos( $hook, 'trcl-products' ) === false
+            && strpos( $hook, 'trcl-conversations' ) === false ) {
             return;
         }
 
@@ -238,6 +256,144 @@ class Admin {
         }
 
         include TRCL_PLUGIN_DIR . 'includes/Admin/views/products.php';
+    }
+
+    /**
+     * Render Conversations page (v2.2 CNV-03).
+     */
+    public function render_conversations(): void {
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ) );
+        }
+
+        include TRCL_PLUGIN_DIR . 'includes/Admin/views/conversations.php';
+    }
+
+    /**
+     * AJAX: full transcript for the View modal (v2.2 CNV-03).
+     *
+     * Returns conversation meta + ordered message list. Content is sent
+     * raw in JSON; the JS renders it exclusively through .text() so no
+     * HTML in a chat message can execute in wp-admin.
+     */
+    public function ajax_get_transcript(): void {
+        \check_ajax_referer( 'trcl_admin_nonce', 'nonce' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-ai-chat-lite' ) ], 403 );
+        }
+
+        $conversation_id = isset( $_POST['conversation_id'] ) ? (int) $_POST['conversation_id'] : 0;
+
+        $service    = new \TrillChatLite\Conversations\ConversationQueryService();
+        $transcript = $service->get_transcript( $conversation_id );
+
+        if ( null === $transcript ) {
+            \wp_send_json_error( [ 'message' => __( 'Conversation not found.', 'trill-ai-chat-lite' ) ], 404 );
+        }
+
+        $c = $transcript['conversation'];
+
+        \wp_send_json_success( [
+            'meta'     => [
+                'id'         => (int) $c->id,
+                'session_id' => $c->session_id,
+                'customer'   => $this->resolve_customer_label( (int) $c->user_id, (string) $c->customer_email ),
+                'status'     => $c->status,
+                'started_at' => $c->started_at,
+                'ended_at'   => $c->ended_at,
+            ],
+            'messages' => array_map(
+                static fn( $m ) => [
+                    'role'       => $m->role,
+                    'content'    => $m->content,
+                    'created_at' => $m->created_at,
+                    'rating'     => isset( $m->feedback_rating ) ? (int) $m->feedback_rating : 0,
+                ],
+                $transcript['messages']
+            ),
+        ] );
+    }
+
+    /**
+     * admin-post handler: stream a CSV of all conversations matching the
+     * current filters (v2.2 CNV-04).
+     */
+    public function handle_conversations_export_post(): void {
+        \check_admin_referer( 'trcl_conversations_export' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        // Filters arrive as GET params mirrored from the list screen.
+        // The exporter re-runs them through the query service's
+        // sanitiser, so raw values are acceptable here.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- check_admin_referer above.
+        $raw_filters = \wp_unslash( $_GET );
+
+        $exporter = new \TrillChatLite\Conversations\TranscriptExporter();
+        $exporter->stream_conversations_csv( is_array( $raw_filters ) ? $raw_filters : [] );
+        exit;
+    }
+
+    /**
+     * admin-post handler: stream a single conversation transcript as CSV
+     * (v2.2 CNV-04).
+     */
+    public function handle_transcript_export_post(): void {
+        $conversation_id = isset( $_GET['conversation_id'] ) ? (int) $_GET['conversation_id'] : 0;
+
+        \check_admin_referer( 'trcl_transcript_export_' . $conversation_id );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        $exporter = new \TrillChatLite\Conversations\TranscriptExporter();
+
+        if ( ! $exporter->stream_transcript_csv( $conversation_id ) ) {
+            \wp_die(
+                esc_html__( 'Conversation not found.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 404 ]
+            );
+        }
+        exit;
+    }
+
+    /**
+     * Human label for a conversation's customer: display name for known
+     * users, stored email for identified guests, "Guest" otherwise.
+     *
+     * Public because the conversations view (included from
+     * render_conversations) and the AJAX handler share it.
+     *
+     * @param int    $user_id        WP user ID (0 = guest).
+     * @param string $customer_email Email captured during chat, if any.
+     * @return string
+     */
+    public function resolve_customer_label( int $user_id, string $customer_email ): string {
+        if ( $user_id > 0 ) {
+            $user = \get_userdata( $user_id );
+            if ( $user instanceof \WP_User ) {
+                return $user->display_name;
+            }
+        }
+
+        if ( '' !== $customer_email ) {
+            return $customer_email;
+        }
+
+        return __( 'Guest', 'trill-ai-chat-lite' );
     }
 
     /**

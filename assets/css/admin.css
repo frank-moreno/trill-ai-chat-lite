@@ -442,3 +442,164 @@
     background: var(--trcl-primary, #10B981);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
+
+/* ========================================
+   Conversations page (v2.2)
+   ======================================== */
+
+.trcl-conversations-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.trcl-conversations-filters label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.trcl-conversations-filters .trcl-export-btn {
+    margin-left: auto;
+}
+
+.trcl-conversations-count {
+    color: #50575e;
+}
+
+.trcl-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    background: #f0f0f1;
+    color: #50575e;
+}
+
+.trcl-status-badge--active {
+    background: #e7f5fe;
+    color: #0a4b78;
+}
+
+.trcl-status-badge--completed,
+.trcl-status-badge--ended {
+    background: #edfaef;
+    color: #00650d;
+}
+
+.trcl-status-badge--escalated {
+    background: #fcf0f1;
+    color: #8a1f11;
+}
+
+.trcl-rating {
+    color: #dba617;
+    letter-spacing: 1px;
+}
+
+.trcl-converted-yes {
+    color: #00a32a;
+    font-weight: 700;
+}
+
+/* Transcript modal */
+.trcl-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trcl-modal {
+    background: #fff;
+    border-radius: 8px;
+    width: min(680px, calc(100vw - 40px));
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.trcl-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.trcl-modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.trcl-modal-close {
+    font-size: 22px;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.trcl-modal-meta {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f1;
+    font-size: 12px;
+    color: #50575e;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+}
+
+.trcl-modal-meta-key {
+    font-weight: 600;
+}
+
+.trcl-modal-messages {
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.trcl-modal-msg {
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.trcl-modal-msg--assistant {
+    background: #f0f0f1;
+    color: #1d2327;
+    align-self: flex-start;
+}
+
+.trcl-modal-msg--user {
+    background: #2271b1;
+    color: #fff;
+    align-self: flex-end;
+}
+
+.trcl-modal-msg-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.trcl-modal-msg-wrap:has(.trcl-modal-msg--user) {
+    align-items: flex-end;
+}
+
+.trcl-modal-msg-stamp {
+    font-size: 11px;
+    color: #8c8f94;
+    margin-top: 2px;
+}
