@@ -85,6 +85,30 @@
 }
 
 /* ========================================
+   Classic bubble launcher (v2.1)
+   — kept in sync with chat-launcher.css
+   ======================================== */
+
+.trcl-chat-toggle--bubble {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--trcl-primary, #10B981);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.trcl-chat-toggle--bubble:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.trcl-chat-toggle--bubble .trcl-bubble-icon {
+    width: 26px;
+    height: 26px;
+    display: block;
+}
+
+/* ========================================
    Chat Window
    ======================================== */
 
@@ -196,6 +220,36 @@
 .trcl-chat-close svg {
     width: 20px;
     height: 20px;
+}
+
+/* Expand / collapse toggle (v2.1) — desktop only. */
+.trcl-chat-expand {
+    background: none;
+    border: none;
+    color: var(--trcl-header-text, #fff);
+    cursor: pointer;
+    padding: 8px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.trcl-chat-expand:hover,
+.trcl-chat-expand--active {
+    opacity: 1;
+}
+
+.trcl-chat-expand svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Expanded window state (v2.1) — desktop only; the mobile and
+   landscape full-screen overrides further down still win because
+   they appear later in this stylesheet. */
+.trcl-chat-window--expanded {
+    width: min(720px, calc(100vw - 80px));
+    height: min(85vh, 860px);
 }
 
 /* ========================================
@@ -611,6 +665,11 @@
         margin: -8px -8px -8px 0;
     }
 
+    /* Expand toggle: pointless when already full-screen */
+    .trcl-chat-expand {
+        display: none;
+    }
+
     /* Messages area: fill available space */
     .trcl-chat-messages {
         padding: 12px;
@@ -697,6 +756,11 @@
         height: 100%;
         border-radius: 0;
         z-index: 100000;
+    }
+
+    /* Expand toggle: pointless when already full-screen */
+    .trcl-chat-expand {
+        display: none;
     }
 
     .trcl-chat-header {

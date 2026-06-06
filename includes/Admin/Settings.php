@@ -79,6 +79,19 @@ class Settings {
     public const RADIUS_DEFAULT = 12;
 
     /**
+     * Valid launcher styles (v2.1 APP-08).
+     *
+     * 'brand'  — floating Trill SVG logo (the pre-2.1 look, default so
+     *            upgrades stay visually identical).
+     * 'bubble' — classic round bubble with a chat icon, tinted with the
+     *            primary colour.
+     *
+     * @since 2.1.0
+     * @var string[]
+     */
+    public const LAUNCHER_STYLES = [ 'brand', 'bubble' ];
+
+    /**
      * Curated font choices for the widget (key => CSS stack).
      *
      * A whitelist instead of a free-text field: font-family is injected
@@ -182,6 +195,17 @@ class Settings {
                     return mb_substr( \sanitize_text_field( (string) $value ), 0, 40 );
                 },
                 'default'           => '',
+            ]
+        );
+
+        // Launcher style (v2.1 APP-08) — whitelisted key.
+        \register_setting(
+            self::SETTINGS_GROUP,
+            'trcl_launcher_style',
+            [
+                'type'              => 'string',
+                'sanitize_callback' => [ $this, 'sanitize_launcher_style' ],
+                'default'           => 'brand',
             ]
         );
 
@@ -581,6 +605,20 @@ class Settings {
     }
 
     /**
+     * Sanitize the launcher style against the whitelist.
+     *
+     * @since 2.1.0
+     *
+     * @param mixed $value Raw input.
+     * @return string 'brand' or 'bubble'.
+     */
+    public function sanitize_launcher_style( $value ): string {
+        $key = \sanitize_key( (string) $value );
+
+        return in_array( $key, self::LAUNCHER_STYLES, true ) ? $key : 'brand';
+    }
+
+    /**
      * Sanitize the custom avatar attachment ID.
      *
      * Accepts only IDs that resolve to an actual image attachment in the
@@ -675,6 +713,7 @@ class Settings {
             'radius'         => $this->clamp_int( \get_option( 'trcl_widget_border_radius', self::RADIUS_DEFAULT ), self::RADIUS_MIN, self::RADIUS_MAX, self::RADIUS_DEFAULT ),
             'font_stack'     => $this->get_font_stack(),
             'assistant_name' => $this->get_assistant_name(),
+            'launcher_style' => $this->sanitize_launcher_style( (string) \get_option( 'trcl_launcher_style', 'brand' ) ),
         ];
     }
 

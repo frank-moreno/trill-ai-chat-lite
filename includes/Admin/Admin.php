@@ -567,6 +567,7 @@ class Admin {
                 'trcl_assistant_name',
                 'trcl_widget_font',
                 'trcl_custom_avatar_id',
+                'trcl_launcher_style',
             ]
         );
 

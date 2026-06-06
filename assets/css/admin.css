@@ -394,3 +394,51 @@
 .trcl-pv-note {
     margin-top: 8px;
 }
+
+/* ========================================
+   Appearance — launcher style + preview (v2.1)
+   ======================================== */
+
+.trcl-launcher-grid {
+    display: flex;
+    gap: 8px;
+}
+
+.trcl-launcher-grid .trcl-position-option img {
+    display: inline-block;
+}
+
+.trcl-launcher-bubble-swatch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #10b981;
+    flex-shrink: 0;
+}
+
+.trcl-pv-launcher-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.trcl-pv-launcher--brand img {
+    display: block;
+    width: 48px;
+    height: 48px;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22));
+}
+
+.trcl-pv-launcher--bubble {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--trcl-primary, #10B981);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}

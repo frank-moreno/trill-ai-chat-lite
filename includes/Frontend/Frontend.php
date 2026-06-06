@@ -217,6 +217,8 @@ class Frontend {
             // Custom avatar URL (v2.1) — '' means "use the bundled default".
             // Already esc_url()'d and re-validated against the media library.
             'avatar_url'      => $avatar_url,
+            // Launcher style (v2.1 APP-08) — whitelisted 'brand' | 'bubble'.
+            'launcher_style'  => $settings_controller->sanitize_launcher_style( (string) \get_option( 'trcl_launcher_style', 'brand' ) ),
             'plugin_url'      => TRCL_PLUGIN_URL,
             // Lazy-load targets — consumed by chat-launcher.js on first click.
             // versioned_url() appends ?ver=<content-hash> so the cache is
@@ -241,6 +243,8 @@ class Frontend {
                     $assistant_name
                 ),
                 'close_chat'      => __( 'Close chat', 'trill-ai-chat-lite' ),
+                'expand_chat'     => __( 'Expand chat', 'trill-ai-chat-lite' ),
+                'collapse_chat'   => __( 'Collapse chat', 'trill-ai-chat-lite' ),
                 'limit_reached'   => __( 'Monthly Limit Reached', 'trill-ai-chat-lite' ),
             ],
             'branding' => [

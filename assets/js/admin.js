@@ -150,6 +150,13 @@
                 }
             });
 
+            // Launcher style → preview launcher swatch.
+            $(document).on('change', 'input[name="trcl_launcher_style"]', function () {
+                var isBubble = $(this).val() === 'bubble';
+                $('#trcl-pv-launcher-brand').toggle(!isBubble);
+                $('#trcl-pv-launcher-bubble').toggle(isBubble);
+            });
+
             // Avatar — media library picker.
             this.initAvatarPicker();
         },

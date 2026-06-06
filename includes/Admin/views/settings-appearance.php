@@ -155,6 +155,39 @@ if ( is_array( $trcl_appearance_notice ) ) {
     <table class="form-table" role="presentation">
 
         <tr>
+            <th scope="row"><?php esc_html_e( 'Launcher Style', 'trill-ai-chat-lite' ); ?></th>
+            <td>
+                <fieldset class="trcl-launcher-grid">
+                    <legend class="screen-reader-text">
+                        <?php esc_html_e( 'Launcher Style', 'trill-ai-chat-lite' ); ?>
+                    </legend>
+                    <label class="trcl-position-option">
+                        <input type="radio"
+                               name="trcl_launcher_style"
+                               value="brand"
+                               <?php checked( $trcl_appearance['launcher_style'], 'brand' ); ?> />
+                        <img src="<?php echo esc_url( TRCL_PLUGIN_URL . 'assets/images/launcher.svg' ); ?>"
+                             alt="" width="28" height="28" />
+                        <?php esc_html_e( 'Brand logo', 'trill-ai-chat-lite' ); ?>
+                    </label>
+                    <label class="trcl-position-option">
+                        <input type="radio"
+                               name="trcl_launcher_style"
+                               value="bubble"
+                               <?php checked( $trcl_appearance['launcher_style'], 'bubble' ); ?> />
+                        <span class="trcl-launcher-bubble-swatch" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h2v4l4.5-4H20c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="#FFFFFF"/></svg>
+                        </span>
+                        <?php esc_html_e( 'Classic bubble', 'trill-ai-chat-lite' ); ?>
+                    </label>
+                </fieldset>
+                <p class="description">
+                    <?php esc_html_e( 'How the closed chat launcher looks. The classic bubble uses your primary colour.', 'trill-ai-chat-lite' ); ?>
+                </p>
+            </td>
+        </tr>
+
+        <tr>
             <th scope="row"><?php esc_html_e( 'Widget Position', 'trill-ai-chat-lite' ); ?></th>
             <td>
                 <fieldset class="trcl-position-grid">
@@ -360,6 +393,17 @@ if ( is_array( $trcl_appearance_notice ) ) {
                 </span>
             </div>
         </div>
+        <div class="trcl-pv-launcher-row">
+            <span class="trcl-pv-launcher trcl-pv-launcher--brand" id="trcl-pv-launcher-brand"
+                  <?php echo ( 'brand' !== $trcl_appearance['launcher_style'] ) ? 'style="display:none"' : ''; ?>>
+                <img src="<?php echo esc_url( TRCL_PLUGIN_URL . 'assets/images/launcher.svg' ); ?>" alt="" width="48" height="48" />
+            </span>
+            <span class="trcl-pv-launcher trcl-pv-launcher--bubble" id="trcl-pv-launcher-bubble"
+                  <?php echo ( 'bubble' !== $trcl_appearance['launcher_style'] ) ? 'style="display:none"' : ''; ?>>
+                <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h2v4l4.5-4H20c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="#FFFFFF"/></svg>
+            </span>
+        </div>
+
         <p class="description trcl-pv-note">
             <?php esc_html_e( 'Approximate preview — exact rendering depends on your theme.', 'trill-ai-chat-lite' ); ?>
         </p>
