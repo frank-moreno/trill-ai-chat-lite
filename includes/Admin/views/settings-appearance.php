@@ -315,7 +315,7 @@ if ( is_array( $trcl_appearance_notice ) ) {
                         <?php esc_html_e( 'Upload Image', 'trill-ai-chat-lite' ); ?>
                     </button>
                     <button type="button" class="button-link-delete" id="trcl-avatar-remove"
-                            <?php echo ( 0 === $trcl_avatar_id ) ? 'style="display:none"' : ''; ?>>
+                            <?php if ( 0 === $trcl_avatar_id ) : ?>style="display:none"<?php endif; ?>>
                         <?php esc_html_e( 'Remove', 'trill-ai-chat-lite' ); ?>
                     </button>
                 </div>
@@ -395,11 +395,11 @@ if ( is_array( $trcl_appearance_notice ) ) {
         </div>
         <div class="trcl-pv-launcher-row">
             <span class="trcl-pv-launcher trcl-pv-launcher--brand" id="trcl-pv-launcher-brand"
-                  <?php echo ( 'brand' !== $trcl_appearance['launcher_style'] ) ? 'style="display:none"' : ''; ?>>
+                  <?php if ( 'brand' !== $trcl_appearance['launcher_style'] ) : ?>style="display:none"<?php endif; ?>>
                 <img src="<?php echo esc_url( TRCL_PLUGIN_URL . 'assets/images/launcher.svg' ); ?>" alt="" width="48" height="48" />
             </span>
             <span class="trcl-pv-launcher trcl-pv-launcher--bubble" id="trcl-pv-launcher-bubble"
-                  <?php echo ( 'bubble' !== $trcl_appearance['launcher_style'] ) ? 'style="display:none"' : ''; ?>>
+                  <?php if ( 'bubble' !== $trcl_appearance['launcher_style'] ) : ?>style="display:none"<?php endif; ?>>
                 <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h2v4l4.5-4H20c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="#FFFFFF"/></svg>
             </span>
         </div>
