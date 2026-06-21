@@ -338,6 +338,44 @@ class ConversationManager {
     }
 
     /**
+     * Hard-delete a specific set of conversations by ID.
+     *
+     * Admin-initiated deletion (v2.2 CNV-08). Reuses the exact same
+     * audited cascade as the GDPR eraser (feedback → messages →
+     * conversations) so there is a single source of truth for what
+     * "removing a conversation" means across the plugin — no parallel
+     * delete path that could miss a related table.
+     *
+     * @since 2.2.0
+     *
+     * @param int[] $conversation_ids Conversation IDs to remove.
+     * @return int Total rows deleted across the three tables.
+     */
+    public function delete_by_ids( array $conversation_ids ): int {
+        $conv_ids = array_values(
+            array_unique(
+                array_filter(
+                    array_map( 'intval', $conversation_ids ),
+                    static fn( int $id ): bool => $id > 0
+                )
+            )
+        );
+
+        if ( empty( $conv_ids ) ) {
+            return 0;
+        }
+
+        $removed = $this->delete_cascade( $conv_ids );
+
+        trcl_log( 'Admin conversation delete', 'info', [
+            'conversations' => count( $conv_ids ),
+            'rows_deleted'  => $removed,
+        ] );
+
+        return $removed;
+    }
+
+    /**
      * Hard-delete leads associated with the given email.
      *
      * Wrapper around LeadCaptureService::erase_by_email so the GDPR

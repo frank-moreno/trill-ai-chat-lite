@@ -12,6 +12,8 @@
  *   1.2.0 — analytics + cart attribution (adds trcl_analytics_events,
  *           v2.0 Block 3)
  *   1.3.0 — lead capture (adds trcl_leads, v2.0 Block 4)
+ *   1.4.0 — conversations admin page (adds FULLTEXT index on
+ *           trcl_messages.content for transcript search, v2.2 CNV-02)
  *
  * @package TrillChatLite\Database
  * @since 1.0.0
@@ -34,7 +36,15 @@ class Migrations {
     /**
      * Current schema version.
      */
-    private const SCHEMA_VERSION = '1.3.0';
+    private const SCHEMA_VERSION = '1.4.0';
+
+    /**
+     * Option flag: whether the FULLTEXT index on trcl_messages.content
+     * is available ('1') or the host refused it ('0', LIKE fallback).
+     *
+     * @since 2.2.0
+     */
+    public const OPT_MESSAGES_FULLTEXT = 'trcl_messages_fulltext';
 
     /**
      * Run all migrations.
@@ -120,11 +130,60 @@ class Migrations {
             PRIMARY KEY (id),
             KEY conversation_id (conversation_id),
             KEY role (role),
-            KEY created_at (created_at)
+            KEY created_at (created_at),
+            FULLTEXT KEY ft_content (content)
         ) {$charset_collate};";
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table creation DDL.
         dbDelta( $sql );
+
+        self::ensure_messages_fulltext( $wpdb, $table_name );
+    }
+
+    /**
+     * Verify the FULLTEXT index on trcl_messages.content exists, adding
+     * it explicitly when dbDelta's ALTER path didn't (v2.2 CNV-02).
+     *
+     * dbDelta creates FULLTEXT keys reliably on the CREATE TABLE path but
+     * has historically been inconsistent when upgrading an existing
+     * table. Belt and braces: check SHOW INDEX, attempt a direct ALTER
+     * if missing, and record the outcome in OPT_MESSAGES_FULLTEXT so the
+     * conversations query service knows whether MATCH ... AGAINST is
+     * available or it must fall back to LIKE.
+     *
+     * Failure is non-fatal by design — exotic hosts (older MyISAM
+     * conversions, restricted ALTER privileges) simply get the LIKE
+     * fallback and a log line.
+     *
+     * @since 2.2.0
+     *
+     * @param \wpdb  $wpdb       WordPress database object.
+     * @param string $table_name Fully prefixed messages table name.
+     */
+    private static function ensure_messages_fulltext( \wpdb $wpdb, string $table_name ): void {
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Index introspection on custom table.
+        $index = $wpdb->get_var( "SHOW INDEX FROM {$table_name} WHERE Key_name = 'ft_content'" );
+
+        if ( null !== $index ) {
+            \update_option( self::OPT_MESSAGES_FULLTEXT, '1', false );
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- One-time index creation on custom table.
+        $wpdb->query( "ALTER TABLE {$table_name} ADD FULLTEXT KEY ft_content (content)" );
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Verification read.
+        $verify = $wpdb->get_var( "SHOW INDEX FROM {$table_name} WHERE Key_name = 'ft_content'" );
+
+        if ( null !== $verify ) {
+            \update_option( self::OPT_MESSAGES_FULLTEXT, '1', false );
+            return;
+        }
+
+        \update_option( self::OPT_MESSAGES_FULLTEXT, '0', false );
+        trcl_log( 'FULLTEXT index on messages could not be created — transcript search will use LIKE', 'warning', [
+            'db_error' => $wpdb->last_error,
+        ] );
     }
 
     /**

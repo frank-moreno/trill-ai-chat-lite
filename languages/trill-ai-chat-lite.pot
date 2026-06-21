@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.1.0\n"
+"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/trill-ai-chat-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-06T17:53:18+00:00\n"
+"POT-Creation-Date: 2026-06-21T10:24:58+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: trill-ai-chat-lite\n"
@@ -76,136 +76,185 @@ msgstr ""
 msgid "Trill Chat Lite activation failed: "
 msgstr ""
 
-#: includes/Admin/Admin.php:95
-#: includes/Admin/Admin.php:96
+#: includes/Admin/Admin.php:101
+#: includes/Admin/Admin.php:102
 msgid "Trill Chat"
 msgstr ""
 
-#: includes/Admin/Admin.php:107
-#: includes/Admin/Admin.php:108
+#: includes/Admin/Admin.php:113
+#: includes/Admin/Admin.php:114
 msgid "Dashboard"
 msgstr ""
 
-#: includes/Admin/Admin.php:117
-#: includes/Admin/Admin.php:118
+#: includes/Admin/Admin.php:123
+#: includes/Admin/Admin.php:124
 msgid "Products"
 msgstr ""
 
-#: includes/Admin/Admin.php:127
-#: includes/Admin/Admin.php:128
+#: includes/Admin/Admin.php:133
+#: includes/Admin/Admin.php:134
+#: includes/Admin/views/conversations.php:59
+msgid "Conversations"
+msgstr ""
+
+#: includes/Admin/Admin.php:143
+#: includes/Admin/Admin.php:144
 msgid "Leads"
 msgstr ""
 
-#: includes/Admin/Admin.php:137
-#: includes/Admin/Admin.php:138
+#: includes/Admin/Admin.php:153
+#: includes/Admin/Admin.php:154
 msgid "Settings"
 msgstr ""
 
-#: includes/Admin/Admin.php:147
-#: includes/Admin/Admin.php:148
+#: includes/Admin/Admin.php:163
+#: includes/Admin/Admin.php:164
 msgid "About"
 msgstr ""
 
-#: includes/Admin/Admin.php:205
+#: includes/Admin/Admin.php:224
 msgid "Saving..."
 msgstr ""
 
-#: includes/Admin/Admin.php:206
+#: includes/Admin/Admin.php:225
 msgid "Settings saved successfully!"
 msgstr ""
 
-#: includes/Admin/Admin.php:207
+#: includes/Admin/Admin.php:226
 msgid "An error occurred. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php:208
+#: includes/Admin/Admin.php:227
 msgid "Indexing..."
 msgstr ""
 
-#: includes/Admin/Admin.php:209
+#: includes/Admin/Admin.php:228
 msgid "Please wait..."
 msgstr ""
 
-#: includes/Admin/Admin.php:210
+#: includes/Admin/Admin.php:229
 msgid "Indexing failed."
 msgstr ""
 
-#: includes/Admin/Admin.php:211
+#: includes/Admin/Admin.php:230
 msgid "Request failed. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php:212
+#: includes/Admin/Admin.php:231
 #: includes/Admin/views/products.php:64
 msgid "Reindex Products Now"
 msgstr ""
 
-#: includes/Admin/Admin.php:226
-#: includes/Admin/Admin.php:237
+#: includes/Admin/Admin.php:232
+msgid "Permanently delete this conversation? This cannot be undone."
+msgstr ""
+
+#: includes/Admin/Admin.php:233
+msgid "Permanently delete the selected conversations? This cannot be undone."
+msgstr ""
+
+#: includes/Admin/Admin.php:234
+msgid "Please select at least one conversation."
+msgstr ""
+
 #: includes/Admin/Admin.php:248
 #: includes/Admin/Admin.php:259
 #: includes/Admin/Admin.php:270
-#: includes/Admin/Admin.php:333
-#: includes/Admin/Admin.php:404
-#: includes/Admin/Admin.php:481
-#: includes/Admin/Admin.php:554
+#: includes/Admin/Admin.php:331
+#: includes/Admin/Admin.php:359
+#: includes/Admin/Admin.php:399
+#: includes/Admin/Admin.php:507
+#: includes/Admin/Admin.php:518
+#: includes/Admin/Admin.php:529
+#: includes/Admin/Admin.php:592
+#: includes/Admin/Admin.php:663
+#: includes/Admin/Admin.php:740
+#: includes/Admin/Admin.php:813
 msgid "You do not have sufficient permissions."
 msgstr ""
 
 #: includes/Admin/Admin.php:287
-#: includes/Admin/Admin.php:611
+#: includes/Admin/Admin.php:546
+#: includes/Admin/Admin.php:870
 msgid "Insufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:308
+#: includes/Admin/Admin.php:296
+#: includes/Admin/Admin.php:369
+#: includes/AI/RestController.php:617
+msgid "Conversation not found."
+msgstr ""
+
+#: includes/Admin/Admin.php:420
+msgid "No conversations were selected."
+msgstr ""
+
+#. translators: 1: number of conversations deleted, 2: number of database rows removed
+#: includes/Admin/Admin.php:433
+#, php-format
+msgid "Deleted %1$d conversation (%2$d records removed)."
+msgid_plural "Deleted %1$d conversations (%2$d records removed)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/Admin.php:447
+msgid "Could not delete the selected conversations."
+msgstr ""
+
+#: includes/Admin/Admin.php:499
+msgid "Guest"
+msgstr ""
+
+#: includes/Admin/Admin.php:567
 msgid "Settings saved."
 msgstr ""
 
 #. translators: 1: posts indexed, 2: terms indexed, 3: total chunks
-#: includes/Admin/Admin.php:350
+#: includes/Admin/Admin.php:609
 #, php-format
 msgid "Reindex complete — %1$d posts, %2$d categories, %3$d chunks in total."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Admin/Admin.php:368
+#: includes/Admin/Admin.php:627
 #, php-format
 msgid "Reindex failed: %s"
 msgstr ""
 
-#: includes/Admin/Admin.php:413
+#: includes/Admin/Admin.php:672
 msgid "Invalid lead action."
 msgstr ""
 
-#: includes/Admin/Admin.php:426
+#: includes/Admin/Admin.php:685
 msgid "Lead marked as contacted."
 msgstr ""
 
-#: includes/Admin/Admin.php:427
+#: includes/Admin/Admin.php:686
 msgid "Could not update the lead."
 msgstr ""
 
 #. translators: %d: lead rows removed
-#: includes/Admin/Admin.php:446
+#: includes/Admin/Admin.php:705
 #, php-format
 msgid "Erased %d lead row(s) for that email."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Admin/Admin.php:458
+#: includes/Admin/Admin.php:717
 #, php-format
 msgid "Action failed: %s"
 msgstr ""
 
-#: includes/Admin/Admin.php:580
+#: includes/Admin/Admin.php:839
 msgid "Appearance settings reset to defaults. Your welcome message was kept."
 msgstr ""
 
-#: includes/Admin/Admin.php:615
+#: includes/Admin/Admin.php:874
 msgid "WooCommerce is not active."
 msgstr ""
 
 #. translators: %d: number of products indexed
-#: includes/Admin/Admin.php:624
+#: includes/Admin/Admin.php:883
 #, php-format
 msgid "%d products indexed successfully."
 msgstr ""
@@ -366,6 +415,133 @@ msgstr ""
 msgid "Terms"
 msgstr ""
 
+#: includes/Admin/views/conversations.php:69
+msgid "Note: message search is running in compatibility mode on this host (slower on large tables)."
+msgstr ""
+
+#: includes/Admin/views/conversations.php:77
+msgid "From"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:82
+msgid "To"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:87
+msgid "All Statuses"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:96
+msgid "All Ratings"
+msgstr ""
+
+#. translators: %d: star rating 1-5
+#: includes/Admin/views/conversations.php:101
+#, php-format
+msgid "%d star"
+msgid_plural "%d stars"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/views/conversations.php:110
+msgid "Search messages…"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:112
+#: includes/Admin/views/leads.php:135
+msgid "Filter"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:113
+msgid "Reset"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:116
+#: includes/Admin/views/leads.php:152
+msgid "Export CSV"
+msgstr ""
+
+#. translators: %d: number of conversations matching the filters
+#: includes/Admin/views/conversations.php:123
+#, php-format
+msgid "%d conversation"
+msgid_plural "%d conversations"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/views/conversations.php:138
+msgid "Delete selected"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:148
+msgid "Select all conversations"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:150
+msgid "Date"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:151
+msgid "Customer"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:152
+#: includes/Admin/views/leads.php:170
+#: includes/Gdpr/ConversationManager.php:217
+#: includes/Gdpr/ConversationManager.php:259
+msgid "Status"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:153
+#: includes/Gdpr/ConversationManager.php:267
+msgid "Messages"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:154
+msgid "Rating"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:155
+msgid "Converted"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:156
+msgid "Revenue"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:157
+#: includes/Admin/views/leads.php:171
+msgid "Actions"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:163
+msgid "No conversations match the current filters."
+msgstr ""
+
+#: includes/Admin/views/conversations.php:186
+msgid "Select this conversation"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:228
+msgid "View"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:231
+msgid "CSV"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:237
+msgid "Delete"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:271
+msgid "Conversation"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:272
+msgid "Close"
+msgstr ""
+
 #: includes/Admin/views/dashboard.php:18
 msgid "Trill AI Product Chat — Dashboard"
 msgstr ""
@@ -500,16 +676,8 @@ msgstr ""
 msgid "Search by email..."
 msgstr ""
 
-#: includes/Admin/views/leads.php:135
-msgid "Filter"
-msgstr ""
-
 #: includes/Admin/views/leads.php:141
 msgid "Clear"
-msgstr ""
-
-#: includes/Admin/views/leads.php:152
-msgid "Export CSV"
 msgstr ""
 
 #: includes/Admin/views/leads.php:160
@@ -527,16 +695,6 @@ msgstr ""
 
 #: includes/Admin/views/leads.php:169
 msgid "Captured"
-msgstr ""
-
-#: includes/Admin/views/leads.php:170
-#: includes/Gdpr/ConversationManager.php:217
-#: includes/Gdpr/ConversationManager.php:259
-msgid "Status"
-msgstr ""
-
-#: includes/Admin/views/leads.php:171
-msgid "Actions"
 msgstr ""
 
 #: includes/Admin/views/leads.php:213
@@ -1183,10 +1341,6 @@ msgstr ""
 msgid "An unexpected error occurred. Please try again."
 msgstr ""
 
-#: includes/AI/RestController.php:617
-msgid "Conversation not found."
-msgstr ""
-
 #: includes/AI/RestController.php:644
 msgid "Failed to retrieve conversation."
 msgstr ""
@@ -1326,15 +1480,11 @@ msgstr ""
 msgid "Customer email on record"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:267
-msgid "Messages"
-msgstr ""
-
-#: includes/Lite/UpgradeManager.php:152
+#: includes/Lite/UpgradeManager.php:161
 msgid "Trill AI Chat 2.0 is here — your free trial has been re-registered automatically against the new Trill Cloud backend. No action needed."
 msgstr ""
 
-#: includes/Lite/UpgradeManager.php:156
+#: includes/Lite/UpgradeManager.php:165
 msgid "Read the release notes"
 msgstr ""
 

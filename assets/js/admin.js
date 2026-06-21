@@ -159,6 +159,129 @@
 
             // Avatar — media library picker.
             this.initAvatarPicker();
+
+            // Conversations page (v2.2) — transcript modal.
+            this.initTranscriptModal();
+
+            // Conversations page (v2.2 CNV-08) — delete actions.
+            this.initConversationDelete();
+        },
+
+        /**
+         * Delete actions on the Conversations page (v2.2 CNV-08).
+         *
+         * Pure UX guard rails — a "select all" toggle plus confirm()
+         * dialogs before any destructive submit. Server-side nonce +
+         * capability checks remain the actual security boundary; these
+         * dialogs only protect against accidental clicks.
+         */
+        initConversationDelete: function () {
+            var $form = $('.trcl-conversations-form');
+            if (!$form.length) {
+                return;
+            }
+
+            var strings = (typeof trclAdmin !== 'undefined' && trclAdmin.strings) ? trclAdmin.strings : {};
+
+            // "Select all" header checkbox toggles every row checkbox.
+            $form.on('change', '.trcl-select-all', function () {
+                $form.find('.trcl-row-check').prop('checked', this.checked);
+            });
+
+            // Per-row delete — confirm a single removal.
+            $form.on('click', '.trcl-delete-conversation', function (e) {
+                if (!window.confirm(strings.confirm_delete_one || 'Permanently delete this conversation? This cannot be undone.')) {
+                    e.preventDefault();
+                }
+            });
+
+            // Bulk delete — require a selection, then confirm.
+            $form.on('click', '.trcl-bulk-delete', function (e) {
+                if (!$form.find('.trcl-row-check:checked').length) {
+                    e.preventDefault();
+                    window.alert(strings.no_selection || 'Please select at least one conversation.');
+                    return;
+                }
+                if (!window.confirm(strings.confirm_delete_selected || 'Permanently delete the selected conversations? This cannot be undone.')) {
+                    e.preventDefault();
+                }
+            });
+        },
+
+        /**
+         * Transcript View modal on the Conversations page (v2.2 CNV-03).
+         *
+         * Security note: every piece of transcript data is rendered via
+         * jQuery .text() (never .html()/.append(rawString)) so HTML or
+         * script inside a chat message cannot execute in wp-admin.
+         */
+        initTranscriptModal: function () {
+            var $backdrop = $('#trcl-transcript-modal');
+            if (!$backdrop.length) {
+                return;
+            }
+
+            function close() {
+                $backdrop.hide();
+                $('#trcl-modal-meta, #trcl-modal-messages').empty();
+            }
+
+            $(document).on('click', '.trcl-view-transcript', function () {
+                var id = $(this).data('conversation-id');
+
+                $.post(trclAdmin.ajaxurl, {
+                    action: 'trcl_get_transcript',
+                    nonce: trclAdmin.nonce,
+                    conversation_id: id
+                }, function (response) {
+                    if (!response || !response.success) {
+                        window.alert((response && response.data && response.data.message) || 'Error');
+                        return;
+                    }
+
+                    var meta = response.data.meta || {};
+                    var $meta = $('#trcl-modal-meta').empty();
+                    var $msgs = $('#trcl-modal-messages').empty();
+
+                    [
+                        ['Customer', meta.customer],
+                        ['Status', meta.status],
+                        ['Started', meta.started_at],
+                        ['Ended', meta.ended_at || '—'],
+                        ['Session', meta.session_id]
+                    ].forEach(function (pair) {
+                        var $dt = $('<span class="trcl-modal-meta-key"></span>').text(pair[0] + ': ');
+                        var $dd = $('<span class="trcl-modal-meta-val"></span>').text(pair[1] || '');
+                        $meta.append($('<span class="trcl-modal-meta-item"></span>').append($dt, $dd));
+                    });
+
+                    (response.data.messages || []).forEach(function (m) {
+                        var $bubble = $('<div></div>')
+                            .addClass('trcl-modal-msg trcl-modal-msg--' + (m.role === 'user' ? 'user' : 'assistant'))
+                            .text(m.content);
+                        var $stamp = $('<div class="trcl-modal-msg-stamp"></div>')
+                            .text(m.created_at + (m.rating ? ' · ' + m.rating + '/5' : ''));
+                        $msgs.append($('<div class="trcl-modal-msg-wrap"></div>').append($bubble, $stamp));
+                    });
+
+                    $backdrop.show();
+                    $msgs.scrollTop(0);
+                });
+            });
+
+            $(document).on('click', '.trcl-modal-close', close);
+
+            $backdrop.on('click', function (e) {
+                if (e.target === this) {
+                    close();
+                }
+            });
+
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape' && $backdrop.is(':visible')) {
+                    close();
+                }
+            });
         },
 
         /**
