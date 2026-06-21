@@ -85,10 +85,11 @@ class Admin {
         // Appearance reset (v2.1).
         \add_action( 'admin_post_trcl_reset_appearance', [ $this, 'handle_reset_appearance_post' ] );
 
-        // Conversations admin (v2.2): transcript modal + CSV exports.
+        // Conversations admin (v2.2): transcript modal + CSV exports + delete.
         \add_action( 'wp_ajax_trcl_get_transcript', [ $this, 'ajax_get_transcript' ] );
         \add_action( 'admin_post_trcl_conversations_export', [ $this, 'handle_conversations_export_post' ] );
         \add_action( 'admin_post_trcl_transcript_export', [ $this, 'handle_transcript_export_post' ] );
+        \add_action( 'admin_post_trcl_conversation_delete', [ $this, 'handle_conversation_delete_post' ] );
     }
 
     /**
@@ -228,6 +229,9 @@ class Admin {
                 'indexing_failed' => __( 'Indexing failed.', 'trill-ai-chat-lite' ),
                 'request_failed'  => __( 'Request failed. Please try again.', 'trill-ai-chat-lite' ),
                 'reindex_now'     => __( 'Reindex Products Now', 'trill-ai-chat-lite' ),
+                'confirm_delete_one'      => __( 'Permanently delete this conversation? This cannot be undone.', 'trill-ai-chat-lite' ),
+                'confirm_delete_selected' => __( 'Permanently delete the selected conversations? This cannot be undone.', 'trill-ai-chat-lite' ),
+                'no_selection'            => __( 'Please select at least one conversation.', 'trill-ai-chat-lite' ),
             ],
         ] );
     }
@@ -367,6 +371,105 @@ class Admin {
                 [ 'response' => 404 ]
             );
         }
+        exit;
+    }
+
+    /**
+     * admin-post handler: permanently delete one or more conversations
+     * (v2.2 CNV-08).
+     *
+     * Supports two POST shapes from the Conversations list form:
+     *   - single_delete = <id>            (per-row "Delete" button)
+     *   - bulk_delete    = 1 + conversation_ids[] = [<id>, ...]
+     *
+     * Security posture (OWASP):
+     *   - State-changing, so POST only (never a GET link).
+     *   - Nonce verified via check_admin_referer.
+     *   - Capability gate (manage_trcl_chat), 403 otherwise.
+     *   - All IDs hard-cast to int before they reach the DB layer.
+     * Deletion itself is delegated to ConversationManager::delete_by_ids
+     * so the GDPR cascade (feedback → messages → conversations) stays the
+     * single source of truth.
+     */
+    public function handle_conversation_delete_post(): void {
+        \check_admin_referer( 'trcl_conversation_delete' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        // Resolve the target IDs. A single-row delete takes precedence so
+        // that any checkboxes ticked at the same time are ignored.
+        $ids = [];
+        if ( isset( $_POST['single_delete'] ) ) {
+            $ids = [ (int) $_POST['single_delete'] ];
+        } elseif ( isset( $_POST['bulk_delete'] ) && isset( $_POST['conversation_ids'] ) && is_array( $_POST['conversation_ids'] ) ) {
+            // wp_unslash + intval; the manager re-validates (> 0, unique).
+            $ids = array_map( 'intval', (array) \wp_unslash( $_POST['conversation_ids'] ) );
+        }
+
+        $ids = array_values( array_filter( $ids, static fn( int $id ): bool => $id > 0 ) );
+
+        if ( empty( $ids ) ) {
+            \set_transient( 'trcl_conversations_notice', [
+                'type'    => 'error',
+                'message' => __( 'No conversations were selected.', 'trill-ai-chat-lite' ),
+            ], 60 );
+            $this->redirect_to_conversations();
+        }
+
+        try {
+            $manager = new \TrillChatLite\Gdpr\ConversationManager();
+            $deleted = $manager->delete_by_ids( $ids );
+
+            \set_transient( 'trcl_conversations_notice', [
+                'type'    => 'success',
+                'message' => sprintf(
+                    /* translators: 1: number of conversations deleted, 2: number of database rows removed */
+                    _n(
+                        'Deleted %1$d conversation (%2$d records removed).',
+                        'Deleted %1$d conversations (%2$d records removed).',
+                        count( $ids ),
+                        'trill-ai-chat-lite'
+                    ),
+                    count( $ids ),
+                    (int) $deleted
+                ),
+            ], 60 );
+        } catch ( \Throwable $e ) {
+            trcl_log( 'Conversation delete failed', 'error', [ 'error' => $e->getMessage() ] );
+            \set_transient( 'trcl_conversations_notice', [
+                'type'    => 'error',
+                'message' => __( 'Could not delete the selected conversations.', 'trill-ai-chat-lite' ),
+            ], 60 );
+        }
+
+        $this->redirect_to_conversations();
+    }
+
+    /**
+     * Redirect back to the Conversations list, preserving the filters the
+     * admin was looking at (referer) when possible.
+     */
+    private function redirect_to_conversations(): void {
+        $referer  = \wp_get_referer();
+        $fallback = \admin_url( 'admin.php?page=trcl-conversations' );
+        $target   = $fallback;
+
+        if ( is_string( $referer ) && $referer !== '' ) {
+            // Only honour same-host admin URLs that point at our page.
+            $path = \wp_parse_url( $referer, PHP_URL_PATH );
+            if ( is_string( $path ) && strpos( $path, 'admin.php' ) !== false
+                && strpos( $referer, 'page=trcl-conversations' ) !== false ) {
+                $target = $referer;
+            }
+        }
+
+        \wp_safe_redirect( $target );
         exit;
     }
 

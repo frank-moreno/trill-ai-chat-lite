@@ -162,6 +162,50 @@
 
             // Conversations page (v2.2) — transcript modal.
             this.initTranscriptModal();
+
+            // Conversations page (v2.2 CNV-08) — delete actions.
+            this.initConversationDelete();
+        },
+
+        /**
+         * Delete actions on the Conversations page (v2.2 CNV-08).
+         *
+         * Pure UX guard rails — a "select all" toggle plus confirm()
+         * dialogs before any destructive submit. Server-side nonce +
+         * capability checks remain the actual security boundary; these
+         * dialogs only protect against accidental clicks.
+         */
+        initConversationDelete: function () {
+            var $form = $('.trcl-conversations-form');
+            if (!$form.length) {
+                return;
+            }
+
+            var strings = (typeof trclAdmin !== 'undefined' && trclAdmin.strings) ? trclAdmin.strings : {};
+
+            // "Select all" header checkbox toggles every row checkbox.
+            $form.on('change', '.trcl-select-all', function () {
+                $form.find('.trcl-row-check').prop('checked', this.checked);
+            });
+
+            // Per-row delete — confirm a single removal.
+            $form.on('click', '.trcl-delete-conversation', function (e) {
+                if (!window.confirm(strings.confirm_delete_one || 'Permanently delete this conversation? This cannot be undone.')) {
+                    e.preventDefault();
+                }
+            });
+
+            // Bulk delete — require a selection, then confirm.
+            $form.on('click', '.trcl-bulk-delete', function (e) {
+                if (!$form.find('.trcl-row-check:checked').length) {
+                    e.preventDefault();
+                    window.alert(strings.no_selection || 'Please select at least one conversation.');
+                    return;
+                }
+                if (!window.confirm(strings.confirm_delete_selected || 'Permanently delete the selected conversations? This cannot be undone.')) {
+                    e.preventDefault();
+                }
+            });
         },
 
         /**

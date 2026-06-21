@@ -94,11 +94,11 @@ class TranscriptExporter {
                 // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- HTTP response stream.
                 fputcsv( $fh, [
                     (int) $row->id,
-                    $row->session_id,
-                    $row->started_at,
-                    $row->ended_at,
-                    $row->status,
-                    $this->customer_label( $row ),
+                    CsvCellSanitizer::sanitize( $row->session_id ),
+                    CsvCellSanitizer::sanitize( $row->started_at ),
+                    CsvCellSanitizer::sanitize( $row->ended_at ),
+                    CsvCellSanitizer::sanitize( $row->status ),
+                    CsvCellSanitizer::sanitize( $this->customer_label( $row ) ),
                     (int) $row->message_count,
                     null !== $row->avg_rating ? round( (float) $row->avg_rating, 1 ) : '',
                     ( (int) $row->order_id > 0 ) ? 'yes' : 'no',
@@ -133,15 +133,15 @@ class TranscriptExporter {
 
         // Conversation meta block first — spreadsheet-friendly context.
         // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- HTTP response stream.
-        fputcsv( $fh, [ 'session_id', $c->session_id ] );
+        fputcsv( $fh, [ 'session_id', CsvCellSanitizer::sanitize( $c->session_id ) ] );
         // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- HTTP response stream.
-        fputcsv( $fh, [ 'customer', $this->customer_label( $c ) ] );
+        fputcsv( $fh, [ 'customer', CsvCellSanitizer::sanitize( $this->customer_label( $c ) ) ] );
         // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- HTTP response stream.
-        fputcsv( $fh, [ 'status', $c->status ] );
+        fputcsv( $fh, [ 'status', CsvCellSanitizer::sanitize( $c->status ) ] );
         // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- HTTP response stream.
-        fputcsv( $fh, [ 'started_at', $c->started_at ] );
+        fputcsv( $fh, [ 'started_at', CsvCellSanitizer::sanitize( $c->started_at ) ] );
         // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- HTTP response stream.
-        fputcsv( $fh, [ 'ended_at', (string) $c->ended_at ] );
+        fputcsv( $fh, [ 'ended_at', CsvCellSanitizer::sanitize( (string) $c->ended_at ) ] );
         // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- HTTP response stream.
         fputcsv( $fh, [] );
 
@@ -152,9 +152,9 @@ class TranscriptExporter {
         foreach ( $transcript['messages'] as $m ) {
             // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- HTTP response stream.
             fputcsv( $fh, [
-                $m->created_at,
-                $m->role,
-                $m->content,
+                CsvCellSanitizer::sanitize( $m->created_at ),
+                CsvCellSanitizer::sanitize( $m->role ),
+                CsvCellSanitizer::sanitize( $m->content ),
                 isset( $m->feedback_rating ) && null !== $m->feedback_rating ? (int) $m->feedback_rating : '',
             ] );
         }

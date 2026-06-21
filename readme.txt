@@ -4,7 +4,7 @@ Tags: woocommerce, ai chatbot, product search, order tracking, cart recovery
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ AI chatbot for WooCommerce: cart-aware shopping, verified order tracking, smart 
 **Trill AI Product Chat for WooCommerce — the AI shopping assistant that turns chat into measurable revenue.**
 
 Trill AI Chat Lite adds a friendly, store-aware AI chat to your WooCommerce site in under 5 minutes. Robin — the AI assistant — answers shoppers in natural language using your real catalogue, your real page content, the current cart, and verified order data. The merchant gets a dashboard that proves revenue from chat. Free forever, open source, GDPR-ready.
+
+= New in 2.2 — see every conversation =
+
+* **New Conversations admin page.** Browse every chat from a new **Trill Chat → Conversations** screen, with message count, average rating, conversion status and attributed revenue on every row.
+* **Filter and search.** Narrow by date range, status and star rating, and search across message content to find any conversation fast.
+* **Read full transcripts.** Open any conversation in a popup to read the complete back-and-forth, rendered as plain text.
+* **Export to CSV.** Download the whole filtered list, or a single conversation's transcript — exports are hardened against spreadsheet formula injection.
+* **Tidy up.** Permanently delete conversations you no longer need, one at a time or in bulk.
 
 = New in 2.1 — make the widget yours =
 
@@ -221,6 +229,16 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 2.2.0 =
+**Conversations release — see, search, export and manage every chat.**
+
+* **New Trill Chat → Conversations admin page** listing every conversation with message count, average rating, conversion status and attributed revenue per row.
+* **Filters + full-text search** — narrow by date range, status and rating, and search message content. Search uses a FULLTEXT index where available, with a safe LIKE fallback on hosts without it.
+* **Transcript viewer** — read the full conversation in an accessible popup, rendered exclusively as text so nothing in a chat message can execute in wp-admin.
+* **CSV export** — export the whole filtered list or a single transcript. Exports are hardened against spreadsheet formula / CSV injection.
+* **Delete conversations** — remove conversations you no longer need, individually or in bulk, through the same audited cascade used by the GDPR tools (feedback → messages → conversations). Nonce- and capability-protected.
+* **Database:** schema upgraded to 1.4.0 — adds a FULLTEXT index on message content for fast search. The migration is additive and idempotent via dbDelta.
+
 = 2.1.0 =
 **Appearance release — full visual control over the chat widget.**
 
@@ -327,6 +345,9 @@ This release turns Trill AI Chat from a product-search chatbot into a full-stack
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+Conversations release. A new Trill Chat → Conversations page to browse, filter, full-text search, read, export (CSV) and delete chats. Adds a FULLTEXT index (schema 1.4.0); the migration is additive and runs automatically. Safe update for all users.
 
 = 2.1.0 =
 Appearance release. Full visual control: 7-colour palette, 4 positions, size sliders, custom assistant name + avatar, font picker, live preview, desktop expand button and a configurable launcher. Your widget looks exactly the same until you change something — safe update for all users.

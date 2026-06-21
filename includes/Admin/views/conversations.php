@@ -47,10 +47,22 @@ $trcl_export_url = \wp_nonce_url(
 );
 
 $trcl_statuses = \TrillChatLite\Conversations\ConversationQueryService::ALLOWED_STATUSES;
+
+// Transient notice from a previous delete action (v2.2 CNV-08).
+$trcl_notice = \get_transient( 'trcl_conversations_notice' );
+if ( $trcl_notice ) {
+    \delete_transient( 'trcl_conversations_notice' );
+}
 ?>
 
 <div class="wrap trcl-conversations-page">
     <h1><?php esc_html_e( 'Conversations', 'trill-ai-chat-lite' ); ?></h1>
+
+    <?php if ( is_array( $trcl_notice ) && isset( $trcl_notice['type'], $trcl_notice['message'] ) ) : ?>
+        <div class="notice notice-<?php echo esc_attr( $trcl_notice['type'] ); ?> is-dismissible">
+            <p><?php echo esc_html( $trcl_notice['message'] ); ?></p>
+        </div>
+    <?php endif; ?>
 
     <?php if ( ! $trcl_service->uses_fulltext() ) : ?>
         <p class="description">
@@ -112,9 +124,29 @@ $trcl_statuses = \TrillChatLite\Conversations\ConversationQueryService::ALLOWED_
         ?>
     </p>
 
+    <form method="post" action="<?php echo esc_url( \admin_url( 'admin-post.php' ) ); ?>" class="trcl-conversations-form">
+        <input type="hidden" name="action" value="trcl_conversation_delete" />
+        <?php \wp_nonce_field( 'trcl_conversation_delete' ); ?>
+
+        <?php if ( ! empty( $trcl_result['rows'] ) ) : ?>
+        <div class="tablenav top">
+            <div class="alignleft actions bulkactions">
+                <button type="submit"
+                        name="bulk_delete"
+                        value="1"
+                        class="button trcl-bulk-delete">
+                    <?php esc_html_e( 'Delete selected', 'trill-ai-chat-lite' ); ?>
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
     <table class="widefat striped trcl-conversations-table">
         <thead>
             <tr>
+                <td class="manage-column check-column">
+                    <input type="checkbox" class="trcl-select-all" aria-label="<?php esc_attr_e( 'Select all conversations', 'trill-ai-chat-lite' ); ?>" />
+                </td>
                 <th><?php esc_html_e( 'Date', 'trill-ai-chat-lite' ); ?></th>
                 <th><?php esc_html_e( 'Customer', 'trill-ai-chat-lite' ); ?></th>
                 <th><?php esc_html_e( 'Status', 'trill-ai-chat-lite' ); ?></th>
@@ -128,7 +160,7 @@ $trcl_statuses = \TrillChatLite\Conversations\ConversationQueryService::ALLOWED_
         <tbody>
             <?php if ( empty( $trcl_result['rows'] ) ) : ?>
                 <tr>
-                    <td colspan="8"><?php esc_html_e( 'No conversations match the current filters.', 'trill-ai-chat-lite' ); ?></td>
+                    <td colspan="9"><?php esc_html_e( 'No conversations match the current filters.', 'trill-ai-chat-lite' ); ?></td>
                 </tr>
             <?php else : ?>
                 <?php foreach ( $trcl_result['rows'] as $trcl_row ) : ?>
@@ -146,6 +178,13 @@ $trcl_statuses = \TrillChatLite\Conversations\ConversationQueryService::ALLOWED_
                     $trcl_converted = ( (int) $trcl_row->order_id > 0 );
                     ?>
                     <tr>
+                        <th scope="row" class="check-column">
+                            <input type="checkbox"
+                                   name="conversation_ids[]"
+                                   value="<?php echo esc_attr( (string) (int) $trcl_row->id ); ?>"
+                                   class="trcl-row-check"
+                                   aria-label="<?php esc_attr_e( 'Select this conversation', 'trill-ai-chat-lite' ); ?>" />
+                        </th>
                         <td><?php echo esc_html( \mysql2date( 'Y-m-d H:i', $trcl_row->started_at ) ); ?></td>
                         <td><?php echo esc_html( $this->resolve_customer_label( (int) $trcl_row->user_id, (string) $trcl_row->customer_email ) ); ?></td>
                         <td>
@@ -191,12 +230,19 @@ $trcl_statuses = \TrillChatLite\Conversations\ConversationQueryService::ALLOWED_
                             <a href="<?php echo esc_url( $trcl_row_csv_url ); ?>" class="button button-small">
                                 <?php esc_html_e( 'CSV', 'trill-ai-chat-lite' ); ?>
                             </a>
+                            <button type="submit"
+                                    name="single_delete"
+                                    value="<?php echo esc_attr( (string) (int) $trcl_row->id ); ?>"
+                                    class="button button-small button-link-delete trcl-delete-conversation">
+                                <?php esc_html_e( 'Delete', 'trill-ai-chat-lite' ); ?>
+                            </button>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
         </tbody>
     </table>
+    </form>
 
     <?php if ( $trcl_result['pages'] > 1 ) : ?>
         <div class="tablenav bottom">
