@@ -123,7 +123,7 @@ if ( is_array( $trcl_appearance_notice ) ) {
 <div class="trcl-appearance-main">
 
 <form method="post" action="options.php">
-    <?php settings_fields( 'trcl_settings' ); ?>
+    <?php settings_fields( \TrillChatLite\Admin\Settings::GROUP_APPEARANCE ); ?>
 
     <h2><?php esc_html_e( 'Colours', 'trill-ai-chat-lite' ); ?></h2>
 

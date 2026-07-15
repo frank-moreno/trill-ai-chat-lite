@@ -1,14 +1,14 @@
 === Trill AI Product Chat for WooCommerce ===
 Contributors: trillai
-Tags: woocommerce, ai chatbot, product search, order tracking, cart recovery
+Tags: woocommerce, ai chatbot, shopping assistant, product search, order tracking
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 2.2.0
+Stable tag: 2.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-AI chatbot for WooCommerce: cart-aware shopping, verified order tracking, smart lead capture, revenue analytics. GDPR-ready. Free forever.
+Free AI shopping assistant for WooCommerce that turns chat into measurable revenue. Cart-aware, verified order tracking, GDPR-ready. No API key.
 
 == Description ==
 
@@ -57,32 +57,27 @@ Plus **GDPR conversation management** wired into WordPress's native Tools → Pe
 = What Lite includes (free, forever) =
 
 * AI shopping assistant widget on every page of your store
-* **Page content indexing** for FAQ, shipping, returns, contact and policy pages
+* **Smart product discovery** — real-time catalogue search with natural-language understanding (50+ shopping phrases, English de-pluralisation) and product cards with one-click AJAX add-to-cart
+* **Page content indexing** — Robin also answers from your FAQ, shipping, returns, contact and policy pages
 * **Cart-aware chat** that sees the current basket and guides to checkout
 * **Verified order tracking** with login or email-match identity check
 * **Smart lead capture** for out-of-stock and price-drop opt-ins, with audited consent
 * **Revenue analytics dashboard** — orders and revenue attributed to chat, 7/30/90-day windows
+* **Conversation history** — browse, filter, full-text search, read, export (CSV) and delete every chat
 * **GDPR conversation management** — DSAR + erasure via WP Privacy Tools, configurable retention
-* Real-time product search across your WooCommerce catalogue
-* Interactive product cards with one-click AJAX add-to-cart
-* Natural language understanding — over 50 shopping phrases recognised
-* Smart English de-pluralisation ("t-shirts" → "T-Shirt", "accessories" → "Accessory")
-* Topic enforcement and prompt-injection protection (guardrails)
-* Generous monthly managed conversation quota on Trill Cloud (tracked in dashboard)
-* Customisable widget colour, position, welcome message, starter chips, privacy notice
-* WordPress 6.0+ and WooCommerce 8.0+ compatible
-* HPOS (High-Performance Order Storage) compatible
-* Shortcode `[trill_chat]` for embedding the chat trigger on any page or post
-* Translation-ready with `.pot` file (works with Loco Translate, WPML and similar)
-* WordPress 7.0 Abilities API integration (optional) — exposes product search, store context, and conversation summary to AI agents and MCP adapters
+* **Topic-safe** — guardrails and prompt-injection protection keep chats about your store
+* **Full widget customisation** — colours, position, size, assistant name, avatar, font, starter chips and privacy notice, with live preview
+* **WooCommerce-ready** — WordPress 6.0+, WooCommerce 8.0+ and HPOS compatible; `[trill_chat]` shortcode to embed anywhere
+* **Built to extend** — translation-ready (`.pot`, Loco Translate, WPML) and the WordPress 7.0 Abilities API for AI agents and MCP adapters
+* Generous monthly conversation quota on Trill Cloud, tracked in the dashboard
 
-= Built for WooCommerce, by a UK SME =
+= Built for WooCommerce, by a UK developer =
 
-Trill AI is built by Greensolutions Pioneers Limited, a UK-registered company (Companies House 15693716). We focus exclusively on AI products for WooCommerce — not a generic chatbot with a Woo plugin bolted on.
+I build Trill AI at Greensolutions Pioneers Limited, a UK-registered company (Companies House 15693716). I focus exclusively on AI products for WooCommerce — not a generic chatbot with a Woo plugin bolted on.
 
-If you're a UK, US or EU store owner looking for AI chat that respects your data, your time and your budget, we'd love to hear what you think.
+If you run a UK, US or EU store and want AI chat that respects your data, your time and your budget, I'd love to hear what you think.
 
-Read more on our blog:
+Read more on the Trill AI blog:
 
 * [Complete guide to AI chat for WooCommerce](https://trillai.io/complete-guide-ai-chat-woocommerce/)
 * [Reduce WooCommerce support tickets with AI](https://trillai.io/reduce-woocommerce-support-tickets-ai/)
@@ -125,7 +120,7 @@ Yes. Trill AI Chat Lite is a WooCommerce AI shopping assistant — it reads your
 
 = Do I need an OpenAI or Anthropic API key? =
 
-No. We manage the AI infrastructure via Trill Cloud — you do not need to create an account with OpenAI, Anthropic or any other provider. Just install, activate and go.
+No. I manage the AI infrastructure via Trill Cloud — you do not need to create an account with OpenAI, Anthropic or any other provider. Just install, activate and go.
 
 = How does the cart-aware feature work? =
 
@@ -143,6 +138,10 @@ When Robin offers to take the visitor's email (out-of-stock notification, price-
 
 When `woocommerce_thankyou` fires, the plugin records an `order_completed` event and looks up any `chat_started` events that share the same WooCommerce session customer ID within the last 24 hours. On a match, an `order_attributed` event is written linking the order to the chat session. The dashboard then surfaces "Orders from chat" and "Revenue from chat" KPIs over a configurable 7/30/90-day window.
 
+= Can I see, search and export my chat history? =
+
+Yes. The **Trill Chat → Conversations** admin page lists every conversation with its message count, average rating, conversion status and attributed revenue. Filter by date range, status and rating, run a full-text search across message content, and open any conversation to read the full transcript. Export the whole filtered list or a single transcript to CSV (hardened against spreadsheet formula injection), and delete conversations you no longer need — individually or in bulk.
+
 = How many conversations does the plugin include? =
 
 The plugin includes a generous monthly conversation allowance, enforced server-side. Your admin dashboard shows a usage counter so you can track how many conversations you have used each calendar month.
@@ -157,7 +156,7 @@ Install Trill AI Chat Lite from the WordPress plugin directory, activate it, and
 
 = Is Trill AI Chat Lite GDPR-compliant? =
 
-Yes, fully wired in. Greensolutions Pioneers Limited is a UK-registered company (Companies House 15693716) subject to UK GDPR and EU GDPR. The plugin auto-registers with WordPress's native **Tools → Export Personal Data** (DSAR) and **Tools → Erase Personal Data** (right to be forgotten) — so any data subject request from a visitor flows through the standard WP admin, with conversations + messages + leads cascaded automatically. Retention is configurable (default 365 days, clamped 7-3650). All messages are transmitted over HTTPS. No IP addresses are ever persisted. Chat data is never used to train AI models. See our [Privacy Policy](https://trillai.io/privacy/) for full details.
+Yes, fully wired in. Greensolutions Pioneers Limited is a UK-registered company (Companies House 15693716) subject to UK GDPR and EU GDPR. The plugin auto-registers with WordPress's native **Tools → Export Personal Data** (DSAR) and **Tools → Erase Personal Data** (right to be forgotten) — so any data subject request from a visitor flows through the standard WP admin, with conversations + messages + leads cascaded automatically. Retention is configurable (default 365 days, clamped 7-3650). All messages are transmitted over HTTPS. No IP addresses are ever persisted. Chat data is never used to train AI models. See the [Privacy Policy](https://trillai.io/privacy-policy/) for full details.
 
 = Does it work with HPOS (High-Performance Order Storage)? =
 
@@ -214,7 +213,7 @@ On WordPress 6.x the abilities simply do not register and the rest of the plugin
 
 = I found a bug or have a feature request. =
 
-Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill-ai-chat-lite/) or email hello@trillai.io. We read every message.
+Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill-ai-chat-lite/) or email hello@trillai.io. I read every message.
 
 == Screenshots ==
 
@@ -228,6 +227,16 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 8. Storefront chat widget answering a product query — interactive product cards with prices, stock and one-click AJAX add-to-cart. Mobile-friendly, theme-agnostic.
 
 == Changelog ==
+
+= 2.2.2 =
+* **Fixed: saving one settings tab no longer breaks or resets the others.** Each settings tab (General, Appearance, Content, Privacy) now registers its own option group. Previously all tabs shared one group, so saving any tab made WordPress update every registered option — fields missing from that tab's form arrived as null, causing a fatal error on the widget-position sanitiser and silently resetting other tabs' options to defaults.
+* Hardened the widget-position sanitiser: null input now preserves the stored value instead of crashing or resetting it.
+* Documentation: canonicalised the legal URLs in the plugin listing (`/terms-of-service/` and `/privacy-policy/`).
+
+= 2.2.1 =
+* Documentation update — no functional code changes.
+* Clarified the external service: the plugin connects to **Trill Cloud** at `api-v2.trillai.io` (per-site Bearer authentication), replacing the outdated `api.trillai.io` reference.
+* Refined the listing: benefit-led short description, accurate tags, consistent first-person voice, a "Conversation history" feature entry, and a new FAQ on viewing / searching / exporting your chat history.
 
 = 2.2.0 =
 **Conversations release — see, search, export and manage every chat.**
@@ -346,6 +355,12 @@ This release turns Trill AI Chat from a product-search chatbot into a full-stack
 
 == Upgrade Notice ==
 
+= 2.2.2 =
+Important bugfix: saving one settings tab could crash and silently reset the other tabs' settings (including disabling the chat). All users should update. After updating, please review your Trill Chat settings once.
+
+= 2.2.1 =
+Documentation-only update — clearer external-service disclosure (Trill Cloud / api-v2) and refined listing copy. No functional changes; safe update for all users.
+
 = 2.2.0 =
 Conversations release. A new Trill Chat → Conversations page to browse, filter, full-text search, read, export (CSV) and delete chats. Adds a FULLTEXT index (schema 1.4.0); the migration is additive and runs automatically. Safe update for all users.
 
@@ -375,22 +390,28 @@ Initial release of Trill AI Chat Lite.
 
 == External Services ==
 
-This plugin relies on the **Trill AI API** (`https://api.trillai.io`) as its
-sole AI processing back-end. The service is required for the plugin to function.
+This plugin relies on **Trill Cloud**, the managed AI back-end I operate
+(Greensolutions Pioneers Limited), at `https://api-v2.trillai.io`, as its sole
+AI processing service. The service is required for the plugin to function.
 
-**What data is sent and when:**
+**What data is sent, and when:**
 
-* When a store visitor sends a chat message, the message text and relevant
-  WooCommerce product context (names, prices, descriptions) are transmitted to
-  the Trill AI API over HTTPS for AI processing.
-* The API also enforces per-site usage limits server-side (no local trialware).
+* When a store visitor sends a chat message, the message text and the
+  WooCommerce context needed to answer it — product names, prices, descriptions
+  and, where relevant to the question, the current cart contents and order-status
+  details — are transmitted to Trill Cloud over HTTPS for AI processing.
+* Each site authenticates with a per-site Bearer token (hashed at rest). Trill
+  Cloud enforces the monthly conversation allowance server-side (no local
+  trialware).
+* No IP addresses are sent, and no customer personal data beyond what the
+  visitor types into the chat and the catalogue context required to answer.
 
 **Service links:**
 
-* Service URL: https://api.trillai.io
-* Terms of Service: https://trillai.io/terms/
-* Privacy Policy: https://trillai.io/privacy/
+* Service URL: https://api-v2.trillai.io
+* Terms of Service: https://trillai.io/terms-of-service/
+* Privacy Policy: https://trillai.io/privacy-policy/
 
-No personal visitor data is collected or stored by the external service beyond
-what is strictly necessary to process the individual chat message. Messages are
-not used for training AI models.
+No personal visitor data is collected or stored by Trill Cloud beyond what is
+strictly necessary to process each individual chat message. Chat data is never
+used to train AI models.

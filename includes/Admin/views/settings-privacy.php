@@ -61,7 +61,7 @@ $trcl_wp_policy_url = $trcl_wp_policy_id > 0 ? (string) \get_permalink( $trcl_wp
 </p>
 
 <form method="post" action="options.php">
-    <?php settings_fields( 'trcl_settings' ); ?>
+    <?php settings_fields( \TrillChatLite\Admin\Settings::GROUP_PRIVACY ); ?>
 
     <table class="form-table" role="presentation">
 

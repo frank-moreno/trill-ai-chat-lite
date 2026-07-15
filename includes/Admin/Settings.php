@@ -24,11 +24,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Settings {
 
     /**
-     * Settings group name.
+     * Settings group names — one group per settings tab.
      *
-     * @var string
+     * Each tab renders its own <form> posting to options.php, and
+     * options.php updates EVERY option registered in the submitted
+     * group — options absent from the POST arrive as null. With the
+     * previous single shared group, saving one tab reset (or, for the
+     * strictly-typed position callback, fataled on) the other tabs'
+     * options. One group per tab scopes each save to the fields that
+     * form actually submits.
+     *
+     * GROUP_GENERAL keeps the legacy 'trcl_settings' name so the
+     * General tab markup needs no change.
+     *
+     * @since 2.2.2
      */
-    private const SETTINGS_GROUP = 'trcl_settings';
+    public const GROUP_GENERAL    = 'trcl_settings';
+    public const GROUP_APPEARANCE = 'trcl_settings_appearance';
+    public const GROUP_CONTENT    = 'trcl_settings_content';
+    public const GROUP_PRIVACY    = 'trcl_settings_privacy';
 
     /**
      * Appearance colour options and their defaults (v2.1).
@@ -115,7 +129,7 @@ class Settings {
     public function register_settings(): void {
         // Chat enabled toggle.
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_GENERAL,
             'trcl_chat_enabled',
             [
                 'type'              => 'string',
@@ -128,7 +142,7 @@ class Settings {
 
         // Widget position.
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_widget_position',
             [
                 'type'              => 'string',
@@ -141,7 +155,7 @@ class Settings {
         // legacy primary key kept for backwards compatibility).
         foreach ( self::COLOR_DEFAULTS as $color_option => $color_default ) {
             \register_setting(
-                self::SETTINGS_GROUP,
+                self::GROUP_APPEARANCE,
                 $color_option,
                 [
                     'type'              => 'string',
@@ -156,7 +170,7 @@ class Settings {
 
         // Widget dimensions (v2.1) — clamped ints, px units applied at render.
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_widget_width',
             [
                 'type'              => 'integer',
@@ -166,7 +180,7 @@ class Settings {
         );
 
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_widget_height',
             [
                 'type'              => 'integer',
@@ -176,7 +190,7 @@ class Settings {
         );
 
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_widget_border_radius',
             [
                 'type'              => 'integer',
@@ -187,7 +201,7 @@ class Settings {
 
         // Assistant name (v2.1) — empty means "use the default (Robin)".
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_assistant_name',
             [
                 'type'              => 'string',
@@ -200,7 +214,7 @@ class Settings {
 
         // Launcher style (v2.1 APP-08) — whitelisted key.
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_launcher_style',
             [
                 'type'              => 'string',
@@ -212,7 +226,7 @@ class Settings {
         // Custom avatar (v2.1) — media library attachment ID; 0 means
         // "use the bundled default avatar".
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_custom_avatar_id',
             [
                 'type'              => 'integer',
@@ -223,7 +237,7 @@ class Settings {
 
         // Widget font (v2.1) — whitelisted key into FONT_CHOICES.
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_widget_font',
             [
                 'type'              => 'string',
@@ -237,7 +251,7 @@ class Settings {
 
         // Show "Powered by Trill AI" badge (opt-in, OFF by default).
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_GENERAL,
             'trcl_show_powered_by',
             [
                 'type'              => 'string',
@@ -252,7 +266,7 @@ class Settings {
         // Default is empty: the frontend builds the localised fallback greeting
         // dynamically so it follows the configured assistant name (v2.1).
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_APPEARANCE,
             'trcl_welcome_message',
             [
                 'type'              => 'string',
@@ -263,7 +277,7 @@ class Settings {
 
         // Skip widget on WooCommerce checkout (opt-in, OFF by default).
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_GENERAL,
             'trcl_skip_checkout',
             [
                 'type'              => 'string',
@@ -276,7 +290,7 @@ class Settings {
 
         // Skip widget on WooCommerce My Account pages (opt-in, OFF by default).
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_GENERAL,
             'trcl_skip_account',
             [
                 'type'              => 'string',
@@ -293,7 +307,7 @@ class Settings {
         // optional "|" splits a display Label from the underlying Value sent on
         // click (falls back to Label when Value is omitted). Capped at 3 chips.
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_GENERAL,
             'trcl_initial_quick_replies',
             [
                 'type'              => 'string',
@@ -305,7 +319,7 @@ class Settings {
         // Content indexing settings (v2.0 Block 1).
         // Nested array — the sanitizer enforces structure + types.
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_CONTENT,
             \TrillChatLite\Content\ContentSettings::OPTION_KEY,
             [
                 'type'              => 'array',
@@ -316,7 +330,7 @@ class Settings {
 
         // GDPR settings (v2.0 Block 2).
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_PRIVACY,
             \TrillChatLite\Gdpr\GdprSettings::OPT_RETENTION_DAYS,
             [
                 'type'              => 'integer',
@@ -326,7 +340,7 @@ class Settings {
         );
 
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_PRIVACY,
             \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_URL,
             [
                 'type'              => 'string',
@@ -336,7 +350,7 @@ class Settings {
         );
 
         \register_setting(
-            self::SETTINGS_GROUP,
+            self::GROUP_PRIVACY,
             \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_TEXT,
             [
                 'type'              => 'string',
@@ -556,11 +570,22 @@ class Settings {
      *
      * v2.1 expands the whitelist from 2 to 4 corners.
      *
-     * @param string $position Position value.
+     * Accepts mixed input on purpose: options.php passes null for any
+     * registered option missing from the POST, and a strictly-typed
+     * parameter turns that into a fatal TypeError (the 2.2.1 cross-tab
+     * save bug). On null the stored value is preserved instead of
+     * silently resetting the merchant's choice.
+     *
+     * @param mixed $position Position value (string expected, null tolerated).
      * @return string Sanitized position.
      */
-    public function sanitize_position( string $position ): string {
-        $position = sanitize_text_field( $position );
+    public function sanitize_position( $position ): string {
+        if ( null === $position ) {
+            $current = \get_option( 'trcl_widget_position', 'bottom-right' );
+            return in_array( $current, self::POSITIONS, true ) ? $current : 'bottom-right';
+        }
+
+        $position = sanitize_text_field( (string) $position );
 
         return in_array( $position, self::POSITIONS, true ) ? $position : 'bottom-right';
     }
@@ -735,11 +760,13 @@ class Settings {
     }
 
     /**
-     * Get settings group name.
+     * Get the legacy settings group name (the General tab group).
+     *
+     * Since 2.2.2 each tab has its own group — see the GROUP_* constants.
      *
      * @return string
      */
     public function get_settings_group(): string {
-        return self::SETTINGS_GROUP;
+        return self::GROUP_GENERAL;
     }
 }

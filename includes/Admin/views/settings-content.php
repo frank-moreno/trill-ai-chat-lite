@@ -89,7 +89,7 @@ $trcl_action_url = \admin_url( 'admin-post.php' );
 </p>
 
 <form method="post" action="options.php">
-    <?php settings_fields( 'trcl_settings' ); ?>
+    <?php settings_fields( \TrillChatLite\Admin\Settings::GROUP_CONTENT ); ?>
 
     <table class="form-table" role="presentation">
 
