@@ -1,20 +1,38 @@
 # Files and directories to exclude from the WordPress.org SVN distribution.
 # Used by deployment scripts (e.g. wp-cli/dist-archive-command).
+#
+# Pattern rules:
+#   - A leading slash anchors to repo root.
+#   - No leading slash → recursive match (e.g. `.DS_Store` strips every
+#     macOS metadata file regardless of depth).
 
+# Version control
 /.git
 /.github
-.DS_Store
-/_proxy_fixes
-/bin
-/.distignore
 /.gitignore
-/node_modules
-/tests
+
+# Dev tooling / packaging
+/.distignore
 /phpcs.xml
 /phpunit.xml
 /composer.json
 /composer.lock
 /package.json
 /package-lock.json
+/node_modules
+
+# Internal directories that must never ship to WP.org
+/tests
+/docs
+/bin
+/_proxy_fixes
+/wporg-assets
+
+# Hidden / OS metadata — recursive
+.DS_Store
+Thumbs.db
+*.swp
+
+# Markdown docs in the plugin root except readme.txt
 *.md
 !readme.txt

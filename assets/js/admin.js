@@ -23,6 +23,313 @@
         init: function () {
             this.bindEvents();
             this.initColourPreview();
+            this.initAppearanceControls();
+        },
+
+        /**
+         * Map of colour field IDs to the CSS custom property each one
+         * drives in the live preview (v2.1).
+         */
+        colorVarMap: {
+            trcl_widget_color:       '--trcl-primary',
+            trcl_widget_color_hover: '--trcl-primary-hover',
+            trcl_user_bubble_color:  '--trcl-user-bubble',
+            trcl_ai_bubble_color:    '--trcl-ai-bubble',
+            trcl_header_text_color:  '--trcl-header-text',
+            trcl_body_text_color:    '--trcl-body-text',
+            trcl_widget_bg_color:    '--trcl-window-bg'
+        },
+
+        /**
+         * Map of range slider IDs to preview CSS custom properties (px).
+         */
+        rangeVarMap: {
+            trcl_widget_width:         '--trcl-widget-width',
+            trcl_widget_height:        '--trcl-widget-height',
+            trcl_widget_border_radius: '--trcl-radius'
+        },
+
+        /**
+         * Set a CSS custom property on the live preview container.
+         *
+         * @param {string} prop  Custom property name (--trcl-*).
+         * @param {string} value Value, or empty string to remove.
+         */
+        setPreviewVar: function (prop, value) {
+            var pv = document.getElementById('trcl-pv');
+            if (!pv) {
+                return;
+            }
+            if (value) {
+                pv.style.setProperty(prop, value);
+            } else {
+                pv.style.removeProperty(prop);
+            }
+        },
+
+        /**
+         * Initialise the Appearance tab controls (v2.1):
+         * wp-color-picker on colour fields, live px read-outs next to the
+         * range sliders, media-library avatar picker, and live preview
+         * bindings for every control.
+         */
+        initAppearanceControls: function () {
+            var self = this;
+
+            // Colour pickers (wp-color-picker is enqueued only on the
+            // settings screen; guard so other admin pages don't error).
+            var $colors = $('.trcl-color-field');
+            if ($colors.length && typeof $.fn.wpColorPicker === 'function') {
+                $colors.each(function () {
+                    var id = this.id;
+                    var cssVar = self.colorVarMap[id];
+
+                    $(this).wpColorPicker({
+                        change: function (event, ui) {
+                            if (cssVar && ui && ui.color) {
+                                self.setPreviewVar(cssVar, ui.color.toString());
+                            }
+                        },
+                        clear: function () {
+                            var fallback = $('#' + id).data('default-color');
+                            if (cssVar && fallback) {
+                                self.setPreviewVar(cssVar, String(fallback));
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Range sliders — live value display + preview var.
+            $(document).on('input change', '.trcl-range', function () {
+                var $out = $(this).siblings('.trcl-range-value').first();
+                if ($out.length) {
+                    $out.text($(this).val() + ($out.data('suffix') || ''));
+                }
+                var cssVar = self.rangeVarMap[this.id];
+                if (cssVar) {
+                    self.setPreviewVar(cssVar, $(this).val() + 'px');
+                }
+            });
+
+            // Assistant name → preview header (text node, jQuery .text()
+            // escapes by design).
+            $(document).on('input', '#trcl_assistant_name', function () {
+                var name = $.trim($(this).val()) || $(this).attr('placeholder') || 'Robin';
+                $('.trcl-pv-name').text(name);
+            });
+
+            // Welcome message → first AI bubble.
+            $(document).on('input', '#trcl_welcome_message', function () {
+                var $bubble = $('#trcl-pv-welcome');
+                if (!$bubble.length) {
+                    return;
+                }
+                var text = $.trim($(this).val());
+                if (text) {
+                    $bubble.text(text);
+                } else if ($bubble.data('fallback')) {
+                    $bubble.text($bubble.data('fallback'));
+                }
+            });
+
+            // Stash the server-rendered default greeting so clearing the
+            // textarea restores it in the preview.
+            var $welcomeBubble = $('#trcl-pv-welcome');
+            if ($welcomeBubble.length) {
+                $welcomeBubble.data('fallback', $welcomeBubble.text());
+            }
+
+            // Font select → preview font-family (stacks come from the
+            // server-side whitelist via data-stack, never typed by hand).
+            $(document).on('change', '#trcl_widget_font', function () {
+                var stack = $(this).find('option:selected').data('stack') || '';
+                var pv = document.getElementById('trcl-pv');
+                if (pv) {
+                    pv.style.fontFamily = stack ? String(stack) : '';
+                }
+            });
+
+            // Launcher style → preview launcher swatch.
+            $(document).on('change', 'input[name="trcl_launcher_style"]', function () {
+                var isBubble = $(this).val() === 'bubble';
+                $('#trcl-pv-launcher-brand').toggle(!isBubble);
+                $('#trcl-pv-launcher-bubble').toggle(isBubble);
+            });
+
+            // Avatar — media library picker.
+            this.initAvatarPicker();
+
+            // Conversations page (v2.2) — transcript modal.
+            this.initTranscriptModal();
+
+            // Conversations page (v2.2 CNV-08) — delete actions.
+            this.initConversationDelete();
+        },
+
+        /**
+         * Delete actions on the Conversations page (v2.2 CNV-08).
+         *
+         * Pure UX guard rails — a "select all" toggle plus confirm()
+         * dialogs before any destructive submit. Server-side nonce +
+         * capability checks remain the actual security boundary; these
+         * dialogs only protect against accidental clicks.
+         */
+        initConversationDelete: function () {
+            var $form = $('.trcl-conversations-form');
+            if (!$form.length) {
+                return;
+            }
+
+            var strings = (typeof trclAdmin !== 'undefined' && trclAdmin.strings) ? trclAdmin.strings : {};
+
+            // "Select all" header checkbox toggles every row checkbox.
+            $form.on('change', '.trcl-select-all', function () {
+                $form.find('.trcl-row-check').prop('checked', this.checked);
+            });
+
+            // Per-row delete — confirm a single removal.
+            $form.on('click', '.trcl-delete-conversation', function (e) {
+                if (!window.confirm(strings.confirm_delete_one || 'Permanently delete this conversation? This cannot be undone.')) {
+                    e.preventDefault();
+                }
+            });
+
+            // Bulk delete — require a selection, then confirm.
+            $form.on('click', '.trcl-bulk-delete', function (e) {
+                if (!$form.find('.trcl-row-check:checked').length) {
+                    e.preventDefault();
+                    window.alert(strings.no_selection || 'Please select at least one conversation.');
+                    return;
+                }
+                if (!window.confirm(strings.confirm_delete_selected || 'Permanently delete the selected conversations? This cannot be undone.')) {
+                    e.preventDefault();
+                }
+            });
+        },
+
+        /**
+         * Transcript View modal on the Conversations page (v2.2 CNV-03).
+         *
+         * Security note: every piece of transcript data is rendered via
+         * jQuery .text() (never .html()/.append(rawString)) so HTML or
+         * script inside a chat message cannot execute in wp-admin.
+         */
+        initTranscriptModal: function () {
+            var $backdrop = $('#trcl-transcript-modal');
+            if (!$backdrop.length) {
+                return;
+            }
+
+            function close() {
+                $backdrop.hide();
+                $('#trcl-modal-meta, #trcl-modal-messages').empty();
+            }
+
+            $(document).on('click', '.trcl-view-transcript', function () {
+                var id = $(this).data('conversation-id');
+
+                $.post(trclAdmin.ajaxurl, {
+                    action: 'trcl_get_transcript',
+                    nonce: trclAdmin.nonce,
+                    conversation_id: id
+                }, function (response) {
+                    if (!response || !response.success) {
+                        window.alert((response && response.data && response.data.message) || 'Error');
+                        return;
+                    }
+
+                    var meta = response.data.meta || {};
+                    var $meta = $('#trcl-modal-meta').empty();
+                    var $msgs = $('#trcl-modal-messages').empty();
+
+                    [
+                        ['Customer', meta.customer],
+                        ['Status', meta.status],
+                        ['Started', meta.started_at],
+                        ['Ended', meta.ended_at || '—'],
+                        ['Session', meta.session_id]
+                    ].forEach(function (pair) {
+                        var $dt = $('<span class="trcl-modal-meta-key"></span>').text(pair[0] + ': ');
+                        var $dd = $('<span class="trcl-modal-meta-val"></span>').text(pair[1] || '');
+                        $meta.append($('<span class="trcl-modal-meta-item"></span>').append($dt, $dd));
+                    });
+
+                    (response.data.messages || []).forEach(function (m) {
+                        var $bubble = $('<div></div>')
+                            .addClass('trcl-modal-msg trcl-modal-msg--' + (m.role === 'user' ? 'user' : 'assistant'))
+                            .text(m.content);
+                        var $stamp = $('<div class="trcl-modal-msg-stamp"></div>')
+                            .text(m.created_at + (m.rating ? ' · ' + m.rating + '/5' : ''));
+                        $msgs.append($('<div class="trcl-modal-msg-wrap"></div>').append($bubble, $stamp));
+                    });
+
+                    $backdrop.show();
+                    $msgs.scrollTop(0);
+                });
+            });
+
+            $(document).on('click', '.trcl-modal-close', close);
+
+            $backdrop.on('click', function (e) {
+                if (e.target === this) {
+                    close();
+                }
+            });
+
+            $(document).on('keydown', function (e) {
+                if (e.key === 'Escape' && $backdrop.is(':visible')) {
+                    close();
+                }
+            });
+        },
+
+        /**
+         * Media-library avatar picker (v2.1 APP-03).
+         */
+        initAvatarPicker: function () {
+            var frame = null;
+
+            $(document).on('click', '#trcl-avatar-upload', function (e) {
+                e.preventDefault();
+
+                if (typeof wp === 'undefined' || !wp.media) {
+                    return;
+                }
+
+                if (!frame) {
+                    frame = wp.media({
+                        title: 'Select an avatar',
+                        library: { type: 'image' },
+                        multiple: false
+                    });
+
+                    frame.on('select', function () {
+                        var att = frame.state().get('selection').first().toJSON();
+                        var url = (att.sizes && att.sizes.thumbnail) ? att.sizes.thumbnail.url : att.url;
+
+                        $('#trcl_custom_avatar_id').val(att.id);
+                        $('#trcl-avatar-preview img').attr('src', url);
+                        $('.trcl-pv-avatar img').attr('src', url);
+                        $('#trcl-avatar-remove').show();
+                    });
+                }
+
+                frame.open();
+            });
+
+            $(document).on('click', '#trcl-avatar-remove', function (e) {
+                e.preventDefault();
+
+                var fallback = $('#trcl-avatar-preview').data('default');
+
+                $('#trcl_custom_avatar_id').val('0');
+                if (fallback) {
+                    $('#trcl-avatar-preview img').attr('src', fallback);
+                    $('.trcl-pv-avatar img').attr('src', fallback);
+                }
+                $(this).hide();
+            });
         },
 
         /**

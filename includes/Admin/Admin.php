@@ -71,8 +71,25 @@ class Admin {
 
         // AJAX handlers.
         \add_action( 'wp_ajax_trcl_save_settings', [ $this, 'ajax_save_settings' ] );
-        \add_action( 'wp_ajax_trcl_dismiss_notice', [ $this, 'ajax_dismiss_notice' ] );
         \add_action( 'wp_ajax_trcl_reindex_products', [ $this, 'ajax_reindex_products' ] );
+
+        // admin-post handlers (full page reload pattern, used for the
+        // Content tab's "Reindex now" button — keeps the implementation
+        // simple and shows progress via a post-redirect-get notice).
+        \add_action( 'admin_post_trcl_reindex_content', [ $this, 'handle_reindex_content_post' ] );
+
+        // Leads admin actions (Block 4): mark contacted, erase, export.
+        \add_action( 'admin_post_trcl_lead_action', [ $this, 'handle_lead_action_post' ] );
+        \add_action( 'admin_post_trcl_leads_export', [ $this, 'handle_leads_export_post' ] );
+
+        // Appearance reset (v2.1).
+        \add_action( 'admin_post_trcl_reset_appearance', [ $this, 'handle_reset_appearance_post' ] );
+
+        // Conversations admin (v2.2): transcript modal + CSV exports + delete.
+        \add_action( 'wp_ajax_trcl_get_transcript', [ $this, 'ajax_get_transcript' ] );
+        \add_action( 'admin_post_trcl_conversations_export', [ $this, 'handle_conversations_export_post' ] );
+        \add_action( 'admin_post_trcl_transcript_export', [ $this, 'handle_transcript_export_post' ] );
+        \add_action( 'admin_post_trcl_conversation_delete', [ $this, 'handle_conversation_delete_post' ] );
     }
 
     /**
@@ -110,6 +127,26 @@ class Admin {
             [ $this, 'render_products' ]
         );
 
+        // Conversations submenu (v2.2 CNV-03).
+        \add_submenu_page(
+            'trcl-chat',
+            __( 'Conversations', 'trill-ai-chat-lite' ),
+            __( 'Conversations', 'trill-ai-chat-lite' ),
+            'manage_trcl_chat',
+            'trcl-conversations',
+            [ $this, 'render_conversations' ]
+        );
+
+        // Leads submenu (v2.0 Block 4).
+        \add_submenu_page(
+            'trcl-chat',
+            __( 'Leads', 'trill-ai-chat-lite' ),
+            __( 'Leads', 'trill-ai-chat-lite' ),
+            'manage_trcl_chat',
+            'trcl-leads',
+            [ $this, 'render_leads' ]
+        );
+
         // Settings submenu.
         \add_submenu_page(
             'trcl-chat',
@@ -118,6 +155,16 @@ class Admin {
             'manage_trcl_chat',
             'trcl-settings',
             [ $this, 'render_settings' ]
+        );
+
+        // About submenu (v2.0 Block 6 — branding + help anchor).
+        \add_submenu_page(
+            'trcl-chat',
+            __( 'About', 'trill-ai-chat-lite' ),
+            __( 'About', 'trill-ai-chat-lite' ),
+            'manage_trcl_chat',
+            'trcl-about',
+            [ $this, 'render_about' ]
         );
     }
 
@@ -135,7 +182,10 @@ class Admin {
      */
     public function enqueue_admin_assets( string $hook ): void {
         // Only load on our plugin pages.
-        if ( strpos( $hook, 'trcl-chat' ) === false && strpos( $hook, 'trcl-settings' ) === false && strpos( $hook, 'trcl-products' ) === false ) {
+        if ( strpos( $hook, 'trcl-chat' ) === false
+            && strpos( $hook, 'trcl-settings' ) === false
+            && strpos( $hook, 'trcl-products' ) === false
+            && strpos( $hook, 'trcl-conversations' ) === false ) {
             return;
         }
 
@@ -147,27 +197,21 @@ class Admin {
             $this->version
         );
 
+        // Colour pickers + media uploader — only needed by the Settings →
+        // Appearance tab (v2.1). Both ship with core, so this adds no
+        // external requests.
+        $script_deps = [ 'jquery' ];
+        if ( strpos( $hook, 'trcl-settings' ) !== false ) {
+            \wp_enqueue_style( 'wp-color-picker' );
+            $script_deps[] = 'wp-color-picker';
+            \wp_enqueue_media();
+        }
+
         // Admin JavaScript.
         \wp_enqueue_script(
             'trcl-admin',
             TRCL_PLUGIN_URL . 'assets/js/admin.js',
-            [ 'jquery' ],
-            $this->version,
-            true
-        );
-
-        // Lite upsell assets.
-        \wp_enqueue_style(
-            'trcl-lite-upsell',
-            TRCL_PLUGIN_URL . 'assets/css/lite-upsell.css',
-            [ 'trcl-admin' ],
-            $this->version
-        );
-
-        \wp_enqueue_script(
-            'trcl-lite-upsell',
-            TRCL_PLUGIN_URL . 'assets/js/lite-upsell.js',
-            [ 'jquery' ],
+            $script_deps,
             $this->version,
             true
         );
@@ -185,6 +229,9 @@ class Admin {
                 'indexing_failed' => __( 'Indexing failed.', 'trill-ai-chat-lite' ),
                 'request_failed'  => __( 'Request failed. Please try again.', 'trill-ai-chat-lite' ),
                 'reindex_now'     => __( 'Reindex Products Now', 'trill-ai-chat-lite' ),
+                'confirm_delete_one'      => __( 'Permanently delete this conversation? This cannot be undone.', 'trill-ai-chat-lite' ),
+                'confirm_delete_selected' => __( 'Permanently delete the selected conversations? This cannot be undone.', 'trill-ai-chat-lite' ),
+                'no_selection'            => __( 'Please select at least one conversation.', 'trill-ai-chat-lite' ),
             ],
         ] );
     }
@@ -213,6 +260,265 @@ class Admin {
         }
 
         include TRCL_PLUGIN_DIR . 'includes/Admin/views/products.php';
+    }
+
+    /**
+     * Render Conversations page (v2.2 CNV-03).
+     */
+    public function render_conversations(): void {
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ) );
+        }
+
+        include TRCL_PLUGIN_DIR . 'includes/Admin/views/conversations.php';
+    }
+
+    /**
+     * AJAX: full transcript for the View modal (v2.2 CNV-03).
+     *
+     * Returns conversation meta + ordered message list. Content is sent
+     * raw in JSON; the JS renders it exclusively through .text() so no
+     * HTML in a chat message can execute in wp-admin.
+     */
+    public function ajax_get_transcript(): void {
+        \check_ajax_referer( 'trcl_admin_nonce', 'nonce' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-ai-chat-lite' ) ], 403 );
+        }
+
+        $conversation_id = isset( $_POST['conversation_id'] ) ? (int) $_POST['conversation_id'] : 0;
+
+        $service    = new \TrillChatLite\Conversations\ConversationQueryService();
+        $transcript = $service->get_transcript( $conversation_id );
+
+        if ( null === $transcript ) {
+            \wp_send_json_error( [ 'message' => __( 'Conversation not found.', 'trill-ai-chat-lite' ) ], 404 );
+        }
+
+        $c = $transcript['conversation'];
+
+        \wp_send_json_success( [
+            'meta'     => [
+                'id'         => (int) $c->id,
+                'session_id' => $c->session_id,
+                'customer'   => $this->resolve_customer_label( (int) $c->user_id, (string) $c->customer_email ),
+                'status'     => $c->status,
+                'started_at' => $c->started_at,
+                'ended_at'   => $c->ended_at,
+            ],
+            'messages' => array_map(
+                static fn( $m ) => [
+                    'role'       => $m->role,
+                    'content'    => $m->content,
+                    'created_at' => $m->created_at,
+                    'rating'     => isset( $m->feedback_rating ) ? (int) $m->feedback_rating : 0,
+                ],
+                $transcript['messages']
+            ),
+        ] );
+    }
+
+    /**
+     * admin-post handler: stream a CSV of all conversations matching the
+     * current filters (v2.2 CNV-04).
+     */
+    public function handle_conversations_export_post(): void {
+        \check_admin_referer( 'trcl_conversations_export' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        // Filters arrive as GET params mirrored from the list screen.
+        // The exporter re-runs them through the query service's
+        // sanitiser, so raw values are acceptable here.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- check_admin_referer above.
+        $raw_filters = \wp_unslash( $_GET );
+
+        $exporter = new \TrillChatLite\Conversations\TranscriptExporter();
+        $exporter->stream_conversations_csv( is_array( $raw_filters ) ? $raw_filters : [] );
+        exit;
+    }
+
+    /**
+     * admin-post handler: stream a single conversation transcript as CSV
+     * (v2.2 CNV-04).
+     */
+    public function handle_transcript_export_post(): void {
+        $conversation_id = isset( $_GET['conversation_id'] ) ? (int) $_GET['conversation_id'] : 0;
+
+        \check_admin_referer( 'trcl_transcript_export_' . $conversation_id );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        $exporter = new \TrillChatLite\Conversations\TranscriptExporter();
+
+        if ( ! $exporter->stream_transcript_csv( $conversation_id ) ) {
+            \wp_die(
+                esc_html__( 'Conversation not found.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 404 ]
+            );
+        }
+        exit;
+    }
+
+    /**
+     * admin-post handler: permanently delete one or more conversations
+     * (v2.2 CNV-08).
+     *
+     * Supports two POST shapes from the Conversations list form:
+     *   - single_delete = <id>            (per-row "Delete" button)
+     *   - bulk_delete    = 1 + conversation_ids[] = [<id>, ...]
+     *
+     * Security posture (OWASP):
+     *   - State-changing, so POST only (never a GET link).
+     *   - Nonce verified via check_admin_referer.
+     *   - Capability gate (manage_trcl_chat), 403 otherwise.
+     *   - All IDs hard-cast to int before they reach the DB layer.
+     * Deletion itself is delegated to ConversationManager::delete_by_ids
+     * so the GDPR cascade (feedback → messages → conversations) stays the
+     * single source of truth.
+     */
+    public function handle_conversation_delete_post(): void {
+        \check_admin_referer( 'trcl_conversation_delete' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        // Resolve the target IDs. A single-row delete takes precedence so
+        // that any checkboxes ticked at the same time are ignored.
+        $ids = [];
+        if ( isset( $_POST['single_delete'] ) ) {
+            $ids = [ (int) $_POST['single_delete'] ];
+        } elseif ( isset( $_POST['bulk_delete'] ) && isset( $_POST['conversation_ids'] ) && is_array( $_POST['conversation_ids'] ) ) {
+            // wp_unslash + intval; the manager re-validates (> 0, unique).
+            $ids = array_map( 'intval', (array) \wp_unslash( $_POST['conversation_ids'] ) );
+        }
+
+        $ids = array_values( array_filter( $ids, static fn( int $id ): bool => $id > 0 ) );
+
+        if ( empty( $ids ) ) {
+            \set_transient( 'trcl_conversations_notice', [
+                'type'    => 'error',
+                'message' => __( 'No conversations were selected.', 'trill-ai-chat-lite' ),
+            ], 60 );
+            $this->redirect_to_conversations();
+        }
+
+        try {
+            $manager = new \TrillChatLite\Gdpr\ConversationManager();
+            $deleted = $manager->delete_by_ids( $ids );
+
+            \set_transient( 'trcl_conversations_notice', [
+                'type'    => 'success',
+                'message' => sprintf(
+                    /* translators: 1: number of conversations deleted, 2: number of database rows removed */
+                    _n(
+                        'Deleted %1$d conversation (%2$d records removed).',
+                        'Deleted %1$d conversations (%2$d records removed).',
+                        count( $ids ),
+                        'trill-ai-chat-lite'
+                    ),
+                    count( $ids ),
+                    (int) $deleted
+                ),
+            ], 60 );
+        } catch ( \Throwable $e ) {
+            trcl_log( 'Conversation delete failed', 'error', [ 'error' => $e->getMessage() ] );
+            \set_transient( 'trcl_conversations_notice', [
+                'type'    => 'error',
+                'message' => __( 'Could not delete the selected conversations.', 'trill-ai-chat-lite' ),
+            ], 60 );
+        }
+
+        $this->redirect_to_conversations();
+    }
+
+    /**
+     * Redirect back to the Conversations list, preserving the filters the
+     * admin was looking at (referer) when possible.
+     */
+    private function redirect_to_conversations(): void {
+        $referer  = \wp_get_referer();
+        $fallback = \admin_url( 'admin.php?page=trcl-conversations' );
+        $target   = $fallback;
+
+        if ( is_string( $referer ) && $referer !== '' ) {
+            // Only honour same-host admin URLs that point at our page.
+            $path = \wp_parse_url( $referer, PHP_URL_PATH );
+            if ( is_string( $path ) && strpos( $path, 'admin.php' ) !== false
+                && strpos( $referer, 'page=trcl-conversations' ) !== false ) {
+                $target = $referer;
+            }
+        }
+
+        \wp_safe_redirect( $target );
+        exit;
+    }
+
+    /**
+     * Human label for a conversation's customer: display name for known
+     * users, stored email for identified guests, "Guest" otherwise.
+     *
+     * Public because the conversations view (included from
+     * render_conversations) and the AJAX handler share it.
+     *
+     * @param int    $user_id        WP user ID (0 = guest).
+     * @param string $customer_email Email captured during chat, if any.
+     * @return string
+     */
+    public function resolve_customer_label( int $user_id, string $customer_email ): string {
+        if ( $user_id > 0 ) {
+            $user = \get_userdata( $user_id );
+            if ( $user instanceof \WP_User ) {
+                return $user->display_name;
+            }
+        }
+
+        if ( '' !== $customer_email ) {
+            return $customer_email;
+        }
+
+        return __( 'Guest', 'trill-ai-chat-lite' );
+    }
+
+    /**
+     * Render Leads page (v2.0 Block 4 slice 2).
+     */
+    public function render_leads(): void {
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ) );
+        }
+
+        include TRCL_PLUGIN_DIR . 'includes/Admin/views/leads.php';
+    }
+
+    /**
+     * Render About page (v2.0 Block 6 — branding + help).
+     */
+    public function render_about(): void {
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die( esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ) );
+        }
+
+        include TRCL_PLUGIN_DIR . 'includes/Admin/views/about.php';
     }
 
     /**
@@ -262,14 +568,296 @@ class Admin {
     }
 
     /**
-     * AJAX: Dismiss upgrade notice.
+     * admin-post handler: rebuild the full content index.
+     *
+     * Triggered by the "Reindex now" button on the Settings → Content
+     * tab. Uses the classic post-redirect-get pattern: verify nonce
+     * and capability, run the reindex synchronously, stash a notice
+     * in a short-lived transient, then redirect back to the tab so
+     * the next render shows the result.
+     *
+     * Synchronous reindex is acceptable for the Lite tier because the
+     * blacklist (products excluded) keeps the workload small — a few
+     * dozen pages at most. If/when we expose larger CPTs we can
+     * switch to a queued / chunked job runner.
+     *
+     * @since 2.0.0
      */
-    public function ajax_dismiss_notice(): void {
-        \check_ajax_referer( 'trcl_dismiss_notice', 'nonce' );
+    public function handle_reindex_content_post(): void {
+        // Nonce + capability — admin-post.php does NOT verify these for us.
+        \check_admin_referer( 'trcl_reindex_content' );
 
-        \update_option( 'trcl_upgrade_notice_dismissed', time() );
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
 
-        \wp_send_json_success();
+        try {
+            $settings = new \TrillChatLite\Content\ContentSettings();
+            $indexer  = new \TrillChatLite\Content\ContentIndexer( $settings );
+            $result   = $indexer->index_all_opted_in();
+
+            \set_transient(
+                'trcl_reindex_content_notice',
+                [
+                    'type'    => 'success',
+                    'message' => sprintf(
+                        /* translators: 1: posts indexed, 2: terms indexed, 3: total chunks */
+                        __( 'Reindex complete — %1$d posts, %2$d categories, %3$d chunks in total.', 'trill-ai-chat-lite' ),
+                        (int) $result['posts_indexed'],
+                        (int) $result['terms_indexed'],
+                        (int) $result['total_chunks']
+                    ),
+                ],
+                60
+            );
+        } catch ( \Throwable $e ) {
+            trcl_log( 'Manual content reindex failed', 'error', [
+                'error' => $e->getMessage(),
+            ] );
+            \set_transient(
+                'trcl_reindex_content_notice',
+                [
+                    'type'    => 'error',
+                    'message' => sprintf(
+                        /* translators: %s: error message */
+                        __( 'Reindex failed: %s', 'trill-ai-chat-lite' ),
+                        $e->getMessage()
+                    ),
+                ],
+                60
+            );
+        }
+
+        $redirect = \add_query_arg(
+            [ 'page' => 'trcl-settings', 'tab' => 'content' ],
+            \admin_url( 'admin.php' )
+        );
+        \wp_safe_redirect( $redirect );
+        exit;
+    }
+
+    /**
+     * admin-post handler: per-row lead action (mark contacted / erase).
+     *
+     * Receives:
+     *   - lead_id    int
+     *   - lead_op    'contacted' | 'erase'
+     *
+     * Nonce: 'trcl_lead_action_<lead_id>'. Redirects back to the Leads
+     * page with a transient-backed notice.
+     *
+     * @since 2.0.0
+     */
+    public function handle_lead_action_post(): void {
+        $lead_id = isset( $_POST['lead_id'] ) ? (int) $_POST['lead_id'] : 0;
+        $op      = isset( $_POST['lead_op'] ) ? \sanitize_key( \wp_unslash( $_POST['lead_op'] ) ) : '';
+
+        \check_admin_referer( 'trcl_lead_action_' . $lead_id );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        if ( $lead_id <= 0 || ! in_array( $op, [ 'contacted', 'erase' ], true ) ) {
+            \set_transient( 'trcl_lead_action_notice', [
+                'type'    => 'error',
+                'message' => __( 'Invalid lead action.', 'trill-ai-chat-lite' ),
+            ], 60 );
+            $this->redirect_to_leads();
+        }
+
+        try {
+            $svc = new \TrillChatLite\Leads\LeadCaptureService();
+
+            if ( $op === 'contacted' ) {
+                $ok = $svc->update_status( $lead_id, \TrillChatLite\Leads\LeadCaptureService::STATUS_CONTACTED );
+                \set_transient( 'trcl_lead_action_notice', [
+                    'type'    => $ok ? 'success' : 'error',
+                    'message' => $ok
+                        ? __( 'Lead marked as contacted.', 'trill-ai-chat-lite' )
+                        : __( 'Could not update the lead.', 'trill-ai-chat-lite' ),
+                ], 60 );
+            } elseif ( $op === 'erase' ) {
+                // Erase by id → look up the email, then cascade through
+                // ConversationManager so the full GDPR posture stays in
+                // one place (in case the email had multiple lead rows).
+                global $wpdb;
+                $email = (string) $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT email FROM {$wpdb->prefix}trcl_leads WHERE id = %d",
+                        $lead_id
+                    )
+                );
+                if ( $email !== '' ) {
+                    $deleted = $svc->erase_by_email( $email );
+                    \set_transient( 'trcl_lead_action_notice', [
+                        'type'    => 'success',
+                        'message' => sprintf(
+                            /* translators: %d: lead rows removed */
+                            __( 'Erased %d lead row(s) for that email.', 'trill-ai-chat-lite' ),
+                            (int) $deleted
+                        ),
+                    ], 60 );
+                }
+            }
+        } catch ( \Throwable $e ) {
+            trcl_log( 'Lead action failed', 'error', [ 'error' => $e->getMessage() ] );
+            \set_transient( 'trcl_lead_action_notice', [
+                'type'    => 'error',
+                'message' => sprintf(
+                    /* translators: %s: error message */
+                    __( 'Action failed: %s', 'trill-ai-chat-lite' ),
+                    $e->getMessage()
+                ),
+            ], 60 );
+        }
+
+        $this->redirect_to_leads();
+    }
+
+    /**
+     * admin-post handler: stream a CSV export of every lead.
+     *
+     * No row-level filtering yet — exports the full table. Sized for
+     * the dev tier (up to a few thousand rows). For very large stores
+     * a future slice can paginate / stream in chunks.
+     *
+     * @since 2.0.0
+     */
+    public function handle_leads_export_post(): void {
+        \check_admin_referer( 'trcl_leads_export' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'trcl_leads';
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            "SELECT id, email, intent_type, product_id, status, captured_at, session_id
+               FROM {$table}
+              ORDER BY captured_at DESC",
+            ARRAY_A
+        );
+
+        $filename = 'trill-leads-' . \gmdate( 'Y-m-d' ) . '.csv';
+
+        // Stream CSV. No buffering games — exit at the end to stop
+        // any trailing admin output from contaminating the file.
+        //
+        // PHPCS suggests WP_Filesystem for file operations, but that
+        // applies to ON-DISK files; here we are writing to the HTTP
+        // response stream (php://output). WP_Filesystem has no
+        // equivalent of fputcsv on a stream, and using it would force
+        // us to buffer the whole CSV into memory before the response —
+        // unsafe for large lead tables.
+        \nocache_headers();
+        header( 'Content-Type: text/csv; charset=utf-8' );
+        header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- streaming HTTP response, not file IO.
+        $fh = fopen( 'php://output', 'w' );
+
+        // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- writing to HTTP response stream.
+        fputcsv( $fh, [ 'id', 'email', 'intent', 'product_id', 'status', 'captured_at', 'session_id' ] );
+
+        if ( is_array( $rows ) ) {
+            foreach ( $rows as $row ) {
+                // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv -- writing to HTTP response stream.
+                fputcsv( $fh, [
+                    $row['id'] ?? '',
+                    $row['email'] ?? '',
+                    $row['intent_type'] ?? '',
+                    $row['product_id'] ?? 0,
+                    $row['status'] ?? '',
+                    $row['captured_at'] ?? '',
+                    $row['session_id'] ?? '',
+                ] );
+            }
+        }
+
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- closing HTTP response stream opened above.
+        fclose( $fh );
+        exit;
+    }
+
+    /**
+     * admin-post handler: reset all Appearance settings to defaults (v2.1).
+     *
+     * Deletes the appearance option rows so the registered defaults take
+     * over again. Deliberately does NOT touch the welcome message — it is
+     * authored content, not look & feel, and losing it on an accidental
+     * click would hurt. PRG pattern with a transient-backed notice.
+     *
+     * @since 2.1.0
+     */
+    public function handle_reset_appearance_post(): void {
+        \check_admin_referer( 'trcl_reset_appearance' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        $appearance_options = array_merge(
+            array_keys( Settings::COLOR_DEFAULTS ),
+            [
+                'trcl_widget_position',
+                'trcl_widget_width',
+                'trcl_widget_height',
+                'trcl_widget_border_radius',
+                'trcl_assistant_name',
+                'trcl_widget_font',
+                'trcl_custom_avatar_id',
+                'trcl_launcher_style',
+            ]
+        );
+
+        foreach ( $appearance_options as $option ) {
+            \delete_option( $option );
+        }
+
+        \set_transient( 'trcl_appearance_notice', [
+            'type'    => 'success',
+            'message' => __( 'Appearance settings reset to defaults. Your welcome message was kept.', 'trill-ai-chat-lite' ),
+        ], 60 );
+
+        \wp_safe_redirect(
+            \add_query_arg(
+                [ 'page' => 'trcl-settings', 'tab' => 'appearance' ],
+                \admin_url( 'admin.php' )
+            )
+        );
+        exit;
+    }
+
+    /**
+     * Redirect to the Leads admin page (used by lead action handlers).
+     */
+    private function redirect_to_leads(): void {
+        $redirect = \add_query_arg(
+            [ 'page' => 'trcl-leads' ],
+            \admin_url( 'admin.php' )
+        );
+        \wp_safe_redirect( $redirect );
+        exit;
     }
 
     /**

@@ -43,12 +43,22 @@ class Activator {
             // 5. Run initial product index so the chat works immediately.
             self::run_initial_index();
 
+            // 5b. Run initial content index (v2.0 Block 1 — page indexing).
+            //     Best-effort: failures are logged but never block activation.
+            self::run_initial_content_index();
+
             // 6. Flush rewrite rules.
             \flush_rewrite_rules();
 
             // 7. Set activation flag.
             \update_option( 'trcl_activated', true );
             \update_option( 'trcl_activation_time', \current_time( 'mysql' ) );
+
+            // 8. Trial registration with Trill Cloud (api-v2.trillai.io).
+            //    Best-effort: a failure here only sets a retry flag — Plugin
+            //    will retry on the next admin page load via admin_init.
+            //    We don't fail activation on transient backend issues.
+            self::register_trial();
 
             if ( function_exists( 'trcl_log' ) ) {
                 trcl_log( 'Plugin activated successfully' );
@@ -63,6 +73,28 @@ class Activator {
                 esc_html__( 'Trill Chat Lite activation failed: ', 'trill-ai-chat-lite' ) .
                 esc_html( $e->getMessage() )
             );
+        }
+    }
+
+    /**
+     * Run trial registration against api-v2.trillai.io.
+     *
+     * Activation is the canonical "reset and retry" path: we clear both
+     * the retry and perma-fail flags before attempting, so deactivate +
+     * activate gets a stuck site unstuck regardless of prior state.
+     *
+     * Swallows exceptions so activation never fails on backend issues.
+     */
+    private static function register_trial(): void {
+        try {
+            \TrillChatLite\Lite\TrialRegistration::reset_flags();
+            \TrillChatLite\Lite\TrialRegistration::ensure_registered();
+        } catch ( \Throwable $e ) {
+            if ( function_exists( 'trcl_log' ) ) {
+                trcl_log( 'Trial registration threw during activation', 'error', [
+                    'error' => $e->getMessage(),
+                ] );
+            }
         }
     }
 
@@ -162,8 +194,47 @@ class Activator {
             \wp_schedule_event( time(), 'hourly', 'trcl_index_products' );
         }
 
+        // Daily content reindex safety net (v2.0 Block 1).
+        // Real-time save_post hook is the primary path; this cron exists
+        // to repair drift from externally edited content / orphan rows.
+        if ( ! \wp_next_scheduled( \TrillChatLite\Content\ContentIndexer::CRON_HOOK ) ) {
+            \wp_schedule_event( time(), 'daily', \TrillChatLite\Content\ContentIndexer::CRON_HOOK );
+        }
+
         if ( function_exists( 'trcl_log' ) ) {
             trcl_log( 'Cron jobs scheduled', 'debug' );
+        }
+    }
+
+    /**
+     * Run initial content index so the chat can answer page/policy
+     * queries immediately after activation, without waiting for the
+     * first daily cron cycle.
+     *
+     * Best-effort — wrapped in try/catch so a slow site with thousands
+     * of pages or a transient DB error can never break activation.
+     *
+     * @since 2.0.0
+     */
+    private static function run_initial_content_index(): void {
+        try {
+            $settings = new \TrillChatLite\Content\ContentSettings();
+            if ( ! $settings->is_enabled() ) {
+                return;
+            }
+
+            $indexer = new \TrillChatLite\Content\ContentIndexer( $settings );
+            $result  = $indexer->index_all_opted_in();
+
+            if ( function_exists( 'trcl_log' ) ) {
+                trcl_log( 'Initial content index complete', 'info', $result );
+            }
+        } catch ( \Throwable $e ) {
+            if ( function_exists( 'trcl_log' ) ) {
+                trcl_log( 'Initial content index failed (non-fatal)', 'warning', [
+                    'error' => $e->getMessage(),
+                ] );
+            }
         }
     }
 }

@@ -31,14 +31,12 @@ JS_SOURCES=(
     "assets/js/chat-launcher.js"
     "assets/js/chat-widget.js"
     "assets/js/admin.js"
-    "assets/js/lite-upsell.js"
 )
 
 CSS_SOURCES=(
     "assets/css/chat-launcher.css"
     "assets/css/chat-widget.css"
     "assets/css/admin.css"
-    "assets/css/lite-upsell.css"
 )
 
 require_bin() {

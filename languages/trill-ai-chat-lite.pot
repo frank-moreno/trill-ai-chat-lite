@@ -1,342 +1,1505 @@
 # Copyright (C) 2026 Trill AI
-# This file is distributed under the GPL-2.0-or-later.
+# This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Trill AI Product Chat for WooCommerce 1.2.4\n"
-"Report-Msgid-Bugs-To: https://trillai.io/support/\n"
+"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/trill-ai-chat-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-04-20T00:00:00+00:00\n"
+"POT-Creation-Date: 2026-06-21T10:24:58+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.10.0\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: trill-ai-chat-lite\n"
 
 #. Plugin Name of the plugin
+#: trill-ai-chat-lite.php
+#: includes/Admin/views/about.php:44
 msgid "Trill AI Product Chat for WooCommerce"
 msgstr ""
 
 #. Description of the plugin
-msgid "AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically. Free for up to 50 conversations/month."
+#: trill-ai-chat-lite.php
+msgid "AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically."
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Type your message..."
+#. Author of the plugin
+#: trill-ai-chat-lite.php
+msgid "Trill AI"
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Send"
+#. Author URI of the plugin
+#: trill-ai-chat-lite.php
+msgid "https://trillai.io"
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Chat with us!"
+#: includes/Abilities/AbilityRegistrar.php:59
+msgid "E-commerce"
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Sorry, I encountered an error. Please try again."
+#: includes/Abilities/AbilityRegistrar.php:60
+msgid "Abilities related to e-commerce operations such as product discovery and store information."
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Connection error. Please check your internet and try again."
+#: includes/Abilities/AbilityRegistrar.php:91
+msgid "Search WooCommerce Products"
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Robin"
+#: includes/Abilities/AbilityRegistrar.php:92
+msgid "Search the WooCommerce catalogue for products matching a natural-language query and return up to ten compact product cards (name, price, URL, stock status). Uses WooCommerce native full-text search as the primary strategy, with category/tag taxonomy fallback and English de-pluralisation so plural queries match singular product titles. Best for product discovery, \"do you have X?\" questions, and price/availability lookups."
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "AI Assistant"
+#: includes/Abilities/AbilityRegistrar.php:208
+msgid "Get Store Context"
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Online"
+#: includes/Abilities/AbilityRegistrar.php:209
+msgid "Returns metadata about the WooCommerce store: name, URL, tagline, currency code, currency symbol, total published product count, and up to five top categories ordered by product count. Designed as a one-shot context primer for AI agents before they call other Trill abilities or compose a response."
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Robin is typing..."
+#: includes/Abilities/AbilityRegistrar.php:307
+msgid "Get Conversation Summary"
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Close chat"
+#: includes/Abilities/AbilityRegistrar.php:308
+msgid "Retrieves up to fifty most-recent messages from a Trill chat session identified by its UUID session_id. Each message includes id, role (user or assistant), content, and timestamp. Returns an empty messages array if the session is unknown."
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Monthly Limit Reached"
+#: includes/Abilities/AbilityRegistrar.php:399
+#: includes/AI/RestController.php:744
+msgid "Invalid session identifier."
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Upgrade Now"
+#: includes/Activator.php:73
+msgid "Trill Chat Lite activation failed: "
 msgstr ""
 
-#: includes/Frontend/Frontend.php
-msgid "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?"
-msgstr ""
-
-#: includes/Frontend/Frontend.php
-msgid "JavaScript is required for the chat widget."
-msgstr ""
-
-#: includes/Frontend/Frontend.php
-msgid "Chat with us"
-msgstr ""
-
-#: includes/Frontend/Frontend.php
-msgid "Open Chat"
-msgstr ""
-
-#: includes/Frontend/Frontend.php
-msgid "Start Chat"
-msgstr ""
-
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:101
+#: includes/Admin/Admin.php:102
 msgid "Trill Chat"
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:113
+#: includes/Admin/Admin.php:114
 msgid "Dashboard"
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:123
+#: includes/Admin/Admin.php:124
 msgid "Products"
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:133
+#: includes/Admin/Admin.php:134
+#: includes/Admin/views/conversations.php:59
+msgid "Conversations"
+msgstr ""
+
+#: includes/Admin/Admin.php:143
+#: includes/Admin/Admin.php:144
+msgid "Leads"
+msgstr ""
+
+#: includes/Admin/Admin.php:153
+#: includes/Admin/Admin.php:154
 msgid "Settings"
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:163
+#: includes/Admin/Admin.php:164
+msgid "About"
+msgstr ""
+
+#: includes/Admin/Admin.php:224
 msgid "Saving..."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:225
 msgid "Settings saved successfully!"
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:226
 msgid "An error occurred. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:227
 msgid "Indexing..."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:228
 msgid "Please wait..."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:229
 msgid "Indexing failed."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:230
 msgid "Request failed. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:231
+#: includes/Admin/views/products.php:64
 msgid "Reindex Products Now"
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:232
+msgid "Permanently delete this conversation? This cannot be undone."
+msgstr ""
+
+#: includes/Admin/Admin.php:233
+msgid "Permanently delete the selected conversations? This cannot be undone."
+msgstr ""
+
+#: includes/Admin/Admin.php:234
+msgid "Please select at least one conversation."
+msgstr ""
+
+#: includes/Admin/Admin.php:248
+#: includes/Admin/Admin.php:259
+#: includes/Admin/Admin.php:270
+#: includes/Admin/Admin.php:331
+#: includes/Admin/Admin.php:359
+#: includes/Admin/Admin.php:399
+#: includes/Admin/Admin.php:507
+#: includes/Admin/Admin.php:518
+#: includes/Admin/Admin.php:529
+#: includes/Admin/Admin.php:592
+#: includes/Admin/Admin.php:663
+#: includes/Admin/Admin.php:740
+#: includes/Admin/Admin.php:813
 msgid "You do not have sufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:287
+#: includes/Admin/Admin.php:546
+#: includes/Admin/Admin.php:870
 msgid "Insufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#: includes/Admin/Admin.php:296
+#: includes/Admin/Admin.php:369
+#: includes/AI/RestController.php:617
+msgid "Conversation not found."
+msgstr ""
+
+#: includes/Admin/Admin.php:420
+msgid "No conversations were selected."
+msgstr ""
+
+#. translators: 1: number of conversations deleted, 2: number of database rows removed
+#: includes/Admin/Admin.php:433
+#, php-format
+msgid "Deleted %1$d conversation (%2$d records removed)."
+msgid_plural "Deleted %1$d conversations (%2$d records removed)."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/Admin.php:447
+msgid "Could not delete the selected conversations."
+msgstr ""
+
+#: includes/Admin/Admin.php:499
+msgid "Guest"
+msgstr ""
+
+#: includes/Admin/Admin.php:567
+msgid "Settings saved."
+msgstr ""
+
+#. translators: 1: posts indexed, 2: terms indexed, 3: total chunks
+#: includes/Admin/Admin.php:609
+#, php-format
+msgid "Reindex complete — %1$d posts, %2$d categories, %3$d chunks in total."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/Admin/Admin.php:627
+#, php-format
+msgid "Reindex failed: %s"
+msgstr ""
+
+#: includes/Admin/Admin.php:672
+msgid "Invalid lead action."
+msgstr ""
+
+#: includes/Admin/Admin.php:685
+msgid "Lead marked as contacted."
+msgstr ""
+
+#: includes/Admin/Admin.php:686
+msgid "Could not update the lead."
+msgstr ""
+
+#. translators: %d: lead rows removed
+#: includes/Admin/Admin.php:705
+#, php-format
+msgid "Erased %d lead row(s) for that email."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/Admin/Admin.php:717
+#, php-format
+msgid "Action failed: %s"
+msgstr ""
+
+#: includes/Admin/Admin.php:839
+msgid "Appearance settings reset to defaults. Your welcome message was kept."
+msgstr ""
+
+#: includes/Admin/Admin.php:874
 msgid "WooCommerce is not active."
 msgstr ""
 
-#: includes/Admin/Admin.php
+#. translators: %d: number of products indexed
+#: includes/Admin/Admin.php:883
 #, php-format
 msgid "%d products indexed successfully."
 msgstr ""
 
-#: includes/Admin/Admin.php
-msgid "Settings saved."
+#: includes/Admin/Settings.php:454
+#: includes/AI/ResponseFormatter.php:158
+msgid "What's on sale?"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php
-msgid "Trill AI Product Chat — Dashboard"
+#: includes/Admin/Settings.php:455
+msgid "Help me choose a product"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php
-msgid "Chat Status"
+#: includes/Admin/Settings.php:456
+msgid "Do you ship to my country?"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php
-msgid "Monthly Usage"
+#: includes/Admin/Settings.php:604
+#: includes/Admin/views/settings-appearance.php:279
+msgid "Robin"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php
-msgid "Enabled"
+#: includes/Admin/views/about.php:51
+#: includes/Admin/views/dashboard.php:25
+msgid "Active"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php
+#: includes/Admin/views/about.php:52
+#: includes/Admin/views/dashboard.php:28
 msgid "Disabled"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php
-msgid "Go to Settings"
+#: includes/Admin/views/about.php:57
+msgid "An AI shopping assistant designed for WooCommerce stores. Robin answers customer questions, recommends products, tracks orders, and captures leads — using your real catalogue, your real pages, and your customer's real cart."
 msgstr ""
 
-#: includes/Admin/views/dashboard.php
+#: includes/Admin/views/about.php:70
+msgid "What's new in 2.0"
+msgstr ""
+
+#: includes/Admin/views/about.php:73
+msgid "Five user-facing features that turn Robin from a product-only chatbot into a full-stack store assistant."
+msgstr ""
+
+#: includes/Admin/views/about.php:81
+msgid "Page content indexing"
+msgstr ""
+
+#: includes/Admin/views/about.php:84
+msgid "Robin can answer questions about your FAQ, shipping, returns, and other pages — not just products."
+msgstr ""
+
+#: includes/Admin/views/about.php:91
+msgid "GDPR-ready"
+msgstr ""
+
+#: includes/Admin/views/about.php:94
+msgid "DSAR exports and right-to-erasure work end-to-end through WordPress Tools → Personal Data. Configurable retention."
+msgstr ""
+
+#: includes/Admin/views/about.php:101
+msgid "Cart-aware chat + ROI analytics"
+msgstr ""
+
+#: includes/Admin/views/about.php:104
+msgid "Robin knows what is in the customer's cart. The dashboard shows orders and revenue attributed to chat conversations."
+msgstr ""
+
+#: includes/Admin/views/about.php:111
+msgid "Lead capture"
+msgstr ""
+
+#: includes/Admin/views/about.php:114
+msgid "When a product is out of stock or a visitor hesitates on price, Robin offers to take their email — with explicit, audited consent."
+msgstr ""
+
+#: includes/Admin/views/about.php:121
+msgid "Verified order tracking"
+msgstr ""
+
+#: includes/Admin/views/about.php:124
+msgid "Customers can ask \"where is my order?\". Identity is verified before any order data is shared, by user account or email match."
+msgstr ""
+
+#: includes/Admin/views/about.php:136
+msgid "Built by Francisco Carracedo"
+msgstr ""
+
+#: includes/Admin/views/about.php:140
+msgid "Francisco Carracedo is a WordPress freelance developer specialising in WooCommerce, AI integrations, and merchant-focused tooling. Trill AI Chat is part of his Trill AI product line; he also takes on contract work for stores that need custom plugin or integration development."
+msgstr ""
+
+#: includes/Admin/views/about.php:152
+msgid "Portfolio →"
+msgstr ""
+
+#: includes/Admin/views/about.php:157
+msgid "LinkedIn"
+msgstr ""
+
+#: includes/Admin/views/about.php:162
+msgid "GitHub"
+msgstr ""
+
+#: includes/Admin/views/about.php:167
+msgid "Need a custom integration, a bespoke chatbot, or other WordPress development work? Get in touch via portfolio or LinkedIn."
+msgstr ""
+
+#: includes/Admin/views/about.php:176
+msgid "Need help?"
+msgstr ""
+
+#: includes/Admin/views/about.php:179
+msgid "A few ways to get unstuck:"
+msgstr ""
+
+#: includes/Admin/views/about.php:186
+msgid "Documentation"
+msgstr ""
+
+#: includes/Admin/views/about.php:189
+msgid "Setup guides, FAQs, troubleshooting."
+msgstr ""
+
+#: includes/Admin/views/about.php:200
+msgid "WordPress.org forum"
+msgstr ""
+
+#: includes/Admin/views/about.php:203
+msgid "Public Q&A, every topic is answered."
+msgstr ""
+
+#: includes/Admin/views/about.php:208
+msgid "Open the support forum →"
+msgstr ""
+
+#: includes/Admin/views/about.php:214
+#: includes/Admin/views/leads.php:166
+msgid "Email"
+msgstr ""
+
+#: includes/Admin/views/about.php:217
+msgid "Best for billing, account, or private issues."
+msgstr ""
+
+#. translators: 1: company name, 2: Companies House number, 3: plugin version
+#: includes/Admin/views/about.php:236
 #, php-format
-msgid "%1$d of %2$d conversations used"
+msgid "%1$s (Companies House %2$s). Trill AI Product Chat for WooCommerce v%3$s. Released under GPL v2 or later."
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Trill AI Product Chat — Settings"
+#: includes/Admin/views/about.php:244
+#: includes/Admin/views/settings.php:73
+msgid "Privacy"
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Enable Chat Widget"
+#: includes/Admin/views/about.php:246
+msgid "Terms"
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Widget Position"
+#: includes/Admin/views/conversations.php:69
+msgid "Note: message search is running in compatibility mode on this host (slower on large tables)."
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Bottom Right"
+#: includes/Admin/views/conversations.php:77
+msgid "From"
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Bottom Left"
+#: includes/Admin/views/conversations.php:82
+msgid "To"
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Widget Colour"
+#: includes/Admin/views/conversations.php:87
+msgid "All Statuses"
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Welcome Message"
+#: includes/Admin/views/conversations.php:96
+msgid "All Ratings"
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Leave blank for default message."
+#. translators: %d: star rating 1-5
+#: includes/Admin/views/conversations.php:101
+#, php-format
+msgid "%d star"
+msgid_plural "%d stars"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/views/conversations.php:110
+msgid "Search messages…"
 msgstr ""
 
-#: includes/Admin/views/settings.php
-msgid "Save Settings"
+#: includes/Admin/views/conversations.php:112
+#: includes/Admin/views/leads.php:135
+msgid "Filter"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/conversations.php:113
+msgid "Reset"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:116
+#: includes/Admin/views/leads.php:152
+msgid "Export CSV"
+msgstr ""
+
+#. translators: %d: number of conversations matching the filters
+#: includes/Admin/views/conversations.php:123
+#, php-format
+msgid "%d conversation"
+msgid_plural "%d conversations"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/views/conversations.php:138
+msgid "Delete selected"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:148
+msgid "Select all conversations"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:150
+msgid "Date"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:151
+msgid "Customer"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:152
+#: includes/Admin/views/leads.php:170
+#: includes/Gdpr/ConversationManager.php:217
+#: includes/Gdpr/ConversationManager.php:259
+msgid "Status"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:153
+#: includes/Gdpr/ConversationManager.php:267
+msgid "Messages"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:154
+msgid "Rating"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:155
+msgid "Converted"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:156
+msgid "Revenue"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:157
+#: includes/Admin/views/leads.php:171
+msgid "Actions"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:163
+msgid "No conversations match the current filters."
+msgstr ""
+
+#: includes/Admin/views/conversations.php:186
+msgid "Select this conversation"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:228
+msgid "View"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:231
+msgid "CSV"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:237
+msgid "Delete"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:271
+msgid "Conversation"
+msgstr ""
+
+#: includes/Admin/views/conversations.php:272
+msgid "Close"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:18
+msgid "Trill AI Product Chat — Dashboard"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:22
+msgid "Chat Status"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:26
+msgid "The chat widget is visible on your store."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:29
+msgid "Enable in Settings"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:66
+msgid "Monthly Usage"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:68
+msgid "Conversations used this month. Limits are managed by the Trill AI service."
+msgstr ""
+
+#. translators: 1: conversations used, 2: monthly limit
+#: includes/Admin/views/dashboard.php:86
+#, php-format
+msgid "%1$d of %2$d conversations"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:99
+msgid "You have reached your monthly conversation limit. New conversations will be declined until next month."
+msgstr ""
+
+#. translators: %d: remaining conversations
+#: includes/Admin/views/dashboard.php:108
+#, php-format
+msgid "You have %d conversations remaining this month."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:145
+msgid "Performance"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:147
+msgid "Last:"
+msgstr ""
+
+#. translators: %d: number of days
+#: includes/Admin/views/dashboard.php:156
+#, php-format
+msgid "%d days"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:166
+msgid "Activity over the selected window. An order is \"from chat\" when the customer had a chat conversation in the 24 hours before placing the order."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:174
+msgid "Chats started"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:184
+msgid "Orders completed"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:194
+msgid "Orders from chat"
+msgstr ""
+
+#. translators: %s: attribution rate as a percentage
+#: includes/Admin/views/dashboard.php:202
+#, php-format
+msgid "%s%% attribution rate"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:210
+msgid "Revenue from chat"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:221
+msgid "No chat activity yet in this window. Once shoppers start chatting, you'll see chats, attributed orders, and revenue here."
+msgstr ""
+
+#: includes/Admin/views/leads.php:70
+msgid "All statuses"
+msgstr ""
+
+#: includes/Admin/views/leads.php:71
+msgid "New"
+msgstr ""
+
+#: includes/Admin/views/leads.php:72
+msgid "Contacted"
+msgstr ""
+
+#: includes/Admin/views/leads.php:73
+msgid "Erased"
+msgstr ""
+
+#: includes/Admin/views/leads.php:76
+msgid "All intents"
+msgstr ""
+
+#: includes/Admin/views/leads.php:77
+msgid "Out of stock"
+msgstr ""
+
+#: includes/Admin/views/leads.php:78
+msgid "Price drop"
+msgstr ""
+
+#: includes/Admin/views/leads.php:79
+msgid "Generic"
+msgstr ""
+
+#: includes/Admin/views/leads.php:85
+msgid "Trill AI Chat — Leads"
+msgstr ""
+
+#. translators: %d: total leads
+#: includes/Admin/views/leads.php:89
+#, php-format
+msgid "%d leads captured"
+msgstr ""
+
+#: includes/Admin/views/leads.php:102
+msgid "Emails opted in by visitors during a chat — typically \"notify me when this is back in stock\" or \"let me know if you have a sale\". The exact consent text shown at capture time is stored alongside each row for compliance."
+msgstr ""
+
+#: includes/Admin/views/leads.php:132
+msgid "Search by email..."
+msgstr ""
+
+#: includes/Admin/views/leads.php:141
+msgid "Clear"
+msgstr ""
+
+#: includes/Admin/views/leads.php:160
+msgid "No leads captured yet that match these filters."
+msgstr ""
+
+#: includes/Admin/views/leads.php:167
+#: includes/Gdpr/ConversationManager.php:209
+msgid "Intent"
+msgstr ""
+
+#: includes/Admin/views/leads.php:168
+msgid "Product"
+msgstr ""
+
+#: includes/Admin/views/leads.php:169
+msgid "Captured"
+msgstr ""
+
+#: includes/Admin/views/leads.php:213
+msgid "ago"
+msgstr ""
+
+#: includes/Admin/views/leads.php:235
+msgid "Mark contacted"
+msgstr ""
+
+#: includes/Admin/views/leads.php:242
+msgid "Erase ALL lead rows for this email? This cannot be undone."
+msgstr ""
+
+#: includes/Admin/views/leads.php:249
+msgid "Erase"
+msgstr ""
+
+#: includes/Admin/views/products.php:24
 msgid "Trill AI Product Chat — Products"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:28
 msgid "Product Index Status"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:33
 msgid "WooCommerce Products"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:37
 msgid "Indexed Products"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:41
 msgid "In sync"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:43
 msgid "Out of sync"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:45
 msgid "Not indexed"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:50
 msgid "Last Indexed"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:55
+#: includes/Admin/views/settings-content.php:251
 msgid "Never"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:70
 msgid "The product index allows the AI chat to answer questions about your products. It refreshes automatically every hour via cron."
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:76
 msgid "How Product Indexing Works"
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:77
 msgid "The Lite version uses WooCommerce native search to find products relevant to customer questions. The index counts your published products so the AI knows what is available in your store."
 msgstr ""
 
-#: includes/Admin/views/products.php
+#: includes/Admin/views/products.php:78
 msgid "When a customer asks about a product, the AI searches your WooCommerce catalogue in real time and includes matching products in its response."
 msgstr ""
 
-#: includes/Admin/views/upgrade-card.php
-msgid "Unlock More with Trill AI Product Chat"
+#: includes/Admin/views/settings-appearance.php:35
+msgid "Primary Colour"
 msgstr ""
 
-#: includes/Admin/views/upgrade-card.php
-msgid "Compare Plans & Upgrade"
+#: includes/Admin/views/settings-appearance.php:36
+msgid "Header, launcher icon and send button."
 msgstr ""
 
-#: includes/Lite/UpgradeNotices.php
-msgid "Trill AI Product Chat:"
+#: includes/Admin/views/settings-appearance.php:39
+msgid "Primary Hover"
 msgstr ""
 
-#: includes/Lite/UpgradeNotices.php
+#: includes/Admin/views/settings-appearance.php:40
+msgid "Links and hover states."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:43
+msgid "User Message Bubble"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:47
+msgid "AI Message Bubble"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:51
+msgid "Header Text"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:55
+msgid "Body Text"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:59
+msgid "Background"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:60
+msgid "Chat window background."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:65
+msgid "Top Left"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:66
+msgid "Top Right"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:67
+msgid "Bottom Left"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:68
+msgid "Bottom Right"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:72
+msgid "Default (system font)"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:73
+msgid "Serif (Georgia)"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:74
+msgid "Helvetica / Arial"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:75
+msgid "Monospace"
+msgstr ""
+
+#. translators: %s: assistant display name
+#: includes/Admin/views/settings-appearance.php:90
+#: includes/Frontend/Frontend.php:515
 #, php-format
-msgid "You've used %1$d of %2$d free conversations this month."
+msgid "Hi there! I'm %s, your AI shopping assistant. How can I help you today?"
 msgstr ""
 
-#: includes/Lite/UpgradeNotices.php
-msgid "Upgrade for unlimited conversations →"
+#: includes/Admin/views/settings-appearance.php:128
+msgid "Colours"
 msgstr ""
 
-#: includes/AI/RestController.php
+#: includes/Admin/views/settings-appearance.php:153
+msgid "Position & Dimensions"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:158
+#: includes/Admin/views/settings-appearance.php:162
+msgid "Launcher Style"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:171
+msgid "Brand logo"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:181
+msgid "Classic bubble"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:185
+msgid "How the closed chat launcher looks. The classic bubble uses your primary colour."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:191
+#: includes/Admin/views/settings-appearance.php:195
+msgid "Widget Position"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:212
+msgid "Widget Width (px)"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:224
+msgid "Desktop only — the widget is full-screen on mobile."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:230
+msgid "Widget Height (px)"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:247
+msgid "Border Radius (px)"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:264
+msgid "Identity & Messaging"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:270
+msgid "Assistant Name"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:281
+msgid "The name shown in the chat header. Leave blank for the default (Robin)."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:288
+msgid "Welcome Message"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:297
+msgid "The first message visitors see when they open the chat. Leave blank for the default."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:303
+msgid "Avatar / Logo"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:315
+msgid "Upload Image"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:319
+msgid "Remove"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:323
+msgid "Recommended: 128×128px, PNG or JPG. Leave empty for the default avatar."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:330
+msgid "Font Family"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:343
+msgid "Curated system fonts only — no external font requests are ever made."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:354
+msgid "Reset all appearance settings to their defaults? Your welcome message will be kept."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:358
+msgid "Reset to Defaults"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:361
+msgid "Restores colours, position, dimensions, assistant name, avatar and font. The welcome message is not touched."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:368
+msgid "Live Preview"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:379
+#: includes/Frontend/Frontend.php:238
+msgid "AI Assistant"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:380
+#: includes/Frontend/Frontend.php:239
+msgid "Online"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:386
+msgid "Do you have wireless headphones?"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:387
+msgid "Yes! We have 3 wireless headphone models in stock. Would you like me to show you the options?"
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:390
+#: includes/Frontend/Frontend.php:231
+msgid "Type your message..."
+msgstr ""
+
+#: includes/Admin/views/settings-appearance.php:408
+msgid "Approximate preview — exact rendering depends on your theme."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:72
+msgid "Content settings saved."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:84
+msgid "Let Robin (the AI assistant) answer questions about your store's pages — FAQ, shipping, returns, contact, etc. — by indexing selected content. Robin always knows your products; this tab teaches it everything else."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:98
+msgid "Enable content indexing"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:105
+msgid "Allow Robin to use indexed page content when answering customer questions"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:108
+msgid "When off, only product information is sent to the AI."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:115
+msgid "What to index"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:122
+msgid "WordPress Pages"
+msgstr ""
+
+#. translators: %d: number of published pages
+#. translators: %d: number of published posts
+#: includes/Admin/views/settings-content.php:125
+#: includes/Admin/views/settings-content.php:137
+#, php-format
+msgid "%d published"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:134
+msgid "Blog posts"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:146
+msgid "Product category descriptions"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:149
+msgid "Robin always knows your individual products via WooCommerce search — indexing them again here would be redundant."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:156
+msgid "Pages to include"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:159
+msgid "No published pages on this site yet."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:176
+msgid "Leave all unchecked to index every published page. Tick specific pages to narrow the index to those only."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:185
+msgid "Posts to include"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:202
+msgid "Only used when \"Blog posts\" is checked above. Leave all unchecked to index every published post."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:210
+msgid "Automatic re-indexing"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:217
+msgid "Re-index automatically when content changes"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:220
+msgid "When on, editing a page or category description refreshes the index in real time. A daily safety-net cron also runs in the background."
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:227
+msgid "Save content settings"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:232
+msgid "Index status"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:238
+msgid "Indexed sources"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:243
+msgid "Total chunks"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:247
+msgid "Last indexed"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:262
+msgid "Reindex now"
+msgstr ""
+
+#: includes/Admin/views/settings-content.php:268
+msgid "Rebuild the full content index for all opted-in sources."
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:50
+msgid "Privacy settings saved."
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:56
+msgid "Configure how long chat conversations are retained and where shoppers can read your privacy policy. Data Subject Access Requests and right-to-erasure are handled through WordPress's native Tools → Personal Data screens (this plugin registers itself there automatically)."
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:72
+msgid "Conversation retention"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:84
+msgid "days"
+msgstr ""
+
+#. translators: 1: min days, 2: max days
+#: includes/Admin/views/settings-privacy.php:89
+#, php-format
+msgid "Conversations older than this are removed daily by a background job. Clamped to %1$d–%2$d days."
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:102
+msgid "Privacy policy URL"
+msgstr ""
+
+#. translators: %s: privacy page URL
+#: includes/Admin/views/settings-privacy.php:118
+#, php-format
+msgid "Tip — your WordPress privacy page is %s. Copy it into the field above to link to it."
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:127
+msgid "When set, the chat widget shows a small footer link \"By chatting, you accept our Privacy Policy\" pointing here. Leave empty to hide the notice."
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:136
+msgid "Notice text"
+msgstr ""
+
+#. translators: %s: default notice copy
+#: includes/Admin/views/settings-privacy.php:150
+#, php-format
+msgid "Optional override for the text shown before the policy link. Default: \"%s\"."
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:160
+msgid "Save privacy settings"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:165
+msgid "DSAR & erasure"
+msgstr ""
+
+#. translators: 1: link to Tools → Export Personal Data, 2: link to Tools → Erase Personal Data
+#: includes/Admin/views/settings-privacy.php:171
+#, php-format
+msgid "This plugin integrates with WordPress's built-in privacy tools. To handle a Data Subject Access Request, use %1$s. To erase a customer's chat data, use %2$s. In both cases enter the customer's email — the plugin will include or remove the matching conversations automatically."
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:173
+msgid "Tools → Export Personal Data"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:175
+msgid "Tools → Erase Personal Data"
+msgstr ""
+
+#: includes/Admin/views/settings.php:56
+msgid "Trill AI Product Chat — Settings"
+msgstr ""
+
+#: includes/Admin/views/settings.php:61
+msgid "General"
+msgstr ""
+
+#: includes/Admin/views/settings.php:65
+msgid "Appearance"
+msgstr ""
+
+#: includes/Admin/views/settings.php:69
+msgid "Content"
+msgstr ""
+
+#: includes/Admin/views/settings.php:98
+msgid "Enable Chat Widget"
+msgstr ""
+
+#: includes/Admin/views/settings.php:102
+msgid "Show the AI chat widget on your store"
+msgstr ""
+
+#: includes/Admin/views/settings.php:112
+msgid "Show Attribution Badge"
+msgstr ""
+
+#: includes/Admin/views/settings.php:116
+msgid "Display \"Powered by Trill AI\" in the chat widget footer"
+msgstr ""
+
+#: includes/Admin/views/settings.php:118
+msgid "Optional. Show a small attribution link in the chat widget."
+msgstr ""
+
+#: includes/Admin/views/settings.php:124
+msgid "Starter Suggestions"
+msgstr ""
+
+#: includes/Admin/views/settings.php:126
+msgid ""
+"What's on sale?\n"
+"Help me choose a product\n"
+"Label|Actual value sent"
+msgstr ""
+
+#: includes/Admin/views/settings.php:128
+msgid "Up to three suggested prompts displayed as chips when the chat opens. One per line. Use an optional pipe to split display Label from the actual message Value (\"Sale? | Show me discounted items\")."
+msgstr ""
+
+#: includes/Admin/views/settings.php:135
+msgid "Page Visibility"
+msgstr ""
+
+#: includes/Admin/views/settings.php:139
+msgid "Hide widget on the WooCommerce checkout page"
+msgstr ""
+
+#: includes/Admin/views/settings.php:143
+msgid "Hide widget on the WooCommerce My Account pages"
+msgstr ""
+
+#: includes/Admin/views/settings.php:145
+msgid "Recommended when you want to minimise distractions during purchase or account management. The widget never loads on feeds, REST or the login page."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:103
+msgid "Could not reach Trill Cloud to set up the trial. We will retry automatically."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:133
+msgid "This site already has a trial registered. If you lost the secret, the trial will reset next calendar month."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:147
+msgid "The site URL was rejected by the backend. Make sure it is publicly reachable (https://)."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:160
+msgid "Unexpected response from Trill Cloud while setting up the trial."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:193
+msgid "The plugin has not finished setting up the trial. Please try again in a moment."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:230
+msgid "Unable to reach the AI service. Please try again later."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:324
+msgid "Trial credentials are no longer valid. Please reactivate the plugin."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:333
+msgid "Monthly trial limit reached. Upgrade to keep chatting."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:342
+msgid "Too many requests. Please wait a moment and try again."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:352
+msgid "Your message was refused on content-policy grounds. Please rephrase."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:359
+msgid "The request was rejected by the AI service."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:368
+msgid "AI service is temporarily unavailable. Please try again shortly."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:376
+msgid "The AI service took too long to respond. Please try again."
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: includes/AI/ProxyClient.php:386
+#, php-format
+msgid "Unexpected error (HTTP %d). Please try again."
+msgstr ""
+
+#: includes/AI/ResponseFormatter.php:149
+msgid "Show more products"
+msgstr ""
+
+#: includes/AI/ResponseFormatter.php:150
+msgid "View my cart"
+msgstr ""
+
+#: includes/AI/ResponseFormatter.php:151
+msgid "Help with sizing"
+msgstr ""
+
+#: includes/AI/ResponseFormatter.php:157
+msgid "Browse products"
+msgstr ""
+
+#: includes/AI/ResponseFormatter.php:159
+msgid "Shipping info"
+msgstr ""
+
+#: includes/AI/RestController.php:231
 msgid "Message cannot be empty."
 msgstr ""
 
-#: includes/AI/RestController.php
-msgid "Monthly conversation limit reached. Upgrade for unlimited conversations."
+#. translators: %d: maximum character length
+#: includes/AI/RestController.php:241
+#, php-format
+msgid "Message exceeds maximum length of %d characters."
 msgstr ""
 
-#: includes/AI/RestController.php
+#: includes/AI/RestController.php:259
+msgid "Failed to create conversation."
+msgstr ""
+
+#: includes/AI/RestController.php:275
+msgid "Invalid session ID format."
+msgstr ""
+
+#: includes/AI/RestController.php:283
+msgid "Session not found. Please start a new conversation."
+msgstr ""
+
+#: includes/AI/RestController.php:296
+msgid "Failed to store message."
+msgstr ""
+
+#: includes/AI/RestController.php:481
+msgid "Monthly trial limit reached."
+msgstr ""
+
+#: includes/AI/RestController.php:491
+msgid "Too many requests."
+msgstr ""
+
+#: includes/AI/RestController.php:508
+msgid "AI service temporarily unavailable."
+msgstr ""
+
+#: includes/AI/RestController.php:598
+msgid "An unexpected error occurred. Please try again."
+msgstr ""
+
+#: includes/AI/RestController.php:644
+msgid "Failed to retrieve conversation."
+msgstr ""
+
+#: includes/AI/RestController.php:667
+#: includes/AI/RestController.php:682
+msgid "Failed to save feedback."
+msgstr ""
+
+#: includes/AI/RestController.php:675
+msgid "Thank you for your feedback!"
+msgstr ""
+
+#: includes/AI/RestController.php:709
+#: includes/AI/RestController.php:734
+#: includes/AI/RestController.php:768
 msgid "Invalid security token. Please refresh the page."
 msgstr ""
 
-#: includes/AI/RestController.php
+#: includes/AI/RestController.php:778
+msgid "Invalid message identifier."
+msgstr ""
+
+#: includes/AI/RestController.php:802
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: includes/AI/ProxyClient.php
-msgid "Unable to connect to AI service. Please try again later."
+#: includes/AI/RestController.php:1045
+msgid "If you give me your email, I'll only use it to notify you once when this item is back in stock."
 msgstr ""
 
-#: includes/AI/ProxyClient.php
-msgid "AI service is temporarily unavailable. Please try again later."
+#: includes/AI/RestController.php:1048
+msgid "If you give me your email, I'll only use it to notify you once if there is a sale or price drop on this item."
 msgstr ""
 
-#: includes/AI/ResponseFormatter.php
-msgid "Add to basket"
+#: includes/AI/RestController.php:1050
+msgid "If you give me your email, I'll only use it to send you one follow-up about this item."
 msgstr ""
 
-#: includes/AI/ResponseFormatter.php
-msgid "View product"
+#: includes/Frontend/Frontend.php:232
+msgid "Send"
 msgstr ""
 
-#: includes/AI/ResponseFormatter.php
-msgid "View details"
+#: includes/Frontend/Frontend.php:233
+msgid "Chat with us!"
 msgstr ""
 
-#: includes/Activator.php
-msgid "Trill AI Product Chat requires WooCommerce to be installed and active."
+#: includes/Frontend/Frontend.php:235
+msgid "Sorry, I encountered an error. Please try again."
 msgstr ""
 
-#: includes/functions.php
+#: includes/Frontend/Frontend.php:236
+msgid "Connection error. Please check your internet and try again."
+msgstr ""
+
+#. translators: %s: assistant display name
+#: includes/Frontend/Frontend.php:242
+#, php-format
+msgid "%s is typing..."
+msgstr ""
+
+#: includes/Frontend/Frontend.php:245
+msgid "Close chat"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:246
+msgid "Expand chat"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:247
+msgid "Collapse chat"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:248
+msgid "Monthly Limit Reached"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:325
+msgid "JavaScript is required for the chat widget."
+msgstr ""
+
+#: includes/Frontend/Frontend.php:342
+msgid "Chat with us"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:343
+msgid "Open Chat"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:367
+msgid "Start Chat"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:494
+msgid "Privacy Policy"
+msgstr ""
+
+#: includes/functions.php:92
+msgid "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:201
+msgid "Trill AI Chat — Lead opt-ins"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:205
+msgid "Captured at"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:213
+msgid "Product ID"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:221
+msgid "Consent text shown at capture"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:243
+#: includes/Gdpr/PrivacyHooks.php:69
+#: includes/Gdpr/PrivacyHooks.php:86
+msgid "Trill AI Chat conversations"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:247
+msgid "Session ID"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:251
+msgid "Started at"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:255
+msgid "Ended at"
+msgstr ""
+
+#: includes/Gdpr/ConversationManager.php:263
+msgid "Customer email on record"
+msgstr ""
+
+#: includes/Lite/UpgradeManager.php:161
+msgid "Trill AI Chat 2.0 is here — your free trial has been re-registered automatically against the new Trill Cloud backend. No action needed."
+msgstr ""
+
+#: includes/Lite/UpgradeManager.php:165
+msgid "Read the release notes"
+msgstr ""
+
+#: trill-ai-chat-lite.php:53
 msgid "Trill AI Product Chat requires PHP 8.0 or higher."
+msgstr ""
+
+#: trill-ai-chat-lite.php:87
+msgid "Trill AI Product Chat has been deactivated because the full version is installed."
+msgstr ""
+
+#: trill-ai-chat-lite.php:89
+msgid "Manage plugins"
+msgstr ""
+
+#: trill-ai-chat-lite.php:112
+msgid "Trill AI Product Chat requires WooCommerce to be installed and active."
 msgstr ""

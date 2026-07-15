@@ -1,12 +1,26 @@
 <?php
 /**
- * Managed Proxy Client for Lite tier.
+ * Trill Cloud backend client (api-v2.trillai.io, plugin v2.0+).
  *
- * Sends chat requests to the Trill AI proxy endpoint.
- * Uses site-based authentication (no licence key required).
+ * Talks to the new `api-v2.trillai.io` backend introduced with the
+ * OSS plugin 2.0 release. Replaces the legacy v1.x site-hash auth
+ * with a Bearer-per-site model:
+ *
+ *   1. The plugin calls POST /v1/trial/register ONCE per site URL,
+ *      gets back a `tt_trial_*` plaintext secret, and persists it
+ *      via TrialSecretStore. The backend stores only the SHA-256
+ *      hash — re-registration with the same site URL returns 409.
+ *
+ *   2. Every chat request is POST /v1/trial/chat with
+ *      `Authorization: Bearer <secret>` and the full conversation
+ *      history as `messages[]`. Server is stateless.
+ *
+ *   3. The X-Trill-Trial-Remaining response header conveys the
+ *      remaining trial allowance (cap - used - 1) for plugin UX.
  *
  * @package TrillChatLite\AI
- * @since 1.0.0
+ * @since 1.0.0 — site-hash transport
+ * @since 2.0.0 — Bearer-per-site transport
  * @license GPL-2.0-or-later
  */
 
@@ -17,206 +31,364 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use TrillChatLite\Lite\LiteConfig;
+use TrillChatLite\Lite\TrialSecretStore;
 
 /**
- * Proxy Client — Lite managed proxy.
+ * Proxy Client — Trill Cloud backend wrapper.
  *
- * SOLID: Single Responsibility — only API communication.
- * SOLID: Dependency Inversion — depends on LiteConfig abstraction.
+ * SOLID: Single Responsibility — only API transport.
  */
 class ProxyClient {
 
     /**
-     * Request timeout in seconds.
+     * Request timeout for chat calls (seconds). Backend timeout to its
+     * upstream OpenAI is 30s; we give it some headroom.
      */
-    private const TIMEOUT = 30;
+    private const CHAT_TIMEOUT = 35;
 
     /**
-     * Generate site hash for authentication.
-     *
-     * @return string SHA-256 hash of site URL + AUTH_KEY salt.
+     * Request timeout for register / health (fast endpoints).
      */
-    private function generate_site_hash(): string {
-        $site_url = \get_site_url();
-        $salt     = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'trcl-default-salt';
-        return hash( 'sha256', $site_url . $salt );
-    }
+    private const SHORT_TIMEOUT = 10;
+
+    // =========================================================================
+    // Register
+    // =========================================================================
 
     /**
-     * Build request headers.
+     * Call POST /v1/trial/register to obtain a bearer secret for THIS site.
      *
-     * @return array Headers array for wp_remote_post.
-     */
-    private function build_headers(): array {
-        return [
-            'Content-Type'         => 'application/json',
-            'X-TCL-Site-URL'       => \get_site_url(),
-            'X-TCL-Plugin-Version' => defined( 'TRCL_VERSION' ) ? TRCL_VERSION : '1.0.0',
-            'X-TCL-Site-Hash'      => $this->generate_site_hash(),
-        ];
-    }
-
-    /**
-     * Send a chat message to the proxy.
+     * Caller is responsible for persisting the secret via TrialSecretStore.
+     * Idempotency: a 409 from the backend means the site URL is already
+     * registered with a DIFFERENT secret (we cannot recover it). The
+     * caller should NOT clobber an existing stored secret on 409.
      *
-     * @param string $message         User message.
-     * @param string $conversation_id Conversation UUID.
-     * @param array  $context         Additional context (products, page, etc.).
-     * @return array{success: bool, message?: array, error?: string, error_code?: string, meta?: array}
+     * @return array{
+     *     success: bool,
+     *     secret?: string,
+     *     site_id?: string,
+     *     error?: string,
+     *     error_code?: string,
+     *     http_status?: int,
+     * }
      */
-    public function send_message( string $message, string $conversation_id, array $context = [] ): array {
-        $url = LiteConfig::PROXY_BASE_URL . LiteConfig::PROXY_CHAT_PATH;
-
+    public function register(): array {
+        $url = LiteConfig::get_trial_register_url();
         $body = [
-            'message'         => $message,
-            'conversation_id' => $conversation_id,
-            'context'         => $context,
+            'siteUrl' => \get_site_url(),
         ];
 
-        trcl_log( 'ProxyClient: sending request', 'debug', [
-            'url'             => $url,
-            'conversation_id' => $conversation_id,
-            'message_length'  => mb_strlen( $message ),
+        trcl_log( 'ProxyClient::register sending', 'debug', [
+            'url'      => $url,
+            'site_url' => $body['siteUrl'],
         ] );
 
         $response = \wp_remote_post( $url, [
-            'headers' => $this->build_headers(),
-            'body'    => \wp_json_encode( $body ),
-            'timeout' => self::TIMEOUT,
-        ] );
-
-        // Handle connection errors.
-        if ( \is_wp_error( $response ) ) {
-            $error_message = $response->get_error_message();
-            trcl_log( 'ProxyClient: connection error', 'error', [
-                'error' => $error_message,
-            ] );
-
-            return [
-                'success'    => false,
-                'error'      => __( 'Unable to connect to AI service. Please try again later.', 'trill-ai-chat-lite' ),
-                'error_code' => 'CONNECTION_ERROR',
-            ];
-        }
-
-        $status_code   = \wp_remote_retrieve_response_code( $response );
-        $response_body = \wp_remote_retrieve_body( $response );
-        $decoded       = json_decode( $response_body, true );
-
-        // Handle HTTP errors.
-        if ( $status_code !== 200 ) {
-            trcl_log( 'ProxyClient: HTTP error', 'error', [
-                'status_code' => $status_code,
-                'body'        => mb_substr( $response_body, 0, 500 ),
-            ] );
-
-            return $this->handle_http_error( $status_code, $decoded );
-        }
-
-        // Handle malformed response.
-        if ( ! is_array( $decoded ) || empty( $decoded['success'] ) ) {
-            trcl_log( 'ProxyClient: malformed response', 'error', [
-                'body_preview' => mb_substr( $response_body, 0, 200 ),
-            ] );
-
-            return [
-                'success'    => false,
-                'error'      => __( 'Received invalid response from AI service.', 'trill-ai-chat-lite' ),
-                'error_code' => 'MALFORMED_RESPONSE',
-            ];
-        }
-
-        $ai_content = $decoded['message']['content'] ?? $decoded['response'] ?? '';
-
-        trcl_log( 'ProxyClient: response received', 'info', [
-            'conversation_id'         => $conversation_id,
-            'response_length'         => mb_strlen( $ai_content ),
-            'conversations_remaining' => $decoded['meta']['conversations_remaining'] ?? null,
-        ] );
-
-        return [
-            'success' => true,
-            'message' => $decoded['message'] ?? [
-                'role'    => 'assistant',
-                'content' => '',
+            'headers' => [
+                'Content-Type'         => 'application/json',
+                'Accept'               => 'application/json',
+                'User-Agent'           => $this->user_agent(),
+                'X-Trill-Plugin-Ver'   => defined( 'TRCL_VERSION' ) ? TRCL_VERSION : '0.0.0',
             ],
-            'meta' => $decoded['meta'] ?? [],
+            'body'    => \wp_json_encode( $body ),
+            'timeout' => self::SHORT_TIMEOUT,
+        ] );
+
+        if ( \is_wp_error( $response ) ) {
+            trcl_log( 'ProxyClient::register network error', 'error', [
+                'error' => $response->get_error_message(),
+            ] );
+            return [
+                'success'    => false,
+                'error'      => __( 'Could not reach Trill Cloud to set up the trial. We will retry automatically.', 'trill-ai-chat-lite' ),
+                'error_code' => 'NETWORK_ERROR',
+            ];
+        }
+
+        $status_code = \wp_remote_retrieve_response_code( $response );
+        $body_raw    = \wp_remote_retrieve_body( $response );
+        $decoded     = json_decode( $body_raw, true );
+
+        // Happy path: 201 with secret.
+        if ( $status_code === 201 && is_array( $decoded ) && ! empty( $decoded['secret'] ) ) {
+            trcl_log( 'ProxyClient::register success', 'info', [
+                'site_id' => $decoded['siteId'] ?? null,
+            ] );
+            return [
+                'success' => true,
+                'secret'  => (string) $decoded['secret'],
+                'site_id' => isset( $decoded['siteId'] ) ? (string) $decoded['siteId'] : '',
+            ];
+        }
+
+        // 409 already_registered → site URL collision (likely the plugin
+        // re-installed and lost its secret). The backend won't give us
+        // the original secret back, ever.
+        if ( $status_code === 409 ) {
+            trcl_log( 'ProxyClient::register duplicate', 'warning', [
+                'site_url' => $body['siteUrl'],
+            ] );
+            return [
+                'success'     => false,
+                'error'       => __( 'This site already has a trial registered. If you lost the secret, the trial will reset next calendar month.', 'trill-ai-chat-lite' ),
+                'error_code'  => 'ALREADY_REGISTERED',
+                'http_status' => 409,
+            ];
+        }
+
+        // 400 invalid_site_url etc.
+        if ( $status_code === 400 ) {
+            $reason = is_array( $decoded ) ? ( $decoded['reason'] ?? '' ) : '';
+            trcl_log( 'ProxyClient::register bad request', 'error', [
+                'reason' => $reason,
+            ] );
+            return [
+                'success'     => false,
+                'error'       => __( 'The site URL was rejected by the backend. Make sure it is publicly reachable (https://).', 'trill-ai-chat-lite' ),
+                'error_code'  => 'INVALID_SITE_URL',
+                'http_status' => 400,
+            ];
+        }
+
+        // Anything else.
+        trcl_log( 'ProxyClient::register unexpected response', 'error', [
+            'status_code' => $status_code,
+            'body'        => mb_substr( (string) $body_raw, 0, 300 ),
+        ] );
+        return [
+            'success'     => false,
+            'error'       => __( 'Unexpected response from Trill Cloud while setting up the trial.', 'trill-ai-chat-lite' ),
+            'error_code'  => 'UNEXPECTED',
+            'http_status' => (int) $status_code,
         ];
     }
 
+    // =========================================================================
+    // Chat
+    // =========================================================================
+
     /**
-     * Handle HTTP error status codes.
+     * Send a chat completion request.
      *
-     * @param int        $status_code HTTP status code.
-     * @param array|null $decoded     Decoded response body.
-     * @return array Error response array.
+     * @param array $messages Array of {role, content} turns. The caller
+     *                        (RestController) builds this from the
+     *                        pre-built system prompt + persisted history.
+     * @param string $session_id UUID of the conversation (for backend logs).
+     * @return array{
+     *     success: bool,
+     *     reply?: string,
+     *     provider?: string,
+     *     trial_remaining?: int,
+     *     error?: string,
+     *     error_code?: string,
+     *     http_status?: int,
+     * }
      */
-    private function handle_http_error( int $status_code, ?array $decoded ): array {
-        $error_message = $decoded['error'] ?? '';
-
-        switch ( $status_code ) {
-            case 429:
-                return [
-                    'success'    => false,
-                    'error'      => __( 'Too many requests. Please wait a moment and try again.', 'trill-ai-chat-lite' ),
-                    'error_code' => 'RATE_LIMITED',
-                ];
-
-            case 402:
-                return [
-                    'success'    => false,
-                    'error'      => __( 'Monthly conversation limit reached. Upgrade for unlimited conversations.', 'trill-ai-chat-lite' ),
-                    'error_code' => 'LIMIT_REACHED',
-                    'meta'       => [
-                        'upgrade_url' => LiteConfig::getUpgradeUrl( 'limit_reached' ),
-                    ],
-                ];
-
-            case 403:
-                return [
-                    'success'    => false,
-                    'error'      => __( 'Access denied. Please check your site configuration.', 'trill-ai-chat-lite' ),
-                    'error_code' => 'FORBIDDEN',
-                ];
-
-            case 500:
-            case 502:
-            case 503:
-                return [
-                    'success'    => false,
-                    'error'      => __( 'AI service is temporarily unavailable. Please try again later.', 'trill-ai-chat-lite' ),
-                    'error_code' => 'SERVICE_UNAVAILABLE',
-                ];
-
-            default:
-                return [
-                    'success'    => false,
-                    'error'      => sprintf(
-                        /* translators: %d: HTTP status code */
-                        __( 'Unexpected error (HTTP %d). Please try again.', 'trill-ai-chat-lite' ),
-                        $status_code
-                    ),
-                    'error_code' => 'HTTP_ERROR',
-                ];
+    public function send_message( array $messages, string $session_id = '' ): array {
+        $secret = TrialSecretStore::get_secret();
+        if ( $secret === '' ) {
+            trcl_log( 'ProxyClient::send_message missing secret', 'error' );
+            return [
+                'success'    => false,
+                'error'      => __( 'The plugin has not finished setting up the trial. Please try again in a moment.', 'trill-ai-chat-lite' ),
+                'error_code' => 'NOT_REGISTERED',
+            ];
         }
+
+        $url  = LiteConfig::get_trial_chat_url();
+        $body = [
+            'messages' => $messages,
+        ];
+        if ( $session_id !== '' ) {
+            $body['sessionId'] = $session_id;
+        }
+
+        trcl_log( 'ProxyClient::send_message sending', 'debug', [
+            'url'           => $url,
+            'message_count' => count( $messages ),
+            'session_id'    => $session_id,
+        ] );
+
+        $response = \wp_remote_post( $url, [
+            'headers' => [
+                'Content-Type'        => 'application/json',
+                'Accept'              => 'application/json',
+                'Authorization'       => 'Bearer ' . $secret,
+                'User-Agent'          => $this->user_agent(),
+                'X-Trill-Plugin-Ver'  => defined( 'TRCL_VERSION' ) ? TRCL_VERSION : '0.0.0',
+            ],
+            'body'    => \wp_json_encode( $body ),
+            'timeout' => self::CHAT_TIMEOUT,
+        ] );
+
+        if ( \is_wp_error( $response ) ) {
+            trcl_log( 'ProxyClient::send_message network error', 'error', [
+                'error' => $response->get_error_message(),
+            ] );
+            return [
+                'success'    => false,
+                'error'      => __( 'Unable to reach the AI service. Please try again later.', 'trill-ai-chat-lite' ),
+                'error_code' => 'NETWORK_ERROR',
+            ];
+        }
+
+        $status_code = (int) \wp_remote_retrieve_response_code( $response );
+        $body_raw    = \wp_remote_retrieve_body( $response );
+        $decoded     = json_decode( $body_raw, true );
+
+        // Read the remaining trial allowance — backend exposes it on every
+        // 200, useful for the dashboard widget + chat UI countdown.
+        $headers   = \wp_remote_retrieve_headers( $response );
+        $remaining = null;
+        if ( $headers ) {
+            // wp_remote_retrieve_headers returns a Requests_Utility_CaseInsensitiveDictionary
+            // (or array, depending on WP version); both support array access.
+            $raw = $headers['x-trill-trial-remaining'] ?? null;
+            if ( $raw !== null && $raw !== '' && is_numeric( $raw ) ) {
+                $remaining = (int) $raw;
+            }
+        }
+
+        if ( $status_code === 200 && is_array( $decoded ) && isset( $decoded['reply'] ) ) {
+            return [
+                'success'         => true,
+                'reply'           => (string) $decoded['reply'],
+                'provider'        => (string) ( $decoded['provider'] ?? 'openai' ),
+                'trial_remaining' => $remaining,
+            ];
+        }
+
+        // Non-200: map to internal error_code via the helper.
+        return $this->handle_http_error( $status_code, is_array( $decoded ) ? $decoded : null );
     }
 
+    // =========================================================================
+    // Health
+    // =========================================================================
+
     /**
-     * Check if the proxy service is reachable.
-     *
-     * @return bool True if the service responds.
+     * Quick check that the backend is reachable. Used by the dashboard
+     * widget to surface a "service down" message without burning a chat.
      */
     public function is_available(): bool {
-        $url      = LiteConfig::PROXY_BASE_URL . '/health';
+        $url      = LiteConfig::get_health_url();
         $response = \wp_remote_get( $url, [
-            'timeout' => 5,
-            'headers' => $this->build_headers(),
+            'timeout' => self::SHORT_TIMEOUT,
+            'headers' => [
+                'Accept'     => 'application/json',
+                'User-Agent' => $this->user_agent(),
+            ],
         ] );
 
         if ( \is_wp_error( $response ) ) {
             return false;
         }
+        return (int) \wp_remote_retrieve_response_code( $response ) === 200;
+    }
 
-        return \wp_remote_retrieve_response_code( $response ) === 200;
+    // =========================================================================
+    // Internal helpers
+    // =========================================================================
+
+    /**
+     * Build a User-Agent string identifying this plugin to the backend.
+     * Lets backend ops correlate traffic with plugin version.
+     */
+    private function user_agent(): string {
+        $version = defined( 'TRCL_VERSION' ) ? TRCL_VERSION : '0.0.0';
+        return 'trill-ai-chat-lite/' . $version . ' (+' . LiteConfig::SUPPORT_URL . ')';
+    }
+
+    /**
+     * Map an upstream non-200 to our internal error shape.
+     *
+     * Backend → plugin error code mapping:
+     *   401 unauthorized          → AUTH_INVALID (secret revoked / cleared)
+     *   429 trial_exhausted       → TRIAL_EXHAUSTED (cap hit, distinct from rate limit)
+     *   429 rate_limit_exceeded   → RATE_LIMITED (try again shortly)
+     *   400 content_policy_*      → CONTENT_REFUSED (rephrase prompt)
+     *   400 invalid_request       → BAD_REQUEST (plugin bug)
+     *   502 provider_error        → SERVICE_UNAVAILABLE
+     *   503 upstream_overloaded   → SERVICE_UNAVAILABLE (try again later)
+     *   504 upstream_timeout      → SERVICE_TIMEOUT
+     *   anything else             → HTTP_ERROR
+     */
+    private function handle_http_error( int $status_code, ?array $decoded ): array {
+        $backend_error = is_array( $decoded ) ? ( $decoded['error'] ?? '' ) : '';
+
+        switch ( $status_code ) {
+            case 401:
+                trcl_log( 'ProxyClient: auth invalid', 'warning' );
+                return [
+                    'success'     => false,
+                    'error'       => __( 'Trial credentials are no longer valid. Please reactivate the plugin.', 'trill-ai-chat-lite' ),
+                    'error_code'  => 'AUTH_INVALID',
+                    'http_status' => 401,
+                ];
+
+            case 429:
+                if ( $backend_error === 'trial_exhausted' ) {
+                    return [
+                        'success'        => false,
+                        'error'          => __( 'Monthly trial limit reached. Upgrade to keep chatting.', 'trill-ai-chat-lite' ),
+                        'error_code'     => 'TRIAL_EXHAUSTED',
+                        'http_status'    => 429,
+                        'upgrade_url'    => is_array( $decoded ) ? ( $decoded['upgrade_url'] ?? LiteConfig::PRICING_URL ) : LiteConfig::PRICING_URL,
+                        'reset_at'       => is_array( $decoded ) ? ( $decoded['reset_at'] ?? '' ) : '',
+                    ];
+                }
+                return [
+                    'success'              => false,
+                    'error'                => __( 'Too many requests. Please wait a moment and try again.', 'trill-ai-chat-lite' ),
+                    'error_code'           => 'RATE_LIMITED',
+                    'http_status'          => 429,
+                    'retry_after_seconds'  => is_array( $decoded ) ? (int) ( $decoded['retry_after_seconds'] ?? 0 ) : 0,
+                ];
+
+            case 400:
+                if ( $backend_error === 'content_policy_violation' ) {
+                    return [
+                        'success'     => false,
+                        'error'       => __( 'Your message was refused on content-policy grounds. Please rephrase.', 'trill-ai-chat-lite' ),
+                        'error_code'  => 'CONTENT_REFUSED',
+                        'http_status' => 400,
+                    ];
+                }
+                return [
+                    'success'     => false,
+                    'error'       => __( 'The request was rejected by the AI service.', 'trill-ai-chat-lite' ),
+                    'error_code'  => 'BAD_REQUEST',
+                    'http_status' => 400,
+                ];
+
+            case 502:
+            case 503:
+                return [
+                    'success'     => false,
+                    'error'       => __( 'AI service is temporarily unavailable. Please try again shortly.', 'trill-ai-chat-lite' ),
+                    'error_code'  => 'SERVICE_UNAVAILABLE',
+                    'http_status' => $status_code,
+                ];
+
+            case 504:
+                return [
+                    'success'     => false,
+                    'error'       => __( 'The AI service took too long to respond. Please try again.', 'trill-ai-chat-lite' ),
+                    'error_code'  => 'SERVICE_TIMEOUT',
+                    'http_status' => 504,
+                ];
+
+            default:
+                return [
+                    'success'     => false,
+                    'error'       => sprintf(
+                        /* translators: %d: HTTP status code */
+                        __( 'Unexpected error (HTTP %d). Please try again.', 'trill-ai-chat-lite' ),
+                        $status_code
+                    ),
+                    'error_code'  => 'HTTP_ERROR',
+                    'http_status' => $status_code,
+                ];
+        }
     }
 }

@@ -201,6 +201,11 @@ class Frontend {
             true
         );
 
+        // Assistant identity (v2.1 — merchant-customisable, default "Robin").
+        $settings_controller = new Settings();
+        $assistant_name      = $settings_controller->get_assistant_name();
+        $avatar_url          = $settings_controller->get_avatar_url();
+
         // Build localisation data.
         $localize_data = [
             'ajax_url'        => \admin_url( 'admin-ajax.php' ),
@@ -209,6 +214,11 @@ class Frontend {
             'enabled'         => \get_option( 'trcl_chat_enabled', '1' ),
             'widget_position' => \get_option( 'trcl_widget_position', 'bottom-right' ),
             'widget_color'    => \get_option( 'trcl_widget_color', '#10B981' ),
+            // Custom avatar URL (v2.1) — '' means "use the bundled default".
+            // Already esc_url()'d and re-validated against the media library.
+            'avatar_url'      => $avatar_url,
+            // Launcher style (v2.1 APP-08) — whitelisted 'brand' | 'bubble'.
+            'launcher_style'  => $settings_controller->sanitize_launcher_style( (string) \get_option( 'trcl_launcher_style', 'brand' ) ),
             'plugin_url'      => TRCL_PLUGIN_URL,
             // Lazy-load targets — consumed by chat-launcher.js on first click.
             // versioned_url() appends ?ver=<content-hash> so the cache is
@@ -224,20 +234,28 @@ class Frontend {
                 'welcome_message' => $this->get_welcome_message(),
                 'error_message'   => __( 'Sorry, I encountered an error. Please try again.', 'trill-ai-chat-lite' ),
                 'connection_error' => __( 'Connection error. Please check your internet and try again.', 'trill-ai-chat-lite' ),
-                'assistant_name'  => __( 'Robin', 'trill-ai-chat-lite' ),
+                'assistant_name'  => $assistant_name,
                 'assistant_role'  => __( 'AI Assistant', 'trill-ai-chat-lite' ),
                 'online'          => __( 'Online', 'trill-ai-chat-lite' ),
-                'typing'          => __( 'Robin is typing...', 'trill-ai-chat-lite' ),
+                'typing'          => sprintf(
+                    /* translators: %s: assistant display name */
+                    __( '%s is typing...', 'trill-ai-chat-lite' ),
+                    $assistant_name
+                ),
                 'close_chat'      => __( 'Close chat', 'trill-ai-chat-lite' ),
+                'expand_chat'     => __( 'Expand chat', 'trill-ai-chat-lite' ),
+                'collapse_chat'   => __( 'Collapse chat', 'trill-ai-chat-lite' ),
                 'limit_reached'   => __( 'Monthly Limit Reached', 'trill-ai-chat-lite' ),
-                'upgrade_now'     => __( 'Upgrade Now', 'trill-ai-chat-lite' ),
             ],
             'branding' => [
                 'powered_by_text' => LiteConfig::POWERED_BY_TEXT,
                 'powered_by_url'  => LiteConfig::get_powered_by_url(),
                 'show_powered_by' => LiteConfig::get_show_powered_by(),
             ],
-            'upgrade_url' => LiteConfig::getUpgradeUrl( 'widget' ),
+            // Privacy notice — slim footer link rendered in the widget
+            // when the merchant has configured a privacy policy URL on
+            // Settings → Privacy. Empty url means "do not render".
+            'privacy' => $this->build_privacy_localize_block(),
         ];
 
         // WooCommerce data.
@@ -257,7 +275,6 @@ class Frontend {
         // Delegated to Settings::get_initial_quick_replies() so the parsing +
         // cap rules live in a single place (SRP). Filter hook lets themes or
         // other plugins customise per-page.
-        $settings_controller = new Settings();
         $initial_quick_replies = $settings_controller->get_initial_quick_replies();
 
         /**
@@ -285,30 +302,12 @@ class Frontend {
 
         \wp_localize_script( 'trcl-chat-launcher', 'trcl_ajax', $localize_data );
 
-        // Dynamic widget styles (colour and position).
-        $color    = \get_option( 'trcl_widget_color', '#10B981' );
-        $position = \get_option( 'trcl_widget_position', 'bottom-right' );
-        $is_left  = ( 'bottom-left' === $position );
-
-        $inline_css = sprintf(
-            ':root { --trcl-primary: %s; }
-            .trcl-chat-widget { right: %s; left: %s; }
-            .trcl-chat-window { right: %s; left: %s; }
-            .trcl-noscript-message { right: %s; left: %s; }',
-            esc_attr( $color ),
-            $is_left ? 'auto' : '20px',
-            $is_left ? '20px' : 'auto',
-            $is_left ? 'auto' : '0',
-            $is_left ? '0' : 'auto',
-            $is_left ? 'auto' : '20px',
-            $is_left ? '20px' : 'auto'
-        );
-
-        // Attach dynamic colour/position CSS to the launcher stylesheet so
-        // `--trcl-primary` and the bottom-left override are available on the
-        // first paint. The `.trcl-chat-window` rules are harmless no-ops until
-        // the full widget CSS loads.
-        \wp_add_inline_style( 'trcl-chat-launcher', $inline_css );
+        // Dynamic widget styles (v2.1 — full appearance config: colour
+        // palette, 4-corner position, dimensions and optional font).
+        // Attached to the launcher stylesheet so the variables are
+        // available on first paint; the `.trcl-chat-window` rules are
+        // harmless no-ops until the full widget CSS loads.
+        \wp_add_inline_style( 'trcl-chat-launcher', $this->build_appearance_inline_css() );
     }
 
     /**
@@ -375,6 +374,128 @@ class Frontend {
     }
 
     /**
+     * Build the dynamic appearance CSS injected alongside the launcher
+     * stylesheet (v2.1).
+     *
+     * Emits a `:root` block with the full set of `--trcl-*` custom
+     * properties (consumed by chat-launcher.css and chat-widget.css)
+     * plus position rules for the configured corner and an optional
+     * font-family override.
+     *
+     * OWASP: every value is re-validated by Settings::get_appearance_config()
+     * (hex whitelist, position whitelist, clamped ints, curated font map),
+     * so nothing user-typed can reach this CSS string raw.
+     *
+     * @since 2.1.0
+     *
+     * @return string CSS rules (no <style> wrapper).
+     */
+    private function build_appearance_inline_css(): string {
+        $settings   = new Settings();
+        $appearance = $settings->get_appearance_config();
+        $colors     = $appearance['colors'];
+
+        $css = sprintf(
+            ':root {
+                --trcl-primary: %1$s;
+                --trcl-primary-hover: %2$s;
+                --trcl-user-bubble: %3$s;
+                --trcl-ai-bubble: %4$s;
+                --trcl-header-text: %5$s;
+                --trcl-body-text: %6$s;
+                --trcl-window-bg: %7$s;
+                --trcl-widget-width: %8$dpx;
+                --trcl-widget-height: %9$dpx;
+                --trcl-radius: %10$dpx;
+            }',
+            esc_attr( $colors['trcl_widget_color'] ),
+            esc_attr( $colors['trcl_widget_color_hover'] ),
+            esc_attr( $colors['trcl_user_bubble_color'] ),
+            esc_attr( $colors['trcl_ai_bubble_color'] ),
+            esc_attr( $colors['trcl_header_text_color'] ),
+            esc_attr( $colors['trcl_body_text_color'] ),
+            esc_attr( $colors['trcl_widget_bg_color'] ),
+            (int) $appearance['width'],
+            (int) $appearance['height'],
+            (int) $appearance['radius']
+        );
+
+        // Corner placement. The widget container is fixed-position; the
+        // window is absolute inside it and anchors to the same corner so
+        // it expands towards the page centre.
+        //
+        // Selectors are doubled (.trcl-chat-widget.trcl-chat-widget) on
+        // purpose: chat-widget.css lazy-loads AFTER this inline block and
+        // re-declares default corner values, so we need to win on
+        // specificity regardless of stylesheet order.
+        //
+        // The window rules are scoped to desktop-sized viewports so the
+        // full-screen mobile + landscape overrides in chat-widget.css
+        // (max-width: 480px / max-height: 500px) keep winning there.
+        $is_left = in_array( $appearance['position'], [ 'bottom-left', 'top-left' ], true );
+        $is_top  = in_array( $appearance['position'], [ 'top-left', 'top-right' ], true );
+
+        $h_widget = $is_left ? 'right: auto; left: 20px;' : 'right: 20px; left: auto;';
+        $h_window = $is_left ? 'right: auto; left: 0;' : 'right: 0; left: auto;';
+        $v_widget = $is_top ? 'top: 20px; bottom: auto;' : 'bottom: 20px; top: auto;';
+        $v_window = $is_top ? 'top: 0; bottom: auto;' : 'bottom: 0; top: auto;';
+
+        $css .= sprintf(
+            ' .trcl-chat-widget.trcl-chat-widget { %1$s %2$s }
+            .trcl-noscript-message.trcl-noscript-message { %1$s %2$s }
+            @media (min-width: 481px) and (min-height: 501px) {
+                .trcl-chat-window.trcl-chat-window { %3$s %4$s }
+            }',
+            $h_widget,
+            $v_widget,
+            $h_window,
+            $v_window
+        );
+
+        // Optional font override — only emitted when the merchant picked
+        // a non-default stack from the curated whitelist.
+        if ( '' !== $appearance['font_stack'] ) {
+            // Doubled selector for the same lazy-load ordering reason as above.
+            $css .= sprintf(
+                ' .trcl-chat-widget.trcl-chat-widget, .trcl-noscript-message.trcl-noscript-message { font-family: %s; }',
+                $appearance['font_stack'] // Whitelisted constant, not user input.
+            );
+        }
+
+        return $css;
+    }
+
+    /**
+     * Build the privacy block exposed to the widget via wp_localize_script.
+     *
+     * Returns three keys:
+     *   show  string '1' | '0' — whether the widget should render the link.
+     *   text  string           — leading copy ("By chatting, you accept our")
+     *   url   string           — destination URL (empty when show='0')
+     *
+     * Determined by GdprSettings:
+     *   - show='1' only when a privacy_notice_url is configured.
+     *   - text falls back to GdprSettings::NOTICE_DEFAULT_TEXT when the
+     *     merchant has not overridden it.
+     *
+     * Themes and other plugins can short-circuit rendering by hooking the
+     * `trcl_localize_script_data` filter and clearing the `privacy` block.
+     *
+     * @since 2.0.0
+     *
+     * @return array{show:string, text:string, url:string, link_label:string}
+     */
+    private function build_privacy_localize_block(): array {
+        $gdpr = new \TrillChatLite\Gdpr\GdprSettings();
+        return [
+            'show'       => $gdpr->should_render_widget_notice() ? '1' : '0',
+            'text'       => $gdpr->get_privacy_notice_text(),
+            'url'        => $gdpr->get_privacy_notice_url(),
+            'link_label' => __( 'Privacy Policy', 'trill-ai-chat-lite' ),
+        ];
+    }
+
+    /**
      * Get welcome message.
      *
      * @return string
@@ -386,7 +507,14 @@ class Frontend {
             return $custom;
         }
 
-        return __( "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?", 'trill-ai-chat-lite' );
+        // Default greeting follows the configured assistant name (v2.1).
+        $settings = new Settings();
+
+        return sprintf(
+            /* translators: %s: assistant display name */
+            __( "Hi there! I'm %s, your AI shopping assistant. How can I help you today?", 'trill-ai-chat-lite' ),
+            $settings->get_assistant_name()
+        );
     }
 
     /**

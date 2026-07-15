@@ -76,9 +76,28 @@
          * Render the widget HTML.
          */
         render: function () {
-            var html = '' +
-                '<div class="trcl-chat-widget" id="trcl-chat-widget">' +
-                    '<!-- Toggle Button — Trill AI brand launcher -->' +
+            // Avatar (v2.1): custom media-library image when configured,
+            // bundled default (with 2x variant) otherwise. The custom URL
+            // is server-validated + esc_url()'d before localisation; we
+            // still attribute-escape defensively.
+            var avatarAlt = this.escapeAttr(this.str('assistant_name') + ', ' + this.str('assistant_role'));
+            var avatarImg = trcl_ajax.avatar_url
+                ? '<img src="' + this.escapeAttr(trcl_ajax.avatar_url) + '" alt="' + avatarAlt + '" width="40" height="40" />'
+                : '<img src="' + trcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + trcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="' + avatarAlt + '" width="40" height="40" />';
+
+            // Launcher button (v2.1): 'bubble' = classic round bubble with
+            // chat glyph; default 'brand' = floating Trill SVG logo. Markup
+            // kept in sync with chat-launcher.js::buildLauncher().
+            var toggleHtml;
+            if (trcl_ajax.launcher_style === 'bubble') {
+                toggleHtml = '' +
+                    '<button class="trcl-chat-toggle trcl-chat-toggle--bubble" id="trcl-chat-toggle" aria-label="' + this.str('chat_with_us') + '">' +
+                        '<svg class="trcl-bubble-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" focusable="false">' +
+                            '<path d="M20 2H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h2v4l4.5-4H20c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="#FFFFFF"/>' +
+                        '</svg>' +
+                    '</button>';
+            } else {
+                toggleHtml = '' +
                     '<button class="trcl-chat-toggle" id="trcl-chat-toggle" aria-label="' + this.str('chat_with_us') + '">' +
                         '<svg class="trcl-launcher-svg" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" focusable="false">' +
                             '<path class="trcl-launcher-bubble" d="M140.0 68.5 L139.9 79.9 L139.6 85.9 L139.0 90.7 L138.2 94.8 L137.2 98.4 L135.9 101.7 L134.5 104.6 L132.8 107.3 L130.8 109.7 L128.6 111.9 L126.2 113.8 L123.5 115.6 L120.5 117.1 L117.2 118.4 L113.5 119.5 L109.4 120.4 L104.8 121.1 L99.5 121.6 L92.8 121.9 L80.0 122.0 L67.2 121.9 L45.0 144.0 L42.8 118.4 L39.5 117.1 L36.5 115.6 L33.8 113.8 L31.4 111.9 L29.2 109.7 L27.2 107.3 L25.5 104.6 L24.1 101.7 L22.8 98.4 L21.8 94.8 L21.0 90.7 L20.4 85.9 L20.1 79.9 L20.0 68.5 L20.1 57.1 L20.4 51.1 L21.0 46.3 L21.8 42.2 L22.8 38.6 L24.1 35.3 L25.5 32.4 L27.2 29.7 L29.2 27.3 L31.4 25.1 L33.8 23.2 L36.5 21.4 L39.5 19.9 L42.8 18.6 L46.5 17.5 L50.6 16.6 L55.2 15.9 L60.5 15.4 L67.2 15.1 L80.0 15.0 L92.8 15.1 L99.5 15.4 L104.8 15.9 L109.4 16.6 L113.5 17.5 L117.2 18.6 L120.5 19.9 L123.5 21.4 L126.2 23.2 L128.6 25.1 L130.8 27.3 L132.8 29.7 L134.5 32.4 L135.9 35.3 L137.2 38.6 L138.2 42.2 L139.0 46.3 L139.6 51.1 L139.9 57.1 Z"/>' +
@@ -96,18 +115,30 @@
                             '<circle cx="64" cy="92" r="9" fill="#FFFFFF"/>' +
                             '<circle cx="109" cy="84" r="7" fill="#F5A623"/>' +
                         '</svg>' +
-                    '</button>' +
+                    '</button>';
+            }
+
+            var html = '' +
+                '<div class="trcl-chat-widget" id="trcl-chat-widget">' +
+                    toggleHtml +
                     '<!-- Chat Window -->' +
                     '<div class="trcl-chat-window" id="trcl-chat-window">' +
                         '<!-- Header -->' +
                         '<div class="trcl-chat-header">' +
-                            '<div class="trcl-chat-avatar"><img src="' + trcl_ajax.plugin_url + 'assets/images/avatar.png" srcset="' + trcl_ajax.plugin_url + 'assets/images/avatar2x.png 2x" alt="Robin" width="40" height="40" /></div>' +
+                            '<div class="trcl-chat-avatar">' + avatarImg + '</div>' +
                             '<div class="trcl-chat-header-info">' +
                                 '<div class="trcl-chat-header-name">' + this.str('assistant_name') + '</div>' +
-                                '<div class="trcl-chat-header-status">' +
-                                    '<span class="trcl-status-dot"></span> ' + this.str('online') +
-                                '</div>' +
+                                '<div class="trcl-chat-header-role">' + this.str('assistant_role') + '</div>' +
                             '</div>' +
+                            '<div class="trcl-chat-header-status">' +
+                                '<span class="trcl-status-dot"></span> ' + this.str('online') +
+                            '</div>' +
+                            '<!-- Expand toggle (v2.1, desktop only — hidden via CSS on mobile) -->' +
+                            '<button class="trcl-chat-expand" id="trcl-chat-expand" aria-label="' + this.str('expand_chat') + '" aria-pressed="false">' +
+                                '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">' +
+                                    '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" fill="currentColor"/>' +
+                                '</svg>' +
+                            '</button>' +
                             '<button class="trcl-chat-close" id="trcl-chat-close" aria-label="' + this.str('close_chat') + '">' +
                                 '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
                                     '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>' +
@@ -127,6 +158,14 @@
                                 '</svg>' +
                             '</button>' +
                         '</div>' +
+                        '<!-- Privacy notice -->' +
+                        (trcl_ajax.privacy && trcl_ajax.privacy.show === '1' && trcl_ajax.privacy.url ?
+                            '<div class="trcl-privacy-notice">' +
+                                this.escapeHtml(trcl_ajax.privacy.text) + ' ' +
+                                '<a href="' + this.escapeAttr(trcl_ajax.privacy.url) + '" target="_blank" rel="noopener">' +
+                                    this.escapeHtml(trcl_ajax.privacy.link_label || 'Privacy Policy') +
+                                '</a>' +
+                            '</div>' : '') +
                         '<!-- Powered By -->' +
                         (trcl_ajax.branding && trcl_ajax.branding.show_powered_by ?
                             '<a href="' + trcl_ajax.branding.powered_by_url + '" target="_blank" rel="noopener" class="trcl-powered-by">' +
@@ -152,6 +191,20 @@
             // Close chat.
             $(document).on('click', '#trcl-chat-close', function () {
                 self.closeWidget();
+            });
+
+            // Expand / collapse (v2.1, desktop only).
+            $(document).on('click', '#trcl-chat-expand', function () {
+                var $win      = $('#trcl-chat-window');
+                var expanded  = $win.toggleClass('trcl-chat-window--expanded')
+                                    .hasClass('trcl-chat-window--expanded');
+
+                $(this)
+                    .attr('aria-pressed', expanded ? 'true' : 'false')
+                    .attr('aria-label', expanded ? self.str('collapse_chat') : self.str('expand_chat'))
+                    .toggleClass('trcl-chat-expand--active', expanded);
+
+                self.scrollToBottom();
             });
 
             // Send message.
@@ -391,11 +444,6 @@
                         if (response.quick_replies && response.quick_replies.length > 0) {
                             self.renderQuickReplies(response.quick_replies);
                         }
-
-                        // Check proxy meta for upgrade prompt (server-side limits).
-                        if (response.meta && response.meta.upgrade_prompt) {
-                            self.showUpgradePrompt();
-                        }
                     } else {
                         self.handleError(response);
                     }
@@ -406,7 +454,7 @@
                     if (xhr.status === 429) {
                         var body = xhr.responseJSON || {};
                         if (body.code === 'SERVICE_LIMIT_REACHED') {
-                            self.showLimitReached(body.data && body.data.upgrade_url ? body.data.upgrade_url : trcl_ajax.upgrade_url);
+                            self.showLimitReached();
                             return;
                         }
                     }
@@ -610,9 +658,11 @@
         /**
          * Show limit reached banner (triggered by server-side proxy 429).
          *
-         * @param {string} upgradeUrl URL to upgrade page.
+         * TODO(D11): when the wizard 2-path lands, this banner should
+         * surface Cloud (continue with subscription) / BYOK (use your
+         * own API key) options instead of a flat dead-end.
          */
-        showLimitReached: function (upgradeUrl) {
+        showLimitReached: function () {
             this.limitReached = true;
             $('#trcl-chat-input').prop('disabled', true).attr('placeholder', this.str('limit_reached'));
             $('#trcl-chat-send').prop('disabled', true);
@@ -620,24 +670,10 @@
             var $banner = $(
                 '<div class="trcl-limit-banner">' +
                     '<p>' + this.str('limit_reached') + '</p>' +
-                    '<a href="' + (upgradeUrl || trcl_ajax.upgrade_url) + '" target="_blank">' +
-                        this.str('upgrade_now') +
-                    '</a>' +
                 '</div>'
             );
 
             $('.trcl-chat-input-area').before($banner);
-        },
-
-        /**
-         * Show upgrade prompt (soft upsell from proxy meta).
-         */
-        showUpgradePrompt: function () {
-            // Subtle message, not blocking.
-            this.addMessage('assistant',
-                'You\'re approaching your monthly limit. ' +
-                '<a href="' + trcl_ajax.upgrade_url + '" target="_blank">Upgrade for unlimited conversations</a>.'
-            );
         },
 
         /**
@@ -649,7 +685,7 @@
             var errorMsg = response.error || this.str('error_message');
 
             if (response.error_code === 'SERVICE_LIMIT_REACHED' || response.code === 'SERVICE_LIMIT_REACHED') {
-                this.showLimitReached(response.upgrade_url || trcl_ajax.upgrade_url);
+                this.showLimitReached();
                 this.addMessage('assistant', errorMsg);
             } else {
                 this.addMessage('assistant', errorMsg);
@@ -815,6 +851,42 @@
          */
         str: function (key) {
             return (trcl_ajax.strings && trcl_ajax.strings[key]) || key;
+        },
+
+        /**
+         * HTML-escape a string for safe insertion into innerHTML / string-
+         * concatenated markup. Used by render() for merchant-supplied values
+         * (e.g. privacy notice text + URL) so a stray "<" / "&" / quote can
+         * never break out of the surrounding markup.
+         *
+         * @since 2.0.0
+         * @param {string|*} s
+         * @returns {string}
+         */
+        escapeHtml: function (s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[c];
+            });
+        },
+
+        /**
+         * Attribute-safe escape. Identical surface to escapeHtml; kept
+         * as a separate symbol so the call sites read like the HTML spec
+         * (text contexts vs attribute contexts) and so we can tighten one
+         * without disturbing the other.
+         *
+         * @since 2.0.0
+         * @param {string|*} s
+         * @returns {string}
+         */
+        escapeAttr: function (s) {
+            return this.escapeHtml(s);
         }
     };
 

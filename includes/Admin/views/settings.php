@@ -1,6 +1,20 @@
 <?php
 /**
- * Settings admin view.
+ * Settings admin view (tabbed).
+ *
+ * Tabs:
+ *   - General    — behaviour (chat enabled, attribution badge,
+ *                  quick replies, page visibility).
+ *   - Appearance — widget look & feel (colours, position, dimensions,
+ *                  assistant name, welcome message, font). v2.1.
+ *   - Content    — page indexing controls for the AI assistant
+ *                  (which post types to index, per-page selection,
+ *                  auto-reindex, manual reindex button, status).
+ *
+ * Both tabs render their own <form> posting to options.php with the
+ * same nonce / option group (`trcl_settings`). Each form only includes
+ * the fields it owns; WordPress's Settings API saves them per-field
+ * without disturbing settings from the other tab.
  *
  * @package TrillChatLite\Admin
  * @since 1.0.0
@@ -12,24 +26,67 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $trcl_chat_enabled    = get_option( 'trcl_chat_enabled', '1' );
-$trcl_widget_position = get_option( 'trcl_widget_position', 'bottom-right' );
-$trcl_widget_color    = get_option( 'trcl_widget_color', '#10B981' );
-$trcl_welcome_message = get_option( 'trcl_welcome_message', '' );
 $trcl_show_powered_by = get_option( 'trcl_show_powered_by', '0' );
 $trcl_skip_checkout   = get_option( 'trcl_skip_checkout', '0' );
 $trcl_skip_account    = get_option( 'trcl_skip_account', '0' );
 
 // Resolve the default at render-time from the Settings class so the UI
 // stays in sync with register_setting() without duplicating the list.
-$trcl_settings_controller = new \TrillChatLite\Admin\Settings();
+$trcl_settings_controller   = new \TrillChatLite\Admin\Settings();
 $trcl_initial_quick_replies = get_option(
     'trcl_initial_quick_replies',
     $trcl_settings_controller->get_default_quick_replies_raw()
 );
+
+// Tab selector — defaults to General.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only tab routing.
+$trcl_active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
+if ( ! in_array( $trcl_active_tab, [ 'general', 'appearance', 'content', 'privacy' ], true ) ) {
+    $trcl_active_tab = 'general';
+}
+
+$trcl_base_url       = admin_url( 'admin.php?page=trcl-settings' );
+$trcl_general_url    = add_query_arg( 'tab', 'general', $trcl_base_url );
+$trcl_appearance_url = add_query_arg( 'tab', 'appearance', $trcl_base_url );
+$trcl_content_url    = add_query_arg( 'tab', 'content', $trcl_base_url );
+$trcl_privacy_url    = add_query_arg( 'tab', 'privacy', $trcl_base_url );
 ?>
 
 <div class="wrap tcl-settings-page">
     <h1><?php esc_html_e( 'Trill AI Product Chat — Settings', 'trill-ai-chat-lite' ); ?></h1>
+
+    <h2 class="nav-tab-wrapper">
+        <a href="<?php echo esc_url( $trcl_general_url ); ?>"
+           class="nav-tab <?php echo $trcl_active_tab === 'general' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e( 'General', 'trill-ai-chat-lite' ); ?>
+        </a>
+        <a href="<?php echo esc_url( $trcl_appearance_url ); ?>"
+           class="nav-tab <?php echo $trcl_active_tab === 'appearance' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e( 'Appearance', 'trill-ai-chat-lite' ); ?>
+        </a>
+        <a href="<?php echo esc_url( $trcl_content_url ); ?>"
+           class="nav-tab <?php echo $trcl_active_tab === 'content' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e( 'Content', 'trill-ai-chat-lite' ); ?>
+        </a>
+        <a href="<?php echo esc_url( $trcl_privacy_url ); ?>"
+           class="nav-tab <?php echo $trcl_active_tab === 'privacy' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e( 'Privacy', 'trill-ai-chat-lite' ); ?>
+        </a>
+    </h2>
+
+    <?php if ( $trcl_active_tab === 'appearance' ) : ?>
+
+        <?php include __DIR__ . '/settings-appearance.php'; ?>
+
+    <?php elseif ( $trcl_active_tab === 'content' ) : ?>
+
+        <?php include __DIR__ . '/settings-content.php'; ?>
+
+    <?php elseif ( $trcl_active_tab === 'privacy' ) : ?>
+
+        <?php include __DIR__ . '/settings-privacy.php'; ?>
+
+    <?php else : ?>
 
     <form method="post" action="options.php">
         <?php settings_fields( 'trcl_settings' ); ?>
@@ -47,29 +104,8 @@ $trcl_initial_quick_replies = get_option(
                 </td>
             </tr>
 
-            <!-- Widget Position -->
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Widget Position', 'trill-ai-chat-lite' ); ?></th>
-                <td>
-                    <select name="trcl_widget_position">
-                        <option value="bottom-right" <?php selected( $trcl_widget_position, 'bottom-right' ); ?>>
-                            <?php esc_html_e( 'Bottom Right', 'trill-ai-chat-lite' ); ?>
-                        </option>
-                        <option value="bottom-left" <?php selected( $trcl_widget_position, 'bottom-left' ); ?>>
-                            <?php esc_html_e( 'Bottom Left', 'trill-ai-chat-lite' ); ?>
-                        </option>
-                    </select>
-                </td>
-            </tr>
-
-            <!-- Widget Colour -->
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Widget Colour', 'trill-ai-chat-lite' ); ?></th>
-                <td>
-                    <input type="color" name="trcl_widget_color" value="<?php echo esc_attr( $trcl_widget_color ); ?>" />
-                    <p class="description"><?php esc_html_e( 'Primary colour for the chat widget.', 'trill-ai-chat-lite' ); ?></p>
-                </td>
-            </tr>
+            <!-- Position, colours, dimensions, assistant name and welcome
+                 message moved to the Appearance tab in 2.1. -->
 
             <!-- Show "Powered by Trill AI" badge -->
             <tr>
@@ -80,15 +116,6 @@ $trcl_initial_quick_replies = get_option(
                         <?php esc_html_e( 'Display "Powered by Trill AI" in the chat widget footer', 'trill-ai-chat-lite' ); ?>
                     </label>
                     <p class="description"><?php esc_html_e( 'Optional. Show a small attribution link in the chat widget.', 'trill-ai-chat-lite' ); ?></p>
-                </td>
-            </tr>
-
-            <!-- Welcome Message -->
-            <tr>
-                <th scope="row"><?php esc_html_e( 'Welcome Message', 'trill-ai-chat-lite' ); ?></th>
-                <td>
-                    <textarea name="trcl_welcome_message" rows="3" cols="50" class="large-text"><?php echo esc_textarea( $trcl_welcome_message ); ?></textarea>
-                    <p class="description"><?php esc_html_e( 'The first message shown when a visitor opens the chat.', 'trill-ai-chat-lite' ); ?></p>
                 </td>
             </tr>
 
@@ -124,19 +151,5 @@ $trcl_initial_quick_replies = get_option(
         <?php submit_button(); ?>
     </form>
 
-    <!-- Lite Limitations Notice -->
-    <div class="trcl-card" style="background: #f0f6fc; border: 1px solid #c3c4c7; padding: 16px 20px; border-radius: 4px; margin-top: 20px;">
-        <h3 style="margin-top: 0;"><?php esc_html_e( 'Lite Version Limitations', 'trill-ai-chat-lite' ); ?></h3>
-        <p><?php esc_html_e( 'The free version includes basic chat and product search. Upgrade to unlock:', 'trill-ai-chat-lite' ); ?></p>
-        <ul style="list-style: disc; padding-left: 20px;">
-            <li><?php esc_html_e( 'Unlimited conversations', 'trill-ai-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Order tracking', 'trill-ai-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Advanced analytics', 'trill-ai-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Custom branding (remove "Powered by" badge)', 'trill-ai-chat-lite' ); ?></li>
-            <li><?php esc_html_e( 'Priority email support', 'trill-ai-chat-lite' ); ?></li>
-        </ul>
-        <a href="<?php echo esc_url( \TrillChatLite\Lite\LiteConfig::getUpgradeUrl( 'settings_page' ) ); ?>" target="_blank" class="button button-primary">
-            <?php esc_html_e( 'Upgrade Now &rarr;', 'trill-ai-chat-lite' ); ?>
-        </a>
-    </div>
+    <?php endif; ?>
 </div>

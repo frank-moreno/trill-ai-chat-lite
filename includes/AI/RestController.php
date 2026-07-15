@@ -20,8 +20,17 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+use TrillChatLite\Analytics\AnalyticsRecorder;
+use TrillChatLite\Content\ContentSearch;
 use TrillChatLite\Database\DbManager;
+use TrillChatLite\Leads\LeadCaptureService;
+use TrillChatLite\Leads\LeadIntentDetector;
 use TrillChatLite\Lite\LiteConfig;
+use TrillChatLite\Lite\TrialRegistration;
+use TrillChatLite\Search\ProductSearch;
+use TrillChatLite\WooCommerce\CartContext;
+use TrillChatLite\WooCommerce\OrderIntentDetector;
+use TrillChatLite\WooCommerce\OrderLookup;
 
 /**
  * REST Controller — Lite API endpoints.
@@ -75,6 +84,51 @@ class RestController {
     private PromptBuilder $prompt_builder;
 
     /**
+     * Product search service.
+     *
+     * @var ProductSearch
+     */
+    private ProductSearch $search;
+
+    /**
+     * Content search service (v2.0 Block 1 — page indexing).
+     *
+     * @var ContentSearch
+     */
+    private ContentSearch $content_search;
+
+    /**
+     * Cart context provider (v2.0 Block 3 slice 4 — cart-aware chat).
+     *
+     * @var CartContext
+     */
+    private CartContext $cart_context;
+
+    /**
+     * Lead intent detector + capture service (v2.0 Block 4).
+     *
+     * @var LeadIntentDetector
+     */
+    private LeadIntentDetector $lead_detector;
+
+    /**
+     * @var LeadCaptureService
+     */
+    private LeadCaptureService $lead_capture;
+
+    /**
+     * Order tracking services (v2.0 Block 5).
+     *
+     * @var OrderIntentDetector
+     */
+    private OrderIntentDetector $order_intent;
+
+    /**
+     * @var OrderLookup
+     */
+    private OrderLookup $order_lookup;
+
+    /**
      * Response formatter.
      *
      * @var ResponseFormatter
@@ -91,6 +145,13 @@ class RestController {
         $this->proxy          = new ProxyClient();
         $this->prompt_builder = new PromptBuilder();
         $this->formatter      = new ResponseFormatter();
+        $this->search         = new ProductSearch();
+        $this->content_search = new ContentSearch();
+        $this->cart_context   = new CartContext();
+        $this->lead_detector  = new LeadIntentDetector();
+        $this->lead_capture   = new LeadCaptureService();
+        $this->order_intent   = new OrderIntentDetector();
+        $this->order_lookup   = new OrderLookup();
     }
 
     /**
@@ -202,6 +263,11 @@ class RestController {
                 }
 
                 $is_new_conversation = true;
+
+                // Block 3 — record chat_started event so the dashboard
+                // analytics layer can attribute later orders to this
+                // visit. Fire-and-forget; never blocks the chat flow.
+                ( new AnalyticsRecorder() )->record_chat_started( $session_id, $user_id );
             } else {
                 // Validate existing session.
                 if ( ! preg_match( self::UUID_PATTERN, $session_id ) ) {
@@ -234,8 +300,8 @@ class RestController {
             }
 
             // 5. Search relevant products.
-            $is_product_msg  = $this->is_product_query( $message );
-            $product_results = $is_product_msg ? $this->search_products( $message ) : [];
+            $is_product_msg  = $this->search->is_product_query( $message );
+            $product_results = $is_product_msg ? $this->search->search( $message ) : [];
 
             trcl_log( 'Product search result', 'debug', [
                 'message'        => $message,
@@ -244,34 +310,160 @@ class RestController {
                 'product_names'  => array_column( $product_results, 'name' ),
             ] );
 
-            // 6. Build context for proxy.
+            // 5b. Search relevant page / FAQ / policy content
+            //     (v2.0 Block 1 — page indexing). Intent gated:
+            //     skipped for greetings and when product search
+            //     succeeded unless the message clearly asks about
+            //     a store policy / FAQ.
+            $content_results = [];
+            if ( $this->content_search->should_search( $message, ! empty( $product_results ) ) ) {
+                $content_results = $this->content_search->search( $message, 3 );
+            }
+
+            trcl_log( 'Content search result', 'debug', [
+                'message'         => $message,
+                'content_found'   => count( $content_results ),
+                'content_titles'  => array_column( $content_results, 'title' ),
+            ] );
+
+            // 6. Build system prompt with store + content + product context.
             $store_context = $this->build_store_context();
             $this->prompt_builder->with_store_context( $store_context );
-
-            // 6b. Feed guardrails with the same store metadata (auto-generated boundaries).
             $this->prompt_builder->with_guardrails_context( $store_context );
+
+            if ( ! empty( $content_results ) ) {
+                $this->prompt_builder->with_content_context( $content_results );
+            }
 
             if ( ! empty( $product_results ) ) {
                 $this->prompt_builder->with_product_context( $product_results );
             } elseif ( $is_product_msg ) {
-                // Search was performed but no products found — inform the AI.
                 $this->prompt_builder->with_empty_search_result();
             }
 
-            // Get conversation history.
-            $history = $this->db->get_messages( $session_id, 10 );
-            $this->prompt_builder->with_history( $history );
+            // 5c. Cart context (v2.0 Block 3 slice 4 — cart-aware chat).
+            //     Always injected when WC is loaded and the visitor has
+            //     anything in their cart. Lets Robin answer "what is in
+            //     my cart", "how much is my total", and suggest items
+            //     that complement what is already added.
+            $cart = $this->cart_context->get_current_cart();
+            if ( ! empty( $cart ) ) {
+                $this->prompt_builder->with_cart_context( $cart );
+            }
 
-            $proxy_context = $this->prompt_builder->build_context();
-
-            trcl_log( 'Proxy context built', 'debug', [
-                'has_system_prompt' => ! empty( $proxy_context['system_prompt'] ),
-                'has_products'      => ! empty( $proxy_context['products'] ),
-                'system_prompt_len' => mb_strlen( $proxy_context['system_prompt'] ?? '' ),
+            trcl_log( 'Cart context result', 'debug', [
+                'cart_items_count' => isset( $cart['item_count'] ) ? (int) $cart['item_count'] : 0,
+                'cart_total'       => isset( $cart['total'] ) ? (float) $cart['total'] : 0.0,
             ] );
 
-            // 7. Send to proxy.
-            $ai_response = $this->proxy->send_message( $message, $session_id, $proxy_context );
+            // 5d. Lead capture (v2.0 Block 4).
+            //
+            //  - First, if the previous assistant turn carried a
+            //    lead_offer marker AND the current user message
+            //    contains a plausible email, capture the lead
+            //    immediately with the intent stored on that prior
+            //    turn. This handles the visitor replying with
+            //    "yes, francisco@example.com" after Robin offered.
+            //
+            //  - Then, detect a new lead-capture opportunity from
+            //    THIS user message. If matched, instruct Robin to
+            //    offer the email capture and remember the intent so
+            //    the next turn's assistant row gets tagged.
+            $lead_offer_for_this_turn = $this->maybe_capture_lead_from_email_reply( $session_id, $message );
+            $detected_intent          = $this->lead_detector->detect( $message, $product_results );
+
+            $intent_for_storage = '';
+            $intent_product_id  = 0;
+            $consent_text       = '';
+
+            if ( $detected_intent['type'] !== LeadIntentDetector::INTENT_NONE ) {
+                $intent_for_storage = $detected_intent['type'];
+                $intent_product_id  = (int) ( $detected_intent['product_id'] ?? 0 );
+                $consent_text       = $this->build_consent_text( $intent_for_storage );
+
+                $this->prompt_builder->with_lead_offer(
+                    $intent_for_storage,
+                    $intent_product_id,
+                    $consent_text
+                );
+            }
+
+            trcl_log( 'Lead capture state', 'debug', [
+                'detected_intent'   => $intent_for_storage ?: 'none',
+                'product_id'        => $intent_product_id,
+                'captured_on_reply' => $lead_offer_for_this_turn,
+            ] );
+
+            // 5e. Order tracking (v2.0 Block 5).
+            //
+            //  Three resolution paths, in priority order:
+            //    (A) Logged-in user with an explicit order id in their
+            //        message → verified by user_id, inject order.
+            //    (B) Logged-in user with intent but no id → return
+            //        their most recent orders for context.
+            //    (C) Guest with order_id AND email in the same message
+            //        → verified via OrderLookup::find_by_id_and_email.
+            //    (D) Guest with an "email reply" to a previous
+            //        "verification needed" assistant turn → re-attempt
+            //        verification using the email + remembered order_id.
+            //    (E) Guest with intent but no email yet → render the
+            //        ORDER VERIFICATION NEEDED section so Robin asks.
+            //
+            //  Any verification failure (mismatched email, missing
+            //  order) collapses to (E) silently — we never leak the
+            //  existence of an order to an unverified caller.
+            $order_pending_for_storage = 0;
+            $verified_orders           = $this->resolve_order_context(
+                $session_id,
+                $message,
+                $order_pending_for_storage
+            );
+
+            if ( ! empty( $verified_orders ) ) {
+                $this->prompt_builder->with_order_context( $verified_orders );
+            } elseif ( $order_pending_for_storage > 0 || $this->order_intent->is_order_status_intent( $message ) ) {
+                $this->prompt_builder->with_order_email_required( $order_pending_for_storage );
+            }
+
+            trcl_log( 'Order tracking state', 'debug', [
+                'verified_orders'   => count( $verified_orders ),
+                'pending_order_id'  => $order_pending_for_storage,
+            ] );
+
+            $system_prompt = $this->prompt_builder->build();
+
+            // 7. Lazy trial registration fallback. The Activator and the
+            //    admin_init retry hook should already have run, but if a
+            //    front-end visitor arrives before either does (rare edge
+            //    case on a fresh activate), try one more time here.
+            TrialRegistration::ensure_registered();
+
+            // 8. Build the messages[] array for the stateless backend.
+            //    - First: system prompt with persona, guardrails, products.
+            //    - Then: last N turns of history (already includes the user
+            //      message we just stored on step 4).
+            $history = $this->db->get_conversation_history(
+                $session_id,
+                LiteConfig::MAX_HISTORY_MESSAGES
+            );
+
+            $messages = array_merge(
+                [ [ 'role' => 'system', 'content' => $system_prompt ] ],
+                $history
+            );
+
+            trcl_log( 'Built messages payload', 'debug', [
+                'session_id'          => $session_id,
+                'message_count'       => count( $messages ),
+                'system_prompt_bytes' => mb_strlen( $system_prompt ),
+                'history_turns'       => count( $history ),
+                'products_found'      => count( $product_results ),
+                'content_found'       => count( $content_results ),
+                'cart_items'          => isset( $cart['item_count'] ) ? (int) $cart['item_count'] : 0,
+            ] );
+
+            // 9. Send to Trill Cloud backend.
+            $ai_response = $this->proxy->send_message( $messages, $session_id );
 
             if ( ! $ai_response['success'] ) {
                 trcl_log( 'Proxy request failed', 'error', [
@@ -281,27 +473,76 @@ class RestController {
 
                 $error_code = $ai_response['error_code'] ?? 'AI_ERROR';
 
-                // Handle proxy 429 (server-side limit reached) gracefully.
-                if ( $error_code === 'LIMIT_REACHED' ) {
+                // Trial monthly cap reached → 429 with upgrade_url for the
+                // widget to render a "Get more conversations" CTA.
+                if ( $error_code === 'TRIAL_EXHAUSTED' ) {
                     return new \WP_REST_Response( [
                         'success'     => false,
-                        'error'       => __( 'You have reached your monthly conversation limit. Upgrade for unlimited conversations.', 'trill-ai-chat-lite' ),
-                        'error_code'  => 'SERVICE_LIMIT_REACHED',
-                        'upgrade_url' => LiteConfig::getUpgradeUrl( 'api_limit' ),
+                        'error'       => $ai_response['error'] ?? __( 'Monthly trial limit reached.', 'trill-ai-chat-lite' ),
+                        'error_code'  => 'TRIAL_EXHAUSTED',
+                        'upgrade_url' => $ai_response['upgrade_url'] ?? LiteConfig::PRICING_URL,
+                        'reset_at'    => $ai_response['reset_at'] ?? '',
                     ], 429 );
                 }
 
+                if ( $error_code === 'RATE_LIMITED' ) {
+                    return new \WP_REST_Response( [
+                        'success'             => false,
+                        'error'               => $ai_response['error'] ?? __( 'Too many requests.', 'trill-ai-chat-lite' ),
+                        'error_code'          => 'RATE_LIMITED',
+                        'retry_after_seconds' => $ai_response['retry_after_seconds'] ?? 0,
+                    ], 429 );
+                }
+
+                // AUTH_INVALID indicates a corrupted local secret. Clear it
+                // so the next admin page load re-registers cleanly. The
+                // current request still fails — UX trade-off accepted.
+                if ( $error_code === 'AUTH_INVALID' ) {
+                    \TrillChatLite\Lite\TrialSecretStore::clear_secret();
+                }
+
+                $http_status = isset( $ai_response['http_status'] )
+                    ? (int) $ai_response['http_status']
+                    : 502;
                 return $this->formatter->format_error(
                     $ai_response['error'] ?? __( 'AI service temporarily unavailable.', 'trill-ai-chat-lite' ),
                     $error_code,
-                    502
+                    $http_status >= 400 ? $http_status : 502
                 );
             }
 
-            // 8. Store AI response.
-            $ai_content    = $ai_response['message']['content'];
-            $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content );
+            // 10. Store AI response.
+            //     Stamp the assistant message metadata with any pending
+            //     state the next user turn will need:
+            //       - lead_offer       (Block 4): intent we asked Robin
+            //                                     to surface this turn.
+            //       - order_pending    (Block 5): unverified order id
+            //                                     the visitor referenced
+            //                                     so we can resume
+            //                                     verification when
+            //                                     they reply with email.
+            $ai_content   = $ai_response['reply'];
+            $message_meta = [];
+            $meta_payload = [];
 
+            if ( $intent_for_storage !== '' ) {
+                $meta_payload['lead_offer'] = [
+                    'type'         => $intent_for_storage,
+                    'product_id'   => $intent_product_id,
+                    'consent_text' => $consent_text,
+                ];
+            }
+            if ( $order_pending_for_storage > 0 && empty( $verified_orders ) ) {
+                $meta_payload['order_pending'] = [
+                    'order_id' => $order_pending_for_storage,
+                ];
+            }
+
+            if ( ! empty( $meta_payload ) ) {
+                $message_meta['metadata'] = $meta_payload;
+            }
+
+            $ai_message_id = $this->db->create_message( $session_id, 'assistant', $ai_content, $message_meta );
             if ( ! $ai_message_id ) {
                 trcl_log( 'Failed to store AI message (response still returned)', 'warning', [
                     'session_id' => $session_id,
@@ -309,14 +550,25 @@ class RestController {
                 $ai_message_id = 0;
             }
 
-            // 9. Format and return response.
+            // 11. Stash the X-Trill-Trial-Remaining value for the dashboard
+            //     widget. Don't fail the request if the option write fails.
+            if ( isset( $ai_response['trial_remaining'] ) ) {
+                \update_option(
+                    LiteConfig::OPT_TRIAL_REMAINING,
+                    (int) $ai_response['trial_remaining'],
+                    false
+                );
+            }
+
+            // 12. Format and return.
             $processing_time = microtime( true ) - $start_time;
 
             trcl_log( 'Message processed successfully', 'info', [
-                'session_id'       => $session_id,
-                'processing_time'  => round( $processing_time, 3 ),
-                'is_new'           => $is_new_conversation,
-                'products_found'   => count( $product_results ),
+                'session_id'      => $session_id,
+                'processing_time' => round( $processing_time, 3 ),
+                'is_new'          => $is_new_conversation,
+                'products_found'  => count( $product_results ),
+                'trial_remaining' => $ai_response['trial_remaining'] ?? null,
             ] );
 
             $response_data = $this->formatter->format(
@@ -327,9 +579,10 @@ class RestController {
                 $product_results
             );
 
-            // Add proxy meta if available.
-            if ( ! empty( $ai_response['meta'] ) ) {
-                $response_data['meta'] = $ai_response['meta'];
+            if ( isset( $ai_response['trial_remaining'] ) ) {
+                $response_data['meta'] = [
+                    'trial_remaining' => (int) $ai_response['trial_remaining'],
+                ];
             }
 
             return new \WP_REST_Response( $response_data, 200 );
@@ -633,394 +886,168 @@ class RestController {
     }
 
     /**
-     * Search for products relevant to the message.
+     * If the previous assistant turn offered a lead-capture and the
+     * current user message contains a plausible email, capture the
+     * lead with the intent stored on that prior turn.
      *
-     * Uses WooCommerce native search as primary strategy, then falls back
-     * to taxonomy-based search (categories/tags) if no results are found.
+     * Idempotent at the DB layer (LeadCaptureService::capture skips
+     * duplicates on email+session+intent).
      *
-     * @param string $message User message.
-     * @return array Product results or empty array.
+     * @since 2.0.0
+     *
+     * @param string $session_id Current chat session UUID.
+     * @param string $message    The user message we just received.
+     * @return int Lead row id, or 0 if no capture happened.
      */
-    private function search_products( string $message ): array {
-        if ( ! function_exists( 'wc_get_products' ) ) {
-            return [];
+    private function maybe_capture_lead_from_email_reply( string $session_id, string $message ): int {
+        $email = $this->lead_detector->extract_email( $message );
+        if ( $email === '' ) {
+            return 0;
         }
 
-        // Check if message is product-related.
-        if ( ! $this->is_product_query( $message ) ) {
-            return [];
+        $prior = $this->db->get_last_assistant_message( $session_id );
+        if ( ! $prior || empty( $prior->metadata ) ) {
+            return 0;
         }
 
-        try {
-            $search_query = $this->extract_search_query( $message );
-            $variants     = $this->get_search_variants( $search_query );
-            $products     = [];
-
-            // Primary: WooCommerce native full-text search with plural variants.
-            foreach ( $variants as $variant ) {
-                $products = \wc_get_products( [
-                    'status' => 'publish',
-                    'limit'  => 5,
-                    's'      => $variant,
-                ] );
-                if ( ! empty( $products ) ) {
-                    break;
-                }
-            }
-
-            // Fallback: taxonomy search (categories + tags) when native returns empty.
-            if ( empty( $products ) ) {
-                foreach ( $variants as $variant ) {
-                    $products = $this->search_by_taxonomy( $variant );
-                    if ( ! empty( $products ) ) {
-                        break;
-                    }
-                }
-            }
-
-            $results = [];
-            foreach ( $products as $product ) {
-                $results[] = [
-                    'product_id' => $product->get_id(),
-                    'name'       => $product->get_name(),
-                    'price'      => trcl_format_price( $product->get_price() ),
-                    'url'        => $product->get_permalink(),
-                    'in_stock'   => $product->is_in_stock(),
-                ];
-            }
-
-            return $results;
-
-        } catch ( \Exception $e ) {
-            trcl_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
-            return [];
+        $meta = json_decode( (string) $prior->metadata, true );
+        if ( ! is_array( $meta ) || empty( $meta['lead_offer'] ) ) {
+            return 0;
         }
-    }
+        $offer = $meta['lead_offer'];
 
-    /**
-     * Fallback: search products by matching category or tag names.
-     *
-     * WooCommerce native 's' parameter only searches post_title and
-     * post_content. This method catches products that are tagged or
-     * categorised with the search term but whose title doesn't contain it
-     * (e.g. a "V-Neck Tee" in the "T-Shirts" category).
-     *
-     * @param string $query Cleaned search query.
-     * @param int    $limit Maximum results.
-     * @return \WC_Product[] Matching products or empty array.
-     */
-    private function search_by_taxonomy( string $query, int $limit = 5 ): array {
-        $words    = array_filter( explode( ' ', $query ) );
-        $products = [];
+        $intent_type = (string) ( $offer['type'] ?? '' );
+        if ( $intent_type === '' ) {
+            return 0;
+        }
 
-        // Search product categories.
-        $cat_terms = \get_terms( [
-            'taxonomy'   => 'product_cat',
-            'hide_empty' => true,
-            'search'     => $query,
+        $lead_id = $this->lead_capture->capture( $email, $intent_type, [
+            'session_id'     => $session_id,
+            'product_id'     => (int) ( $offer['product_id'] ?? 0 ),
+            'opt_in_consent' => (string) ( $offer['consent_text'] ?? '' ),
+            'metadata'       => [ 'source' => 'chat_reply' ],
         ] );
 
-        if ( ! \is_wp_error( $cat_terms ) && ! empty( $cat_terms ) ) {
-            $cat_slugs = \wp_list_pluck( $cat_terms, 'slug' );
-            $products  = \wc_get_products( [
-                'status'   => 'publish',
-                'limit'    => $limit,
-                'category' => $cat_slugs,
+        if ( $lead_id > 0 ) {
+            trcl_log( 'Lead captured from email reply', 'info', [
+                'lead_id'     => $lead_id,
+                'intent_type' => $intent_type,
             ] );
         }
 
-        // If still empty, try product tags.
-        if ( empty( $products ) ) {
-            $tag_terms = \get_terms( [
-                'taxonomy'   => 'product_tag',
-                'hide_empty' => true,
-                'search'     => $query,
-            ] );
+        return $lead_id;
+    }
 
-            if ( ! \is_wp_error( $tag_terms ) && ! empty( $tag_terms ) ) {
-                $tag_slugs = \wp_list_pluck( $tag_terms, 'slug' );
-                $products  = \wc_get_products( [
-                    'status' => 'publish',
-                    'limit'  => $limit,
-                    'tag'    => $tag_slugs,
-                ] );
-            }
-        }
+    /**
+     * Resolve the order context for this turn.
+     *
+     * Returns an array of formatted orders ready for PromptBuilder, OR
+     * empty + sets `$pending_order_id_out` to the order id we noticed
+     * but couldn't verify yet (so the caller can ask Robin to request
+     * email confirmation).
+     *
+     * Privacy invariants enforced here:
+     *   - Logged-in users only ever see orders bound to their own
+     *     wp_users.ID — checked at the lookup layer.
+     *   - Guests must supply email + order id in the same chat session
+     *     for any order to be exposed. find_by_id_and_email() enforces
+     *     the strict billing-email match.
+     *   - Any failure to verify silently collapses to "ask for email" —
+     *     we never reveal whether an order id exists in the system.
+     *
+     * @param string $session_id          Current chat session UUID.
+     * @param string $message             Current user message.
+     * @param int    $pending_order_id_out Set by reference when we
+     *                                     observed an order id but
+     *                                     couldn't verify it.
+     * @return array Orders formatted by OrderLookup::format_for_prompt.
+     */
+    private function resolve_order_context( string $session_id, string $message, int &$pending_order_id_out ): array {
+        $pending_order_id_out = 0;
 
-        // Last resort: try each word individually (with plural variants).
-        if ( empty( $products ) && count( $words ) > 1 ) {
-            foreach ( $words as $word ) {
-                if ( mb_strlen( $word ) < 3 ) {
-                    continue;
-                }
-                $word_variants = $this->get_search_variants( $word );
-                foreach ( $word_variants as $wv ) {
-                    $products = \wc_get_products( [
-                        'status' => 'publish',
-                        'limit'  => $limit,
-                        's'      => $wv,
-                    ] );
-                    if ( ! empty( $products ) ) {
-                        break 2;
+        $has_intent = $this->order_intent->is_order_status_intent( $message );
+        $msg_order  = $this->order_intent->extract_order_id( $message );
+        $msg_email  = $this->lead_detector->extract_email( $message );
+
+        // Path A & B — logged-in user.
+        $user_id = (int) \get_current_user_id();
+        if ( $user_id > 0 && ( $has_intent || $msg_order > 0 ) ) {
+            $orders = $this->order_lookup->find_for_logged_in_user( $user_id );
+            if ( ! empty( $orders ) ) {
+                $formatted = [];
+                foreach ( $orders as $order ) {
+                    // If the visitor referenced a specific order, prefer
+                    // showing that one rather than the latest few.
+                    if ( $msg_order > 0 && method_exists( $order, 'get_id' ) && (int) $order->get_id() === $msg_order ) {
+                        return [ $this->order_lookup->format_for_prompt( $order ) ];
                     }
+                    $formatted[] = $this->order_lookup->format_for_prompt( $order );
+                }
+                return $formatted;
+            }
+            // Logged-in but no orders — fall through; nothing to leak.
+            return [];
+        }
+
+        // Path C — guest with order_id + email in the same message.
+        if ( $msg_order > 0 && $msg_email !== '' ) {
+            $order = $this->order_lookup->find_by_id_and_email( $msg_order, $msg_email );
+            if ( $order ) {
+                return [ $this->order_lookup->format_for_prompt( $order ) ];
+            }
+            // Email/order mismatch — pretend we don't know which order
+            // they meant. Re-prompt as if no email had been supplied.
+            $pending_order_id_out = $msg_order;
+            return [];
+        }
+
+        // Path D — guest email reply to a previous "verification needed" turn.
+        if ( $msg_email !== '' ) {
+            $prior = $this->db->get_last_assistant_message( $session_id );
+            if ( $prior && ! empty( $prior->metadata ) ) {
+                $prior_meta = json_decode( (string) $prior->metadata, true );
+                $remembered = is_array( $prior_meta )
+                    ? (int) ( $prior_meta['order_pending']['order_id'] ?? 0 )
+                    : 0;
+                if ( $remembered > 0 ) {
+                    $order = $this->order_lookup->find_by_id_and_email( $remembered, $msg_email );
+                    if ( $order ) {
+                        return [ $this->order_lookup->format_for_prompt( $order ) ];
+                    }
+                    $pending_order_id_out = $remembered;
+                    return [];
                 }
             }
         }
 
-        return $products;
+        // Path E — guest with intent but no enough info yet.
+        if ( $has_intent ) {
+            $pending_order_id_out = $msg_order;
+            return [];
+        }
+
+        return [];
     }
 
     /**
-     * Check if message is asking about products.
+     * Produce the exact opt-in consent line Robin should use for a
+     * given intent. Stored verbatim in trcl_leads.opt_in_consent so
+     * the merchant can show in a DSAR audit what the visitor agreed
+     * to.
      *
-     * Uses inverted logic: assumes any message COULD be product-related
-     * unless it clearly matches a non-product pattern (greetings, thanks,
-     * support requests, etc.). This is safer for an e-commerce chatbot
-     * where false negatives (missing a product query) are more costly
-     * than false positives (searching when unnecessary).
+     * @since 2.0.0
      *
-     * @param string $message User message.
-     * @return bool True if the message may be product-related.
+     * @param string $intent_type
+     * @return string
      */
-    private function is_product_query( string $message ): bool {
-        $message_lower = strtolower( trim( $message ) );
-
-        // Very short messages that are clearly not product queries.
-        $non_product_exact = [
-            'hi', 'hello', 'hey', 'hiya', 'yo',
-            'thanks', 'thank you', 'cheers', 'ta',
-            'bye', 'goodbye', 'see you', 'ciao',
-            'yes', 'no', 'ok', 'okay', 'sure', 'nope', 'yep',
-            'help', 'support', 'help me',
-        ];
-
-        if ( in_array( $message_lower, $non_product_exact, true ) ) {
-            return false;
+    private function build_consent_text( string $intent_type ): string {
+        if ( $intent_type === LeadIntentDetector::INTENT_OUT_OF_STOCK ) {
+            return __( 'If you give me your email, I\'ll only use it to notify you once when this item is back in stock.', 'trill-ai-chat-lite' );
         }
-
-        // Patterns that indicate non-product queries.
-        $non_product_patterns = [
-            '/^(hi|hello|hey|good\s+(morning|afternoon|evening))\b/i',
-            '/^(thanks?|thank\s+you|cheers)\b/i',
-            '/^(bye|goodbye|see\s+you|take\s+care)\b/i',
-            '/\b(opening\s+hours?|business\s+hours?|when\s+(are\s+you|do\s+you)\s+open)\b/i',
-            '/\b(contact|email|phone|call|speak\s+to|talk\s+to)\s+(a\s+)?(human|person|agent|someone|support|staff)\b/i',
-            '/\b(return\s+policy|refund\s+policy|shipping\s+policy|privacy\s+policy|terms\s+and\s+conditions)\b/i',
-            '/\b(track|tracking)\s+(my\s+)?(order|parcel|package|delivery)\b/i',
-            '/\b(who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do)\b/i',
-            '/\b(how\s+(long|much)\s+(does|do|is)\s+(delivery|shipping|postage))\b/i',
-            '/\b(where\s+is\s+my\s+order|order\s+status|my\s+order)\b/i',
-            '/\b(payment\s+method|pay\s+with|accept\s+(paypal|visa|mastercard|card))\b/i',
-            '/\b(cancel|change|amend)\s+(my\s+)?(order|subscription)\b/i',
-        ];
-
-        foreach ( $non_product_patterns as $pattern ) {
-            if ( preg_match( $pattern, $message_lower ) ) {
-                return false;
-            }
+        if ( $intent_type === LeadIntentDetector::INTENT_PRICE_DROP ) {
+            return __( 'If you give me your email, I\'ll only use it to notify you once if there is a sale or price drop on this item.', 'trill-ai-chat-lite' );
         }
-
-        // Everything else: assume it could be product-related.
-        return true;
-    }
-
-    /**
-     * Extract search query from user message.
-     *
-     * Strips conversational preamble and filler words, leaving only
-     * the terms likely to match WooCommerce product titles/descriptions.
-     *
-     * @param string $message User message.
-     * @return string Cleaned search query.
-     */
-    private function extract_search_query( string $message ): string {
-        $query = strtolower( $message );
-
-        // Remove conversational preambles (order matters: longest first).
-        $remove_phrases = [
-            // "I'm looking for / I am looking for" family.
-            "i'm looking for", 'i am looking for',
-            // "Do you have / sell" family.
-            'do you have any', 'do you have',
-            'do you sell any', 'do you sell',
-            'do you stock any', 'do you stock',
-            'do you carry any', 'do you carry',
-            // "Can / Could" family.
-            'can i buy', 'can i get', 'can i see',
-            'can you show me', 'can you recommend',
-            'could you show me', 'could you recommend',
-            // "Where / What" family.
-            'where can i find', 'where are the', 'where are your',
-            "what's the price of", 'what is the price of',
-            "what's available in", 'what is available in',
-            'what about', 'what kind of', 'what types of',
-            'what sort of',
-            // "Show / List" family.
-            'show me your', 'show me some', 'show me all', 'show me',
-            'list me your', 'list me all', 'list me', 'list your', 'list all',
-            // "Have you got" family (British English).
-            'have you got any', 'have you got',
-            'got any',
-            // "I want / need / would like" family.
-            'i want to buy', 'i want to see', 'i want some', 'i want',
-            'i need to buy', 'i need some', 'i need',
-            'i would like to see', 'i would like to buy',
-            'i would like some', 'i would like',
-            "i'd like to see", "i'd like to buy",
-            "i'd like some", "i'd like",
-            // "Tell me / Know about" family.
-            'tell me about your', 'tell me about',
-            'tell me more about', 'know about your',
-            // "Looking / Search" family.
-            'looking for some', 'looking for',
-            'search for', 'find me some', 'find me',
-            // "How much" family.
-            'how much is', 'how much are', 'how much do',
-            'how much does', 'how much for',
-            // "Are / Is there" family.
-            'are there any', 'is there any', 'is there a',
-            // "Recommend" family.
-            'any recommendations for', 'any good',
-            'recommend me some', 'recommend me',
-            'what do you recommend for', 'what do you recommend',
-            "what's popular in",
-            // "Please" family.
-            'please show me', 'please show', 'please find',
-            'please list',
-        ];
-
-        foreach ( $remove_phrases as $phrase ) {
-            $query = str_ireplace( $phrase, '', $query );
-        }
-
-        // Remove location/context suffixes that pollute the search term.
-        $remove_suffixes = [
-            'in your store', 'in the store', 'in your shop', 'in the shop',
-            'in this store', 'in this shop', 'on your website', 'on the website',
-            'on your site', 'on the site', 'on this site',
-            'in your catalogue', 'in the catalogue', 'in your catalog', 'in the catalog',
-            'in your collection', 'in the collection',
-            'in stock', 'available', 'for sale',
-            'that you sell', 'that you have', 'that you offer',
-            'you carry', 'you stock', 'you offer',
-            'right now', 'at the moment', 'currently', 'today',
-            'for me', 'for us',
-        ];
-
-        foreach ( $remove_suffixes as $suffix ) {
-            $query = str_ireplace( $suffix, '', $query );
-        }
-
-        // Remove filler words, punctuation, and articles.
-        $query = preg_replace( '/\b(a|an|the|some|any|please|just|maybe|all|your|my|this|that|those|these)\b/', '', $query );
-        $query = str_replace( [ '?', '!', '.', ',', ';', ':' ], '', $query );
-        $query = trim( preg_replace( '/\s+/', ' ', $query ) );
-
-        // If the cleaned query is empty or too short (< 2 chars), fall back to
-        // the longest word(s) from the original message as a last resort.
-        if ( mb_strlen( $query ) < 2 ) {
-            $fallback_words = array_filter(
-                explode( ' ', strtolower( preg_replace( '/[^a-zA-Z0-9\s\-]/', '', $message ) ) ),
-                function ( $w ) {
-                    return mb_strlen( $w ) >= 3;
-                }
-            );
-            if ( ! empty( $fallback_words ) ) {
-                // Sort by length descending — longest words are most likely product terms.
-                usort( $fallback_words, function ( $a, $b ) {
-                    return mb_strlen( $b ) - mb_strlen( $a );
-                } );
-                $query = implode( ' ', array_slice( $fallback_words, 0, 3 ) );
-            }
-        }
-
-        return $query ?: strtolower( $message );
-    }
-
-    /**
-     * Normalise a search term for WooCommerce: try the original and
-     * de-pluralised / stemmed variants.
-     *
-     * WooCommerce native search uses MySQL LIKE %term% which is literal,
-     * so "t-shirts" won't match "T-Shirt". This helper returns multiple
-     * forms so the caller can try each until one matches.
-     *
-     * Covers common English plural rules:
-     *  - ies → y   (accessories → accessory, hoodies handled by -s rule too)
-     *  - ves → f   (scarves → scarf)
-     *  - ses/xes/zes/ches/shes → remove trailing "es"
-     *  - generic -es  (dresses → dress)
-     *  - generic -s   (t-shirts → t-shirt)
-     *
-     * For multi-word queries each word is also de-pluralised individually
-     * and the result added as an extra variant.
-     *
-     * @param string $term Single or multi-word search term.
-     * @return string[] Array of term variants to try (original first).
-     */
-    private function get_search_variants( string $term ): array {
-        $variants = [ $term ];
-
-        // De-pluralise the whole term.
-        $singular = $this->depluralize( $term );
-        if ( $singular !== $term ) {
-            $variants[] = $singular;
-        }
-
-        // For multi-word terms, de-pluralise each word individually.
-        if ( strpos( $term, ' ' ) !== false ) {
-            $words   = explode( ' ', $term );
-            $stemmed = array_map( [ $this, 'depluralize' ], $words );
-            $joined  = implode( ' ', $stemmed );
-            if ( $joined !== $term ) {
-                $variants[] = $joined;
-            }
-        }
-
-        return array_unique( $variants );
-    }
-
-    /**
-     * Attempt to de-pluralise a single English word.
-     *
-     * @param string $word Single word.
-     * @return string Singular form (best effort) or original.
-     */
-    private function depluralize( string $word ): string {
-        $len = mb_strlen( $word );
-
-        // Too short to safely stem.
-        if ( $len < 4 ) {
-            return $word;
-        }
-
-        // -ies → -y  (accessories → accessory, categories → category).
-        if ( preg_match( '/[^aeiou]ies$/i', $word ) ) {
-            return preg_replace( '/ies$/i', 'y', $word );
-        }
-
-        // -ves → -f  (scarves → scarf, knives → knife).
-        if ( preg_match( '/ves$/i', $word ) && $len > 4 ) {
-            return preg_replace( '/ves$/i', 'f', $word );
-        }
-
-        // -ses, -xes, -zes, -ches, -shes → remove "es"
-        // (dresses→dress, boxes→box, watches→watch, brushes→brush).
-        if ( preg_match( '/(ss|x|z|ch|sh)es$/i', $word ) ) {
-            return preg_replace( '/es$/i', '', $word );
-        }
-
-        // Generic -es when word is long enough (shoes stays shoes→shoe OK).
-        if ( preg_match( '/[^s]es$/i', $word ) && $len > 4 ) {
-            return preg_replace( '/es$/i', '', $word );
-        }
-
-        // Generic -s (t-shirts→t-shirt, bags→bag).
-        if ( preg_match( '/[^s]s$/i', $word ) && $len > 3 ) {
-            return preg_replace( '/s$/i', '', $word );
-        }
-
-        return $word;
+        return __( 'If you give me your email, I\'ll only use it to send you one follow-up about this item.', 'trill-ai-chat-lite' );
     }
 
     /**

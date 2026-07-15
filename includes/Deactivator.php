@@ -59,6 +59,7 @@ class Deactivator {
         $hooks = [
             'trcl_cleanup_conversations',
             'trcl_index_products',
+            \TrillChatLite\Content\ContentIndexer::CRON_HOOK,
         ];
 
         foreach ( $hooks as $hook ) {
