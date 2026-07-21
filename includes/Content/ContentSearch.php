@@ -14,6 +14,11 @@
  *      innodb_ft_min_token_size, all-stopword queries). Slower but
  *      catches edge cases that would otherwise miss.
  *
+ * Results are diversified by source (since 2.3.0): a wider pool is
+ * fetched and only the best-scoring chunk per page survives, so a
+ * page saturated with a shared term (e.g. "policy") cannot crowd
+ * every other page out of the top results.
+ *
  * Intent gating happens in `should_search()`:
  *
  *   - SKIP when product search already returned results (the shopper
@@ -74,6 +79,14 @@ class ContentSearch {
      * (e.g. "shipping") whose results FULLTEXT may rank low.
      */
     private const FULLTEXT_MIN_RESULTS = 2;
+
+    /**
+     * Rows fetched from the DB before source diversification. Wider
+     * than the returned limit so that a source whose chunks saturate
+     * the ranking (e.g. "policy" repeated across every Cookie Policy
+     * chunk) cannot crowd every other source out of the top results.
+     */
+    private const FETCH_POOL = 10;
 
     /**
      * Exact non-content messages that should short-circuit without
@@ -167,13 +180,20 @@ class ContentSearch {
         $limit = max( 1, min( 10, $limit ) );
 
         try {
-            $results = $this->fulltext_search( $normalised, $limit );
+            // Fetch a wider pool, then keep only the best chunk per
+            // source (post_id + post_type) so one keyword-saturated
+            // page can't fill every slot — e.g. "refund policy" must
+            // surface the Refund page even when Cookie/Privacy chunks
+            // out-score it on the shared term "policy".
+            $pool    = $this->fulltext_search( $normalised, self::FETCH_POOL );
+            $results = $this->diversify_by_source( $pool, $limit );
 
             // Top-up with LIKE fallback if FULLTEXT under-delivered
             // (very short query, all stopwords, etc.). Merge dedupes by id.
             if ( count( $results ) < self::FULLTEXT_MIN_RESULTS ) {
-                $like = $this->like_search( $normalised, $limit );
-                $results = $this->merge_unique( $results, $like, $limit );
+                $like    = $this->like_search( $normalised, self::FETCH_POOL );
+                $merged  = $this->merge_unique( $pool, $like, self::FETCH_POOL * 2 );
+                $results = $this->diversify_by_source( $merged, $limit );
             }
 
             // Light formatting pass — truncate display snippet for the
@@ -221,10 +241,10 @@ class ContentSearch {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table from $wpdb->prefix (trusted); values bound via prepare. Block-scoped for the multi-line statement.
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, title, snippet, url,
+                "SELECT id, post_id, post_type, title, snippet, url,
                         MATCH(title, snippet) AGAINST(%s IN NATURAL LANGUAGE MODE) AS score
                  FROM {$table}
                  WHERE MATCH(title, snippet) AGAINST(%s IN NATURAL LANGUAGE MODE) > %f
@@ -237,6 +257,7 @@ class ContentSearch {
             ),
             ARRAY_A
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         if ( ! is_array( $rows ) ) {
             return [];
@@ -258,10 +279,10 @@ class ContentSearch {
 
         $like = '%' . $wpdb->esc_like( $query ) . '%';
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table from $wpdb->prefix (trusted); values esc_like'd and bound via prepare. Block-scoped for the multi-line statement.
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, title, snippet, url,
+                "SELECT id, post_id, post_type, title, snippet, url,
                         CASE
                             WHEN title LIKE %s THEN 1.0
                             ELSE 0.5
@@ -277,11 +298,52 @@ class ContentSearch {
             ),
             ARRAY_A
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         if ( ! is_array( $rows ) ) {
             return [];
         }
         return $rows;
+    }
+
+    /**
+     * Keep only the highest-ranked chunk per source, preserving input
+     * order (input is already sorted by score, descending), capped at
+     * $limit distinct sources.
+     *
+     * A "source" is a post_id + post_type pair — two chunks of the
+     * same page collapse to the best one, freeing slots for other
+     * pages. Rows without source columns (defensive) pass through
+     * keyed by row id, i.e. never collapsed.
+     *
+     * @since 2.3.0
+     *
+     * @param array $rows  Ranked rows (best first).
+     * @param int   $limit Max distinct sources to return.
+     * @return array
+     */
+    private function diversify_by_source( array $rows, int $limit ): array {
+        $seen = [];
+        $out  = [];
+
+        foreach ( $rows as $row ) {
+            $post_id = (int) ( $row['post_id'] ?? 0 );
+            $key     = $post_id > 0
+                ? ( (string) ( $row['post_type'] ?? '' ) ) . ':' . $post_id
+                : 'row:' . (int) ( $row['id'] ?? 0 );
+
+            if ( isset( $seen[ $key ] ) ) {
+                continue;
+            }
+            $seen[ $key ] = true;
+            $out[]        = $row;
+
+            if ( count( $out ) >= $limit ) {
+                break;
+            }
+        }
+
+        return $out;
     }
 
     /**

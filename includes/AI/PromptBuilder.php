@@ -696,13 +696,12 @@ class PromptBuilder {
      * @return string Empty search prompt section.
      */
     private function build_empty_search_section(): string {
-        $store_url = $this->store_context['store_url'] ?? \get_site_url();
-
         $lines = [
             'PRODUCT SEARCH RESULT:',
             'A product search was performed but returned no matching results.',
             'Do NOT say you lack access to the catalogue — the search was executed successfully.',
-            sprintf( 'Suggest the customer try different search terms or browse the store at %s.', $store_url ),
+            'Do NOT paste raw URLs and do NOT tell the customer to browse the store themselves — helping them find things is YOUR job.',
+            'Instead: say the specific item was not found, then ask a clarifying question or suggest what the store does offer.',
         ];
 
         if ( ! empty( $this->store_context['top_categories'] ) ) {

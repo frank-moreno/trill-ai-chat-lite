@@ -49,6 +49,14 @@ class ProductSearch {
             return [];
         }
 
+        // Generic catalogue question ("what do you sell?") — a literal
+        // search on the extracted term ("products", "sell"…) matches
+        // nothing by definition, which leaves small catalogues looking
+        // empty. Answer with a storefront overview instead.
+        if ( $this->is_generic_catalogue_query( $message ) ) {
+            return $this->get_catalogue_overview();
+        }
+
         try {
             $search_query = $this->extract_search_query( $message );
             $variants     = $this->get_search_variants( $search_query );
@@ -76,23 +84,126 @@ class ProductSearch {
                 }
             }
 
-            $results = [];
-            foreach ( $products as $product ) {
-                $results[] = [
-                    'product_id' => $product->get_id(),
-                    'name'       => $product->get_name(),
-                    'price'      => trcl_format_price( $product->get_price() ),
-                    'url'        => $product->get_permalink(),
-                    'in_stock'   => $product->is_in_stock(),
-                ];
-            }
-
-            return $results;
+            return $this->format_results( $products );
 
         } catch ( \Exception $e ) {
             trcl_log( 'Product search failed', 'warning', [ 'error' => $e->getMessage() ] );
             return [];
         }
+    }
+
+    /**
+     * Check if the message is a generic catalogue question rather than
+     * a search for something specific — "what do you sell?", "what
+     * products do you have?", "show me your catalogue".
+     *
+     * These extract to literal terms ("products", "sell") that match
+     * nothing, so the caller answers them with get_catalogue_overview()
+     * instead of a doomed literal search. Especially visible in small
+     * catalogues, where no accidental match papers over the gap.
+     *
+     * @since 2.3.0
+     *
+     * @param string $message User message.
+     * @return bool
+     */
+    public function is_generic_catalogue_query( string $message ): bool {
+        $patterns = [
+            '/\bwhat\s+(products?|items?|plans?|services?)\s+(do\s+you|are\s+(there|available))\b/i',
+            '/\bwhat\s+do\s+you\s+(sell|offer|stock|carry)\b/i',
+            '/\bwhat\s+(kinds?|types?|sorts?)\s+of\s+(products?|items?|things)\s+do\s+you\b/i',
+            '/\bshow\s+me\s+(your|the)\s+(products?|catalogue|catalog|range|plans?)\b/i',
+            '/\bwhat\s+can\s+i\s+buy\b/i',
+            '/\bwhat(\'s|\s+is)\s+in\s+(your|the)\s+(store|shop|catalogue|catalog)\b/i',
+            '/\b(list|browse)\s+(all\s+)?(your\s+)?(products?|catalogue|catalog|plans?)\b/i',
+            '/\bdo\s+you\s+(have|sell)\s+any\s+products?\b/i',
+        ];
+
+        foreach ( $patterns as $pattern ) {
+            if ( preg_match( $pattern, $message ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Storefront overview for generic catalogue questions: featured
+     * products first, topped up with the most recent, capped at $limit.
+     *
+     * Same result shape as search(), so the caller's product-card
+     * rendering works unchanged.
+     *
+     * @since 2.3.0
+     *
+     * @param int $limit Maximum products to return.
+     * @return array Product results (possibly empty on an empty store).
+     */
+    private function get_catalogue_overview( int $limit = 5 ): array {
+        try {
+            $products = \wc_get_products( [
+                'status'   => 'publish',
+                'limit'    => $limit,
+                'featured' => true,
+            ] );
+
+            if ( count( $products ) < $limit ) {
+                $seen = [];
+                foreach ( $products as $product ) {
+                    $seen[ $product->get_id() ] = true;
+                }
+
+                $recent = \wc_get_products( [
+                    'status'  => 'publish',
+                    'limit'   => $limit,
+                    'orderby' => 'date',
+                    'order'   => 'DESC',
+                ] );
+
+                foreach ( $recent as $product ) {
+                    if ( count( $products ) >= $limit ) {
+                        break;
+                    }
+                    if ( isset( $seen[ $product->get_id() ] ) ) {
+                        continue;
+                    }
+                    $products[] = $product;
+                }
+            }
+
+            trcl_log( 'Catalogue overview served', 'debug', [
+                'count' => count( $products ),
+            ] );
+
+            return $this->format_results( $products );
+
+        } catch ( \Exception $e ) {
+            trcl_log( 'Catalogue overview failed', 'warning', [ 'error' => $e->getMessage() ] );
+            return [];
+        }
+    }
+
+    /**
+     * Map WC_Product objects to the narrow result shape consumed by
+     * RestController / PromptBuilder / product cards.
+     *
+     * @since 2.3.0
+     *
+     * @param \WC_Product[] $products Products.
+     * @return array
+     */
+    private function format_results( array $products ): array {
+        $results = [];
+        foreach ( $products as $product ) {
+            $results[] = [
+                'product_id' => $product->get_id(),
+                'name'       => $product->get_name(),
+                'price'      => trcl_format_price( $product->get_price() ),
+                'url'        => $product->get_permalink(),
+                'in_stock'   => $product->is_in_stock(),
+            ];
+        }
+        return $results;
     }
 
     /**

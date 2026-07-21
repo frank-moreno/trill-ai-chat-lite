@@ -245,6 +245,92 @@ trcl_assert(
 );
 
 // ---------------------------------------------------------------------
+// Step D: source diversification (2.3.0 — one chunk per source).
+// ---------------------------------------------------------------------
+echo "\nD. diversify_by_source() post-filter\n";
+
+$diversify = new \ReflectionMethod( \TrillChatLite\Content\ContentSearch::class, 'diversify_by_source' );
+$diversify->setAccessible( true );
+
+// Real-world scenario from the 2026-07-15 testserver diagnosis: Cookie
+// and Privacy chunks saturate "policy" and push Refund to 4th place.
+$saturated = [
+    [ 'id' => 1, 'post_id' => 10, 'post_type' => 'page', 'title' => 'Cookie Policy', 'snippet' => 'c1', 'url' => 'u', 'score' => 6.26 ],
+    [ 'id' => 2, 'post_id' => 11, 'post_type' => 'page', 'title' => 'Privacy Policy', 'snippet' => 'p1', 'url' => 'u', 'score' => 5.06 ],
+    [ 'id' => 3, 'post_id' => 10, 'post_type' => 'page', 'title' => 'Cookie Policy', 'snippet' => 'c2', 'url' => 'u', 'score' => 4.92 ],
+    [ 'id' => 4, 'post_id' => 12, 'post_type' => 'page', 'title' => 'Refund and Returns Policy', 'snippet' => 'r1', 'url' => 'u', 'score' => 4.61 ],
+    [ 'id' => 5, 'post_id' => 11, 'post_type' => 'page', 'title' => 'Privacy Policy', 'snippet' => 'p2', 'url' => 'u', 'score' => 4.10 ],
+];
+
+$diverse = $diversify->invoke( $search, $saturated, 3 );
+
+trcl_assert(
+    count( $diverse ) === 3,
+    'diversified output capped at limit (3)'
+);
+trcl_assert(
+    array_column( $diverse, 'title' ) === [ 'Cookie Policy', 'Privacy Policy', 'Refund and Returns Policy' ],
+    'Refund page enters top-3 once duplicate Cookie chunk collapses',
+    'got: ' . implode( ' | ', array_column( $diverse, 'title' ) )
+);
+trcl_assert(
+    (float) $diverse[0]['score'] === 6.26 && (float) $diverse[2]['score'] === 4.61,
+    'best chunk per source survives, score order preserved'
+);
+
+// Same source shared across post types must NOT collapse (page 10 vs
+// product_cat 10 are different sources).
+$cross_type = [
+    [ 'id' => 1, 'post_id' => 10, 'post_type' => 'page', 'title' => 'A', 'snippet' => 's', 'url' => 'u', 'score' => 2.0 ],
+    [ 'id' => 2, 'post_id' => 10, 'post_type' => 'product_cat', 'title' => 'B', 'snippet' => 's', 'url' => 'u', 'score' => 1.0 ],
+];
+trcl_assert(
+    count( $diversify->invoke( $search, $cross_type, 3 ) ) === 2,
+    'same post_id across different post_types treated as distinct sources'
+);
+
+// Rows without source columns (defensive) pass through uncollapsed.
+$no_source = [
+    [ 'id' => 7, 'title' => 'X', 'snippet' => 's', 'url' => 'u', 'score' => 1.0 ],
+    [ 'id' => 8, 'title' => 'Y', 'snippet' => 's', 'url' => 'u', 'score' => 0.5 ],
+];
+trcl_assert(
+    count( $diversify->invoke( $search, $no_source, 3 ) ) === 2,
+    'rows without post_id pass through keyed by row id'
+);
+
+// ---------------------------------------------------------------------
+// Step E: empty-search prompt section (2.3.0 — no raw URLs).
+// ---------------------------------------------------------------------
+echo "\nE. PromptBuilder empty-search section\n";
+
+$builder4 = new \TrillChatLite\AI\PromptBuilder();
+$builder4->with_store_context( [
+    'store_name'     => 'Test Store',
+    'store_url'      => 'https://example.test',
+    'top_categories' => [ 'Software Subscriptions' ],
+] );
+$builder4->with_empty_search_result();
+$prompt4 = $builder4->build();
+
+trcl_assert(
+    strpos( $prompt4, 'PRODUCT SEARCH RESULT:' ) !== false,
+    'empty-search section renders when search came back empty'
+);
+trcl_assert(
+    strpos( $prompt4, 'Do NOT paste raw URLs' ) !== false,
+    'empty-search section forbids raw URLs'
+);
+trcl_assert(
+    strpos( $prompt4, 'browse the store at' ) === false,
+    'empty-search section no longer tells the customer to browse a URL'
+);
+trcl_assert(
+    strpos( $prompt4, 'Software Subscriptions' ) !== false,
+    'empty-search section still offers the store categories'
+);
+
+// ---------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------
 echo "\n=======================================\n";

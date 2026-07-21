@@ -550,12 +550,20 @@ class RestController {
                 $ai_message_id = 0;
             }
 
-            // 11. Stash the X-Trill-Trial-Remaining value for the dashboard
-            //     widget. Don't fail the request if the option write fails.
+            // 11. Stash the X-Trill-Trial-Remaining / X-Trill-Trial-Cap
+            //     values for the dashboard widget. Don't fail the request
+            //     if the option writes fail.
             if ( isset( $ai_response['trial_remaining'] ) ) {
                 \update_option(
                     LiteConfig::OPT_TRIAL_REMAINING,
                     (int) $ai_response['trial_remaining'],
+                    false
+                );
+            }
+            if ( isset( $ai_response['trial_cap'] ) && (int) $ai_response['trial_cap'] > 0 ) {
+                \update_option(
+                    LiteConfig::OPT_TRIAL_CAP,
+                    (int) $ai_response['trial_cap'],
                     false
                 );
             }

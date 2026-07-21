@@ -54,6 +54,15 @@ class LiteConfig {
     public const TRIAL_REGISTER_PATH = '/v1/trial/register';
 
     /**
+     * Path of the secret rotation endpoint (2.3.0).
+     *
+     * Called when register returns 409 (reinstall recovery). The backend
+     * verifies site ownership by fetching GET /wp-json/trcl/v1/verify on
+     * this site before issuing a replacement secret.
+     */
+    public const TRIAL_ROTATE_PATH = '/v1/trial/rotate';
+
+    /**
      * Path of the trial chat endpoint.
      *
      * Called per message. Requires Authorization: Bearer <trial secret>.
@@ -167,6 +176,15 @@ class LiteConfig {
      */
     public const OPT_TRIAL_REMAINING = 'trcl_trial_remaining';
 
+    /**
+     * wp_option caching the plan-aware monthly cap reported by the
+     * backend via X-Trill-Trial-Cap (2.3.1). Lets the dashboard show
+     * the real allowance (50 trial / 2,000 cloud) instead of the
+     * hardcoded MONTHLY_LIMIT. Falls back to MONTHLY_LIMIT when unset
+     * (older backend or no chats yet).
+     */
+    public const OPT_TRIAL_CAP = 'trcl_trial_cap';
+
     // =========================================================================
     // Branding (unchanged from v1.x)
     // =========================================================================
@@ -199,6 +217,13 @@ class LiteConfig {
      */
     public static function get_trial_register_url(): string {
         return self::get_proxy_base_url() . self::TRIAL_REGISTER_PATH;
+    }
+
+    /**
+     * Full URL of the secret rotation endpoint.
+     */
+    public static function get_trial_rotate_url(): string {
+        return self::get_proxy_base_url() . self::TRIAL_ROTATE_PATH;
     }
 
     /**

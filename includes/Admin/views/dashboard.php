@@ -33,8 +33,15 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
 
     <!-- Monthly Usage Card -->
     <?php
-    $trcl_db            = new \TrillChatLite\Database\DbManager();
-    $trcl_monthly_limit = \TrillChatLite\Lite\LiteConfig::MONTHLY_LIMIT;
+    $trcl_db = new \TrillChatLite\Database\DbManager();
+
+    // Plan-aware cap (2.3.1): the backend reports the real allowance per
+    // plan (X-Trill-Trial-Cap, stashed on every chat). Fall back to the
+    // constant when unset (no chats yet, or a pre-cap backend).
+    $trcl_stored_cap    = (int) \get_option( \TrillChatLite\Lite\LiteConfig::OPT_TRIAL_CAP, 0 );
+    $trcl_monthly_limit = $trcl_stored_cap > 0
+        ? $trcl_stored_cap
+        : \TrillChatLite\Lite\LiteConfig::MONTHLY_LIMIT;
 
     // Prefer the server-authoritative count (X-Trill-Trial-Remaining,
     // captured on every successful chat). Fall back to the local
