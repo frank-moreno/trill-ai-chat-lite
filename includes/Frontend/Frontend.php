@@ -246,6 +246,14 @@ class Frontend {
                 'expand_chat'     => __( 'Expand chat', 'trill-ai-chat-lite' ),
                 'collapse_chat'   => __( 'Collapse chat', 'trill-ai-chat-lite' ),
                 'limit_reached'   => __( 'Monthly Limit Reached', 'trill-ai-chat-lite' ),
+                // Consent gate + Request My Data (v2.4 PRV-01).
+                'consent_blocked'   => __( 'Please accept the privacy notice to start chatting', 'trill-ai-chat-lite' ),
+                'i_understand'      => __( 'I Understand', 'trill-ai-chat-lite' ),
+                'request_my_data'   => __( 'Request My Data', 'trill-ai-chat-lite' ),
+                'request_email'     => __( 'Your email address', 'trill-ai-chat-lite' ),
+                'request_send'      => __( 'Send request', 'trill-ai-chat-lite' ),
+                'request_sent'      => __( 'Thanks — check your inbox for a confirmation email.', 'trill-ai-chat-lite' ),
+                'request_error'     => __( 'Could not send the request. Please try again later.', 'trill-ai-chat-lite' ),
             ],
             'branding' => [
                 'powered_by_text' => LiteConfig::POWERED_BY_TEXT,
@@ -488,10 +496,13 @@ class Frontend {
     private function build_privacy_localize_block(): array {
         $gdpr = new \TrillChatLite\Gdpr\GdprSettings();
         return [
-            'show'       => $gdpr->should_render_widget_notice() ? '1' : '0',
-            'text'       => $gdpr->get_privacy_notice_text(),
-            'url'        => $gdpr->get_privacy_notice_url(),
-            'link_label' => __( 'Privacy Policy', 'trill-ai-chat-lite' ),
+            'show'        => $gdpr->should_render_widget_notice() ? '1' : '0',
+            'text'        => $gdpr->get_privacy_notice_text(),
+            'url'         => $gdpr->get_privacy_notice_url(),
+            'link_label'  => __( 'Privacy Policy', 'trill-ai-chat-lite' ),
+            // Consent gate (v2.4 D11/D2): versioned localStorage key.
+            // '' disables the gate (no notice configured).
+            'consent_key' => $gdpr->get_consent_key(),
         ];
     }
 

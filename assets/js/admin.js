@@ -344,6 +344,48 @@
 
             // Product reindex button.
             $(document).on('click', '#trcl-reindex-btn', this.handleReindex.bind(this));
+
+            // Retention preview / run (v2.4 PRV-03, Settings → Privacy).
+            $(document).on('click', '#trcl-retention-preview-btn', this.handleRetention.bind(this, 'trcl_retention_preview', false));
+            $(document).on('click', '#trcl-retention-run-btn', this.handleRetention.bind(this, 'trcl_retention_run', true));
+        },
+
+        /**
+         * Shared handler for the retention Preview / Run Now buttons.
+         *
+         * @param {string}  action  AJAX action name.
+         * @param {boolean} confirm Ask for confirmation first (Run Now).
+         */
+        handleRetention: function (action, confirm) {
+            var $status = $('#trcl-retention-status');
+            var $btns   = $('#trcl-retention-preview-btn, #trcl-retention-run-btn');
+            var strings = trclAdmin.strings || {};
+
+            if (confirm && !window.confirm(strings.retention_confirm || 'Run the cleanup now?')) {
+                return;
+            }
+
+            $btns.prop('disabled', true);
+            $status.css('color', '#50575e').text(strings.please_wait || 'Please wait...');
+
+            $.post(trclAdmin.ajaxurl, {
+                action: action,
+                nonce:  trclAdmin.nonce
+            }, function (response) {
+                if (response.success) {
+                    $status.css('color', '#00a32a').text(response.data.message);
+                    // A real run changes the stats cards — refresh them.
+                    if (confirm) {
+                        setTimeout(function () { location.reload(); }, 1500);
+                    }
+                } else {
+                    $status.css('color', '#d63638').text((response.data && response.data.message) || strings.error || 'An error occurred.');
+                }
+            }).fail(function () {
+                $status.css('color', '#d63638').text(strings.request_failed || 'Request failed. Please try again.');
+            }).always(function () {
+                $btns.prop('disabled', false);
+            });
         },
 
         /**

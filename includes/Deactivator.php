@@ -85,7 +85,7 @@ class Deactivator {
         $like_transient         = $wpdb->esc_like( '_transient_trcl_' ) . '%';
         $like_transient_timeout = $wpdb->esc_like( '_transient_timeout_trcl_' ) . '%';
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Core $wpdb->options table; values esc_like'd and bound via prepare. Block-scoped for the multi-line statement.
         $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM {$wpdb->options}
@@ -95,5 +95,6 @@ class Deactivator {
                 $like_transient_timeout
             )
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
     }
 }

@@ -126,4 +126,31 @@ class GdprSettings {
     public function should_render_widget_notice(): bool {
         return $this->get_privacy_notice_url() !== '';
     }
+
+    /**
+     * Versioned localStorage key for the widget consent gate
+     * (v2.4 PRV-01 D11, decision D2).
+     *
+     * The key embeds a short hash of the notice URL + text, so if the
+     * merchant changes either, every visitor's stored consent becomes
+     * stale and the gate re-appears — re-consent is forced without any
+     * server-side state (no PII is created just by showing the gate).
+     *
+     * '' when the notice is not configured (no gate to render).
+     *
+     * @since 2.4.0
+     *
+     * @return string
+     */
+    public function get_consent_key(): string {
+        if ( ! $this->should_render_widget_notice() ) {
+            return '';
+        }
+
+        return 'trcl_consent_' . substr(
+            md5( $this->get_privacy_notice_url() . '|' . $this->get_privacy_notice_text() ),
+            0,
+            8
+        );
+    }
 }

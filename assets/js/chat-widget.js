@@ -70,6 +70,7 @@
             this.bindEvents();
             this.loadSession();
             this.applyThemeColour();
+            this.applyConsentGate();
         },
 
         /**
@@ -158,13 +159,22 @@
                                 '</svg>' +
                             '</button>' +
                         '</div>' +
-                        '<!-- Privacy notice -->' +
+                        '<!-- Privacy notice + Request My Data (v2.4) -->' +
                         (trcl_ajax.privacy && trcl_ajax.privacy.show === '1' && trcl_ajax.privacy.url ?
                             '<div class="trcl-privacy-notice">' +
                                 this.escapeHtml(trcl_ajax.privacy.text) + ' ' +
                                 '<a href="' + this.escapeAttr(trcl_ajax.privacy.url) + '" target="_blank" rel="noopener">' +
                                     this.escapeHtml(trcl_ajax.privacy.link_label || 'Privacy Policy') +
                                 '</a>' +
+                                ' &middot; <a href="#" id="trcl-request-data" role="button">' +
+                                    this.escapeHtml(this.str('request_my_data')) +
+                                '</a>' +
+                            '</div>' +
+                            '<div class="trcl-request-data-form" id="trcl-request-data-form" style="display:none">' +
+                                '<input type="email" id="trcl-request-data-email" placeholder="' + this.escapeAttr(this.str('request_email')) + '" maxlength="254" />' +
+                                '<button type="button" id="trcl-request-data-send" class="trcl-request-data-send">' +
+                                    this.escapeHtml(this.str('request_send')) +
+                                '</button>' +
                             '</div>' : '') +
                         '<!-- Powered By -->' +
                         (trcl_ajax.branding && trcl_ajax.branding.show_powered_by ?
@@ -235,6 +245,35 @@
                 var productId = $(this).data('product-id');
                 if (productId) {
                     self.addToCart(productId, $(this));
+                }
+            });
+
+            // Consent gate accept (v2.4 D11).
+            $(document).on('click', '#trcl-consent-accept', function () {
+                self.grantConsent();
+            });
+
+            // Request My Data: slide the mini-form open/closed (v2.4).
+            // Collapsed by default via inline display:none — an inline
+            // style, not the `hidden` attribute, because the class's
+            // display:flex would override [hidden] in the cascade.
+            $(document).on('click', '#trcl-request-data', function (e) {
+                e.preventDefault();
+                $('#trcl-request-data-form').stop(true, true).slideToggle(150, function () {
+                    if ($(this).is(':visible')) {
+                        $('#trcl-request-data-email').trigger('focus');
+                    }
+                });
+            });
+
+            // Request My Data: submit (v2.4).
+            $(document).on('click', '#trcl-request-data-send', function () {
+                self.submitDataRequest();
+            });
+            $(document).on('keypress', '#trcl-request-data-email', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    self.submitDataRequest();
                 }
             });
 
@@ -390,6 +429,13 @@
             var message = $.trim($input.val());
 
             if (!message || this.isLoading || this.limitReached) {
+                return;
+            }
+
+            // Consent gate (v2.4 D11): belt-and-braces guard — the input
+            // is disabled while consent is pending, but quick replies and
+            // programmatic calls funnel through here too.
+            if (this.needsConsent()) {
                 return;
             }
 
@@ -851,6 +897,125 @@
          */
         str: function (key) {
             return (trcl_ajax.strings && trcl_ajax.strings[key]) || key;
+        },
+
+        /**
+         * Consent gate (v2.4 PRV-01 D11, decision D2).
+         *
+         * The gate renders only when the merchant configured a privacy
+         * notice (privacy.consent_key non-empty). Acceptance persists
+         * CLIENT-SIDE only, in localStorage under a key versioned by
+         * the notice content — the server never learns that a visitor
+         * merely saw or accepted the notice (no PII created).
+         *
+         * When localStorage is unavailable (private mode, quota) we
+         * fail OPEN: blocking chat forever on a storage quirk punishes
+         * the visitor, and the notice link remains visible either way.
+         */
+        hasConsent: function () {
+            var key = trcl_ajax.privacy && trcl_ajax.privacy.consent_key;
+            if (!key) {
+                return true;
+            }
+            try {
+                return window.localStorage.getItem(key) === '1';
+            } catch (e) {
+                return true;
+            }
+        },
+
+        /** True while the gate must block sending. */
+        needsConsent: function () {
+            return !!(trcl_ajax.privacy &&
+                trcl_ajax.privacy.show === '1' &&
+                trcl_ajax.privacy.consent_key &&
+                !this.hasConsent());
+        },
+
+        /**
+         * Disable the input and render the consent card at the top of
+         * the messages area. Called once from init().
+         */
+        applyConsentGate: function () {
+            if (!this.needsConsent()) {
+                return;
+            }
+
+            $('#trcl-chat-input')
+                .prop('disabled', true)
+                .attr('placeholder', this.str('consent_blocked'));
+            $('#trcl-chat-send').prop('disabled', true);
+
+            var card = '' +
+                '<div class="trcl-consent-gate" id="trcl-consent-gate">' +
+                    '<p>' +
+                        this.escapeHtml(trcl_ajax.privacy.text) + ' ' +
+                        '<a href="' + this.escapeAttr(trcl_ajax.privacy.url) + '" target="_blank" rel="noopener">' +
+                            this.escapeHtml(trcl_ajax.privacy.link_label || 'Privacy Policy') +
+                        '</a>' +
+                    '</p>' +
+                    '<button type="button" id="trcl-consent-accept" class="trcl-consent-accept">' +
+                        this.escapeHtml(this.str('i_understand')) +
+                    '</button>' +
+                '</div>';
+
+            $('#trcl-chat-messages').append(card);
+        },
+
+        /** Persist acceptance and unlock the chat. */
+        grantConsent: function () {
+            var key = trcl_ajax.privacy && trcl_ajax.privacy.consent_key;
+            try {
+                if (key) {
+                    window.localStorage.setItem(key, '1');
+                }
+            } catch (e) {
+                // Storage unavailable — the gate stays open for this
+                // page view (fail-open, see hasConsent).
+            }
+
+            $('#trcl-consent-gate').remove();
+            $('#trcl-chat-input')
+                .prop('disabled', false)
+                .attr('placeholder', this.str('type_message'));
+            $('#trcl-chat-send').prop('disabled', false);
+        },
+
+        /**
+         * Request My Data (v2.4): create a native WP personal-data
+         * export request via the public REST endpoint. The response is
+         * deliberately generic server-side (anti-enumeration); we just
+         * relay it.
+         */
+        submitDataRequest: function () {
+            var self   = this;
+            var $email = $('#trcl-request-data-email');
+            var $send  = $('#trcl-request-data-send');
+            var email  = $.trim($email.val());
+
+            if (!email || email.indexOf('@') === -1) {
+                $email.trigger('focus');
+                return;
+            }
+
+            $send.prop('disabled', true);
+
+            $.ajax({
+                url: trcl_ajax.rest_url + 'privacy-request',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ email: email }),
+                success: function (response) {
+                    $('#trcl-request-data-form').text(
+                        (response && response.message) || self.str('request_sent')
+                    );
+                },
+                error: function () {
+                    $send.prop('disabled', false);
+                    $email.trigger('focus');
+                    window.alert(self.str('request_error'));
+                }
+            });
         },
 
         /**

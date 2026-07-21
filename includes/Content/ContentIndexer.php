@@ -360,13 +360,14 @@ class ContentIndexer {
 
         $table = $wpdb->prefix . self::TABLE;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table from $wpdb->prefix (trusted); id bound via prepare. Block-scoped for the multi-line statement.
         $affected = $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM {$table} WHERE post_id = %d AND post_type NOT IN ('product_cat')",
                 $post_id
             )
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         return $affected !== false && $affected > 0;
     }
@@ -423,10 +424,11 @@ class ContentIndexer {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table from $wpdb->prefix (trusted); no user input. Block-scoped for the multi-line statement.
         $sources = (int) $wpdb->get_var(
             "SELECT COUNT(DISTINCT post_id, post_type) FROM {$table}"
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         return [
             'indexed_sources' => $sources,

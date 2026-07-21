@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.2.0\n"
+"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.4.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/trill-ai-chat-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-21T10:24:58+00:00\n"
+"POT-Creation-Date: 2026-07-18T21:23:01+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: trill-ai-chat-lite\n"
@@ -68,7 +68,7 @@ msgid "Retrieves up to fifty most-recent messages from a Trill chat session iden
 msgstr ""
 
 #: includes/Abilities/AbilityRegistrar.php:399
-#: includes/AI/RestController.php:744
+#: includes/AI/RestController.php:752
 msgid "Invalid session identifier."
 msgstr ""
 
@@ -76,203 +76,256 @@ msgstr ""
 msgid "Trill Chat Lite activation failed: "
 msgstr ""
 
-#: includes/Admin/Admin.php:101
-#: includes/Admin/Admin.php:102
+#: includes/Admin/Admin.php:105
+#: includes/Admin/Admin.php:106
 msgid "Trill Chat"
 msgstr ""
 
-#: includes/Admin/Admin.php:113
-#: includes/Admin/Admin.php:114
+#: includes/Admin/Admin.php:117
+#: includes/Admin/Admin.php:118
 msgid "Dashboard"
 msgstr ""
 
-#: includes/Admin/Admin.php:123
-#: includes/Admin/Admin.php:124
+#: includes/Admin/Admin.php:127
+#: includes/Admin/Admin.php:128
 msgid "Products"
 msgstr ""
 
-#: includes/Admin/Admin.php:133
-#: includes/Admin/Admin.php:134
+#: includes/Admin/Admin.php:137
+#: includes/Admin/Admin.php:138
 #: includes/Admin/views/conversations.php:59
+#: includes/Admin/views/gdpr-tools.php:96
 msgid "Conversations"
 msgstr ""
 
-#: includes/Admin/Admin.php:143
-#: includes/Admin/Admin.php:144
+#: includes/Admin/Admin.php:147
+#: includes/Admin/Admin.php:148
+#: includes/Admin/views/gdpr-tools.php:104
 msgid "Leads"
 msgstr ""
 
-#: includes/Admin/Admin.php:153
-#: includes/Admin/Admin.php:154
+#: includes/Admin/Admin.php:157
+#: includes/Admin/Admin.php:158
 msgid "Settings"
 msgstr ""
 
-#: includes/Admin/Admin.php:163
-#: includes/Admin/Admin.php:164
+#: includes/Admin/Admin.php:167
+#: includes/Admin/Admin.php:168
 msgid "About"
 msgstr ""
 
-#: includes/Admin/Admin.php:224
+#: includes/Admin/Admin.php:228
 msgid "Saving..."
 msgstr ""
 
-#: includes/Admin/Admin.php:225
+#: includes/Admin/Admin.php:229
 msgid "Settings saved successfully!"
 msgstr ""
 
-#: includes/Admin/Admin.php:226
+#: includes/Admin/Admin.php:230
 msgid "An error occurred. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php:227
+#: includes/Admin/Admin.php:231
 msgid "Indexing..."
 msgstr ""
 
-#: includes/Admin/Admin.php:228
+#: includes/Admin/Admin.php:232
 msgid "Please wait..."
 msgstr ""
 
-#: includes/Admin/Admin.php:229
+#: includes/Admin/Admin.php:233
 msgid "Indexing failed."
 msgstr ""
 
-#: includes/Admin/Admin.php:230
+#: includes/Admin/Admin.php:234
 msgid "Request failed. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php:231
+#: includes/Admin/Admin.php:235
 #: includes/Admin/views/products.php:64
 msgid "Reindex Products Now"
 msgstr ""
 
-#: includes/Admin/Admin.php:232
+#: includes/Admin/Admin.php:236
+msgid "Run the cleanup now? Conversations older than the retention window will be permanently deleted."
+msgstr ""
+
+#: includes/Admin/Admin.php:237
 msgid "Permanently delete this conversation? This cannot be undone."
 msgstr ""
 
-#: includes/Admin/Admin.php:233
+#: includes/Admin/Admin.php:238
 msgid "Permanently delete the selected conversations? This cannot be undone."
 msgstr ""
 
-#: includes/Admin/Admin.php:234
+#: includes/Admin/Admin.php:239
 msgid "Please select at least one conversation."
 msgstr ""
 
-#: includes/Admin/Admin.php:248
-#: includes/Admin/Admin.php:259
-#: includes/Admin/Admin.php:270
-#: includes/Admin/Admin.php:331
-#: includes/Admin/Admin.php:359
-#: includes/Admin/Admin.php:399
-#: includes/Admin/Admin.php:507
-#: includes/Admin/Admin.php:518
-#: includes/Admin/Admin.php:529
-#: includes/Admin/Admin.php:592
-#: includes/Admin/Admin.php:663
-#: includes/Admin/Admin.php:740
-#: includes/Admin/Admin.php:813
+#: includes/Admin/Admin.php:253
+#: includes/Admin/Admin.php:264
+#: includes/Admin/Admin.php:275
+#: includes/Admin/Admin.php:336
+#: includes/Admin/Admin.php:364
+#: includes/Admin/Admin.php:404
+#: includes/Admin/Admin.php:512
+#: includes/Admin/Admin.php:523
+#: includes/Admin/Admin.php:534
+#: includes/Admin/Admin.php:597
+#: includes/Admin/Admin.php:668
+#: includes/Admin/Admin.php:747
+#: includes/Admin/Admin.php:821
+#: includes/Admin/GdprToolsPage.php:109
+#: includes/Admin/GdprToolsPage.php:319
 msgid "You do not have sufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:287
-#: includes/Admin/Admin.php:546
-#: includes/Admin/Admin.php:870
+#: includes/Admin/Admin.php:292
+#: includes/Admin/Admin.php:551
+#: includes/Admin/Admin.php:879
+#: includes/Admin/Admin.php:910
+#: includes/Admin/Admin.php:937
 msgid "Insufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:296
-#: includes/Admin/Admin.php:369
-#: includes/AI/RestController.php:617
+#: includes/Admin/Admin.php:301
+#: includes/Admin/Admin.php:374
+#: includes/AI/RestController.php:625
 msgid "Conversation not found."
 msgstr ""
 
-#: includes/Admin/Admin.php:420
+#: includes/Admin/Admin.php:425
 msgid "No conversations were selected."
 msgstr ""
 
 #. translators: 1: number of conversations deleted, 2: number of database rows removed
-#: includes/Admin/Admin.php:433
+#: includes/Admin/Admin.php:438
 #, php-format
 msgid "Deleted %1$d conversation (%2$d records removed)."
 msgid_plural "Deleted %1$d conversations (%2$d records removed)."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Admin/Admin.php:447
+#: includes/Admin/Admin.php:452
 msgid "Could not delete the selected conversations."
 msgstr ""
 
-#: includes/Admin/Admin.php:499
+#: includes/Admin/Admin.php:504
 msgid "Guest"
 msgstr ""
 
-#: includes/Admin/Admin.php:567
+#: includes/Admin/Admin.php:572
 msgid "Settings saved."
 msgstr ""
 
 #. translators: 1: posts indexed, 2: terms indexed, 3: total chunks
-#: includes/Admin/Admin.php:609
+#: includes/Admin/Admin.php:614
 #, php-format
 msgid "Reindex complete — %1$d posts, %2$d categories, %3$d chunks in total."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Admin/Admin.php:627
+#: includes/Admin/Admin.php:632
 #, php-format
 msgid "Reindex failed: %s"
 msgstr ""
 
-#: includes/Admin/Admin.php:672
+#: includes/Admin/Admin.php:677
 msgid "Invalid lead action."
 msgstr ""
 
-#: includes/Admin/Admin.php:685
+#: includes/Admin/Admin.php:690
 msgid "Lead marked as contacted."
 msgstr ""
 
-#: includes/Admin/Admin.php:686
+#: includes/Admin/Admin.php:691
 msgid "Could not update the lead."
 msgstr ""
 
 #. translators: %d: lead rows removed
-#: includes/Admin/Admin.php:705
+#: includes/Admin/Admin.php:712
 #, php-format
 msgid "Erased %d lead row(s) for that email."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Admin/Admin.php:717
+#: includes/Admin/Admin.php:724
 #, php-format
 msgid "Action failed: %s"
 msgstr ""
 
-#: includes/Admin/Admin.php:839
+#: includes/Admin/Admin.php:847
 msgid "Appearance settings reset to defaults. Your welcome message was kept."
 msgstr ""
 
-#: includes/Admin/Admin.php:874
+#. translators: 1: number of conversations, 2: retention days
+#: includes/Admin/Admin.php:889
+#, php-format
+msgid "%1$d conversation is older than %2$d days and would be deleted."
+msgid_plural "%1$d conversations are older than %2$d days and would be deleted."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of conversations deleted
+#: includes/Admin/Admin.php:919
+#, php-format
+msgid "Cleanup complete — %d conversation deleted."
+msgid_plural "Cleanup complete — %d conversations deleted."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/Admin.php:941
 msgid "WooCommerce is not active."
 msgstr ""
 
 #. translators: %d: number of products indexed
-#: includes/Admin/Admin.php:883
+#: includes/Admin/Admin.php:950
 #, php-format
 msgid "%d products indexed successfully."
 msgstr ""
 
-#: includes/Admin/Settings.php:454
+#: includes/Admin/GdprToolsPage.php:96
+#: includes/Admin/GdprToolsPage.php:97
+#: includes/Admin/views/gdpr-tools.php:36
+msgid "GDPR Tools"
+msgstr ""
+
+#: includes/Admin/GdprToolsPage.php:192
+msgid "Unknown export format."
+msgstr ""
+
+#: includes/Admin/GdprToolsPage.php:227
+msgid "Erasure not confirmed — type DELETE (in capitals) to proceed."
+msgstr ""
+
+#. translators: %d: number of records (conversations + leads) erased
+#: includes/Admin/GdprToolsPage.php:240
+#, php-format
+msgid "Erasure complete — %d record removed."
+msgid_plural "Erasure complete — %d records removed."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/Admin/GdprToolsPage.php:342
+#: includes/Gdpr/PrivacyRequestController.php:102
+msgid "Please enter a valid email address."
+msgstr ""
+
+#: includes/Admin/Settings.php:468
 #: includes/AI/ResponseFormatter.php:158
 msgid "What's on sale?"
 msgstr ""
 
-#: includes/Admin/Settings.php:455
+#: includes/Admin/Settings.php:469
 msgid "Help me choose a product"
 msgstr ""
 
-#: includes/Admin/Settings.php:456
+#: includes/Admin/Settings.php:470
 msgid "Do you ship to my country?"
 msgstr ""
 
-#: includes/Admin/Settings.php:604
+#: includes/Admin/Settings.php:629
 #: includes/Admin/views/settings-appearance.php:279
 msgid "Robin"
 msgstr ""
@@ -392,6 +445,7 @@ msgid "Open the support forum →"
 msgstr ""
 
 #: includes/Admin/views/about.php:214
+#: includes/Admin/views/gdpr-tools.php:213
 #: includes/Admin/views/leads.php:166
 msgid "Email"
 msgstr ""
@@ -487,13 +541,14 @@ msgstr ""
 
 #: includes/Admin/views/conversations.php:152
 #: includes/Admin/views/leads.php:170
-#: includes/Gdpr/ConversationManager.php:217
-#: includes/Gdpr/ConversationManager.php:259
+#: includes/Gdpr/ConversationManager.php:272
+#: includes/Gdpr/ConversationManager.php:314
 msgid "Status"
 msgstr ""
 
 #: includes/Admin/views/conversations.php:153
-#: includes/Gdpr/ConversationManager.php:267
+#: includes/Admin/views/gdpr-tools.php:100
+#: includes/Gdpr/ConversationManager.php:322
 msgid "Messages"
 msgstr ""
 
@@ -523,6 +578,7 @@ msgid "Select this conversation"
 msgstr ""
 
 #: includes/Admin/views/conversations.php:228
+#: includes/Admin/views/gdpr-tools.php:30
 msgid "View"
 msgstr ""
 
@@ -558,72 +614,208 @@ msgstr ""
 msgid "Enable in Settings"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:66
+#: includes/Admin/views/dashboard.php:73
 msgid "Monthly Usage"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:68
+#: includes/Admin/views/dashboard.php:75
 msgid "Conversations used this month. Limits are managed by the Trill AI service."
 msgstr ""
 
 #. translators: 1: conversations used, 2: monthly limit
-#: includes/Admin/views/dashboard.php:86
+#: includes/Admin/views/dashboard.php:93
 #, php-format
 msgid "%1$d of %2$d conversations"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:99
+#: includes/Admin/views/dashboard.php:106
 msgid "You have reached your monthly conversation limit. New conversations will be declined until next month."
 msgstr ""
 
 #. translators: %d: remaining conversations
-#: includes/Admin/views/dashboard.php:108
+#: includes/Admin/views/dashboard.php:115
 #, php-format
 msgid "You have %d conversations remaining this month."
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:145
+#: includes/Admin/views/dashboard.php:152
 msgid "Performance"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:147
+#: includes/Admin/views/dashboard.php:154
 msgid "Last:"
 msgstr ""
 
 #. translators: %d: number of days
-#: includes/Admin/views/dashboard.php:156
+#. translators: %d: retention period in days
+#: includes/Admin/views/dashboard.php:163
+#: includes/Admin/views/settings-privacy.php:187
 #, php-format
 msgid "%d days"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:166
+#: includes/Admin/views/dashboard.php:173
 msgid "Activity over the selected window. An order is \"from chat\" when the customer had a chat conversation in the 24 hours before placing the order."
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:174
+#: includes/Admin/views/dashboard.php:181
 msgid "Chats started"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:184
+#: includes/Admin/views/dashboard.php:191
 msgid "Orders completed"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:194
+#: includes/Admin/views/dashboard.php:201
 msgid "Orders from chat"
 msgstr ""
 
 #. translators: %s: attribution rate as a percentage
-#: includes/Admin/views/dashboard.php:202
+#: includes/Admin/views/dashboard.php:209
 #, php-format
 msgid "%s%% attribution rate"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:210
+#: includes/Admin/views/dashboard.php:217
 msgid "Revenue from chat"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:221
+#: includes/Admin/views/dashboard.php:228
 msgid "No chat activity yet in this window. Once shoppers start chatting, you'll see chats, attributed orders, and revenue here."
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:29
+msgid "Search"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:31
+msgid "Export"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:32
+#: includes/Admin/views/leads.php:249
+msgid "Erase"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:39
+msgid "Look up, export, and erase the personal data this plugin holds for a visitor. Every action taken here is recorded in the audit trail below. No IP addresses are ever stored."
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:48
+msgid "Data subject lookup"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:55
+msgid "Email address"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:62
+msgid "visitor@example.com"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:66
+msgid "Look up"
+msgstr ""
+
+#. translators: %s: masked email address
+#: includes/Admin/views/gdpr-tools.php:77
+#, php-format
+msgid "No data found for %s."
+msgstr ""
+
+#. translators: %s: masked email address
+#: includes/Admin/views/gdpr-tools.php:88
+#, php-format
+msgid "Data held for %s"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:108
+msgid "First activity"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:112
+msgid "Last activity"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:122
+msgid "Right of Access"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:123
+msgid "Review everything this plugin holds for the visitor, on screen."
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:129
+msgid "View data"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:135
+msgid "Data Portability"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:136
+msgid "Download the same data in a portable format to pass on to the visitor."
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:142
+msgid "Download JSON"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:145
+msgid "Download CSV"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:151
+msgid "Right to Erasure"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:152
+msgid "Permanently delete every conversation, message, feedback entry and lead for this email. This cannot be undone."
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:158
+#: includes/Admin/views/gdpr-tools.php:166
+msgid "Type DELETE to confirm"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:170
+msgid "Erase all data"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:179
+msgid "Data on record"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:182
+msgid "Nothing on record for this email."
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:203
+msgid "Recent GDPR actions"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:206
+msgid "No GDPR actions recorded yet."
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:211
+msgid "Date (UTC)"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:212
+msgid "Action"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:214
+msgid "Performed by"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:215
+msgid "Records"
+msgstr ""
+
+#: includes/Admin/views/gdpr-tools.php:224
+msgid "Unknown"
 msgstr ""
 
 #: includes/Admin/views/leads.php:70
@@ -685,7 +877,7 @@ msgid "No leads captured yet that match these filters."
 msgstr ""
 
 #: includes/Admin/views/leads.php:167
-#: includes/Gdpr/ConversationManager.php:209
+#: includes/Gdpr/ConversationManager.php:264
 msgid "Intent"
 msgstr ""
 
@@ -707,10 +899,6 @@ msgstr ""
 
 #: includes/Admin/views/leads.php:242
 msgid "Erase ALL lead rows for this email? This cannot be undone."
-msgstr ""
-
-#: includes/Admin/views/leads.php:249
-msgid "Erase"
 msgstr ""
 
 #: includes/Admin/views/products.php:24
@@ -747,6 +935,7 @@ msgstr ""
 
 #: includes/Admin/views/products.php:55
 #: includes/Admin/views/settings-content.php:251
+#: includes/Admin/views/settings-privacy.php:206
 msgid "Never"
 msgstr ""
 
@@ -840,7 +1029,7 @@ msgstr ""
 
 #. translators: %s: assistant display name
 #: includes/Admin/views/settings-appearance.php:90
-#: includes/Frontend/Frontend.php:515
+#: includes/Frontend/Frontend.php:526
 #, php-format
 msgid "Hi there! I'm %s, your AI shopping assistant. How can I help you today?"
 msgstr ""
@@ -1137,20 +1326,54 @@ msgid "Save privacy settings"
 msgstr ""
 
 #: includes/Admin/views/settings-privacy.php:165
+msgid "Data retention status"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:174
+msgid "Stored conversations"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:178
+msgid "Stored messages"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:182
+msgid "Retention window"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:194
+msgid "Last cleanup"
+msgstr ""
+
+#. translators: %d: conversations removed in the last cleanup
+#: includes/Admin/views/settings-privacy.php:201
+#, php-format
+msgid "%d conversations removed"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:214
+msgid "Preview Cleanup"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:217
+msgid "Run Cleanup Now"
+msgstr ""
+
+#: includes/Admin/views/settings-privacy.php:224
 msgid "DSAR & erasure"
 msgstr ""
 
 #. translators: 1: link to Tools → Export Personal Data, 2: link to Tools → Erase Personal Data
-#: includes/Admin/views/settings-privacy.php:171
+#: includes/Admin/views/settings-privacy.php:230
 #, php-format
 msgid "This plugin integrates with WordPress's built-in privacy tools. To handle a Data Subject Access Request, use %1$s. To erase a customer's chat data, use %2$s. In both cases enter the customer's email — the plugin will include or remove the matching conversations automatically."
 msgstr ""
 
-#: includes/Admin/views/settings-privacy.php:173
+#: includes/Admin/views/settings-privacy.php:232
 msgid "Tools → Export Personal Data"
 msgstr ""
 
-#: includes/Admin/views/settings-privacy.php:175
+#: includes/Admin/views/settings-privacy.php:234
 msgid "Tools → Erase Personal Data"
 msgstr ""
 
@@ -1221,60 +1444,80 @@ msgstr ""
 msgid "Recommended when you want to minimise distractions during purchase or account management. The widget never loads on feeds, REST or the login page."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:103
+#: includes/AI/ProxyClient.php:110
 msgid "Could not reach Trill Cloud to set up the trial. We will retry automatically."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:133
-msgid "This site already has a trial registered. If you lost the secret, the trial will reset next calendar month."
+#: includes/AI/ProxyClient.php:140
+msgid "This site is already registered. The plugin will verify site ownership and reconnect automatically."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:147
+#: includes/AI/ProxyClient.php:154
 msgid "The site URL was rejected by the backend. Make sure it is publicly reachable (https://)."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:160
+#: includes/AI/ProxyClient.php:167
 msgid "Unexpected response from Trill Cloud while setting up the trial."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:193
+#: includes/AI/ProxyClient.php:227
+msgid "Could not reach Trill Cloud to reconnect this site."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:253
+msgid "This site is not registered with Trill Cloud yet."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:269
+msgid "Trill Cloud could not verify ownership of this site."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:280
+msgid "Too many reconnection attempts today. Please try again tomorrow."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:293
+msgid "Unexpected response from Trill Cloud while reconnecting this site."
+msgstr ""
+
+#: includes/AI/ProxyClient.php:327
 msgid "The plugin has not finished setting up the trial. Please try again in a moment."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:230
+#: includes/AI/ProxyClient.php:364
 msgid "Unable to reach the AI service. Please try again later."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:324
+#: includes/AI/ProxyClient.php:466
 msgid "Trial credentials are no longer valid. Please reactivate the plugin."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:333
+#: includes/AI/ProxyClient.php:475
 msgid "Monthly trial limit reached. Upgrade to keep chatting."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:342
+#: includes/AI/ProxyClient.php:484
 msgid "Too many requests. Please wait a moment and try again."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:352
+#: includes/AI/ProxyClient.php:494
 msgid "Your message was refused on content-policy grounds. Please rephrase."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:359
+#: includes/AI/ProxyClient.php:501
 msgid "The request was rejected by the AI service."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:368
+#: includes/AI/ProxyClient.php:510
 msgid "AI service is temporarily unavailable. Please try again shortly."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:376
+#: includes/AI/ProxyClient.php:518
 msgid "The AI service took too long to respond. Please try again."
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/AI/ProxyClient.php:386
+#: includes/AI/ProxyClient.php:528
 #, php-format
 msgid "Unexpected error (HTTP %d). Please try again."
 msgstr ""
@@ -1337,46 +1580,47 @@ msgstr ""
 msgid "AI service temporarily unavailable."
 msgstr ""
 
-#: includes/AI/RestController.php:598
+#: includes/AI/RestController.php:606
 msgid "An unexpected error occurred. Please try again."
 msgstr ""
 
-#: includes/AI/RestController.php:644
+#: includes/AI/RestController.php:652
 msgid "Failed to retrieve conversation."
 msgstr ""
 
-#: includes/AI/RestController.php:667
-#: includes/AI/RestController.php:682
+#: includes/AI/RestController.php:675
+#: includes/AI/RestController.php:690
 msgid "Failed to save feedback."
 msgstr ""
 
-#: includes/AI/RestController.php:675
+#: includes/AI/RestController.php:683
 msgid "Thank you for your feedback!"
 msgstr ""
 
-#: includes/AI/RestController.php:709
-#: includes/AI/RestController.php:734
-#: includes/AI/RestController.php:768
+#: includes/AI/RestController.php:717
+#: includes/AI/RestController.php:742
+#: includes/AI/RestController.php:776
 msgid "Invalid security token. Please refresh the page."
 msgstr ""
 
-#: includes/AI/RestController.php:778
+#: includes/AI/RestController.php:786
 msgid "Invalid message identifier."
 msgstr ""
 
-#: includes/AI/RestController.php:802
+#: includes/AI/RestController.php:810
+#: includes/Gdpr/PrivacyRequestController.php:81
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: includes/AI/RestController.php:1045
+#: includes/AI/RestController.php:1053
 msgid "If you give me your email, I'll only use it to notify you once when this item is back in stock."
 msgstr ""
 
-#: includes/AI/RestController.php:1048
+#: includes/AI/RestController.php:1056
 msgid "If you give me your email, I'll only use it to notify you once if there is a sale or price drop on this item."
 msgstr ""
 
-#: includes/AI/RestController.php:1050
+#: includes/AI/RestController.php:1058
 msgid "If you give me your email, I'll only use it to send you one follow-up about this item."
 msgstr ""
 
@@ -1418,23 +1662,51 @@ msgstr ""
 msgid "Monthly Limit Reached"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:325
+#: includes/Frontend/Frontend.php:250
+msgid "Please accept the privacy notice to start chatting"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:251
+msgid "I Understand"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:252
+msgid "Request My Data"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:253
+msgid "Your email address"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:254
+msgid "Send request"
+msgstr ""
+
+#: includes/Frontend/Frontend.php:255
+msgid "Thanks — check your inbox for a confirmation email."
+msgstr ""
+
+#: includes/Frontend/Frontend.php:256
+msgid "Could not send the request. Please try again later."
+msgstr ""
+
+#: includes/Frontend/Frontend.php:333
 msgid "JavaScript is required for the chat widget."
 msgstr ""
 
-#: includes/Frontend/Frontend.php:342
+#: includes/Frontend/Frontend.php:350
 msgid "Chat with us"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:343
+#: includes/Frontend/Frontend.php:351
 msgid "Open Chat"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:367
+#: includes/Frontend/Frontend.php:375
 msgid "Start Chat"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:494
+#: includes/Frontend/Frontend.php:502
 msgid "Privacy Policy"
 msgstr ""
 
@@ -1442,42 +1714,46 @@ msgstr ""
 msgid "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:201
+#: includes/Gdpr/ConversationManager.php:256
 msgid "Trill AI Chat — Lead opt-ins"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:205
+#: includes/Gdpr/ConversationManager.php:260
 msgid "Captured at"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:213
+#: includes/Gdpr/ConversationManager.php:268
 msgid "Product ID"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:221
+#: includes/Gdpr/ConversationManager.php:276
 msgid "Consent text shown at capture"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:243
+#: includes/Gdpr/ConversationManager.php:298
 #: includes/Gdpr/PrivacyHooks.php:69
 #: includes/Gdpr/PrivacyHooks.php:86
 msgid "Trill AI Chat conversations"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:247
+#: includes/Gdpr/ConversationManager.php:302
 msgid "Session ID"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:251
+#: includes/Gdpr/ConversationManager.php:306
 msgid "Started at"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:255
+#: includes/Gdpr/ConversationManager.php:310
 msgid "Ended at"
 msgstr ""
 
-#: includes/Gdpr/ConversationManager.php:263
+#: includes/Gdpr/ConversationManager.php:318
 msgid "Customer email on record"
+msgstr ""
+
+#: includes/Gdpr/PrivacyRequestController.php:110
+msgid "If data exists for that address, a confirmation email is on its way."
 msgstr ""
 
 #: includes/Lite/UpgradeManager.php:161
@@ -1486,6 +1762,14 @@ msgstr ""
 
 #: includes/Lite/UpgradeManager.php:165
 msgid "Read the release notes"
+msgstr ""
+
+#: includes/Plugin.php:229
+msgid "Trill AI Chat could not reconnect this site automatically."
+msgstr ""
+
+#: includes/Plugin.php:230
+msgid "Your site must be publicly reachable (including its REST API) for ownership verification. Deactivate and reactivate the plugin to retry, or contact hello@trillai.io."
 msgstr ""
 
 #: trill-ai-chat-lite.php:53

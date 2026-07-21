@@ -85,6 +85,10 @@ class Admin {
         // Appearance reset (v2.1).
         \add_action( 'admin_post_trcl_reset_appearance', [ $this, 'handle_reset_appearance_post' ] );
 
+        // Retention UI on Settings → Privacy (v2.4 PRV-03).
+        \add_action( 'wp_ajax_trcl_retention_preview', [ $this, 'ajax_retention_preview' ] );
+        \add_action( 'wp_ajax_trcl_retention_run', [ $this, 'ajax_retention_run' ] );
+
         // Conversations admin (v2.2): transcript modal + CSV exports + delete.
         \add_action( 'wp_ajax_trcl_get_transcript', [ $this, 'ajax_get_transcript' ] );
         \add_action( 'admin_post_trcl_conversations_export', [ $this, 'handle_conversations_export_post' ] );
@@ -229,6 +233,7 @@ class Admin {
                 'indexing_failed' => __( 'Indexing failed.', 'trill-ai-chat-lite' ),
                 'request_failed'  => __( 'Request failed. Please try again.', 'trill-ai-chat-lite' ),
                 'reindex_now'     => __( 'Reindex Products Now', 'trill-ai-chat-lite' ),
+                'retention_confirm'       => __( 'Run the cleanup now? Conversations older than the retention window will be permanently deleted.', 'trill-ai-chat-lite' ),
                 'confirm_delete_one'      => __( 'Permanently delete this conversation? This cannot be undone.', 'trill-ai-chat-lite' ),
                 'confirm_delete_selected' => __( 'Permanently delete the selected conversations? This cannot be undone.', 'trill-ai-chat-lite' ),
                 'no_selection'            => __( 'Please select at least one conversation.', 'trill-ai-chat-lite' ),
@@ -690,12 +695,14 @@ class Admin {
                 // ConversationManager so the full GDPR posture stays in
                 // one place (in case the email had multiple lead rows).
                 global $wpdb;
+                // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table from $wpdb->prefix (trusted); id bound via prepare. Block-scoped for the multi-line statement.
                 $email = (string) $wpdb->get_var(
                     $wpdb->prepare(
                         "SELECT email FROM {$wpdb->prefix}trcl_leads WHERE id = %d",
                         $lead_id
                     )
                 );
+                // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                 if ( $email !== '' ) {
                     $deleted = $svc->erase_by_email( $email );
                     \set_transient( 'trcl_lead_action_notice', [
@@ -746,13 +753,14 @@ class Admin {
         global $wpdb;
         $table = $wpdb->prefix . 'trcl_leads';
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table from $wpdb->prefix (trusted); no user input in this query. Block-scoped for the multi-line statement.
         $rows = $wpdb->get_results(
             "SELECT id, email, intent_type, product_id, status, captured_at, session_id
                FROM {$table}
               ORDER BY captured_at DESC",
             ARRAY_A
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         $filename = 'trill-leads-' . \gmdate( 'Y-m-d' ) . '.csv';
 
@@ -858,6 +866,65 @@ class Admin {
         );
         \wp_safe_redirect( $redirect );
         exit;
+    }
+
+    /**
+     * AJAX: retention dry-run — count what the current window would
+     * delete, without deleting (v2.4 PRV-03).
+     */
+    public function ajax_retention_preview(): void {
+        \check_ajax_referer( 'trcl_admin_nonce', 'nonce' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-ai-chat-lite' ) ], 403 );
+        }
+
+        $service = new \TrillChatLite\Gdpr\RetentionService();
+        $count   = $service->preview();
+
+        \wp_send_json_success( [
+            'count'   => $count,
+            'message' => sprintf(
+                /* translators: 1: number of conversations, 2: retention days */
+                _n(
+                    '%1$d conversation is older than %2$d days and would be deleted.',
+                    '%1$d conversations are older than %2$d days and would be deleted.',
+                    $count,
+                    'trill-ai-chat-lite'
+                ),
+                $count,
+                $service->get_stats()['retention_days']
+            ),
+        ] );
+    }
+
+    /**
+     * AJAX: run the retention cleanup now (v2.4 PRV-03). Reuses the
+     * exact routine the daily cron runs; the JS side asks for an
+     * explicit confirm before calling.
+     */
+    public function ajax_retention_run(): void {
+        \check_ajax_referer( 'trcl_admin_nonce', 'nonce' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'trill-ai-chat-lite' ) ], 403 );
+        }
+
+        $deleted = ( new \TrillChatLite\Gdpr\RetentionService() )->run();
+
+        \wp_send_json_success( [
+            'deleted' => $deleted,
+            'message' => sprintf(
+                /* translators: %d: number of conversations deleted */
+                _n(
+                    'Cleanup complete — %d conversation deleted.',
+                    'Cleanup complete — %d conversations deleted.',
+                    $deleted,
+                    'trill-ai-chat-lite'
+                ),
+                $deleted
+            ),
+        ] );
     }
 
     /**

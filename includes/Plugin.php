@@ -141,6 +141,15 @@ final class Plugin {
         );
         $this->components['admin']->register_hooks();
 
+        // 3b. GDPR Tools page (v2.4 PRV-01). Hooks admin_menu at
+        //     priority 20 so it runs after Admin::add_admin_menu
+        //     (which registers via the deferred Loader) and the
+        //     submenu lands last. Thin orchestrator — lookup/export/
+        //     erase logic stays in Gdpr\ConversationManager +
+        //     Gdpr\AuditLogger.
+        $this->components['gdpr_tools_page'] = new \TrillChatLite\Admin\GdprToolsPage();
+        $this->components['gdpr_tools_page']->register_hooks();
+
         // 4. Frontend component (only on frontend).
         if ( ! is_admin() ) {
             $this->components['frontend'] = new Frontend( $this->loader, $this->version );
@@ -192,7 +201,34 @@ final class Plugin {
         //    until it succeeds — admin only, throttled to once per request.
         \add_action( 'admin_init', [ $this, 'maybe_retry_trial_registration' ] );
 
+        // 8b. Actionable notice when registration AND rotation both
+        //     failed (2.3.0 §2.3) — the only remaining terminal state.
+        \add_action( 'admin_notices', [ $this, 'maybe_render_trial_failure_notice' ] );
+
         trcl_log( 'All plugin components initialised', 'debug' );
+    }
+
+    /**
+     * Render an actionable admin notice when the site is stuck in the
+     * registration perma-fail state (register 409/400 and, since 2.3.0,
+     * secret rotation also failed).
+     *
+     * Only shown to users who can act on it (manage_options).
+     *
+     * @since 2.3.0
+     */
+    public function maybe_render_trial_failure_notice(): void {
+        if ( ! \current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        if ( ! \TrillChatLite\Lite\TrialRegistration::has_perma_fail() ) {
+            return;
+        }
+        printf(
+            '<div class="notice notice-error"><p><strong>%s</strong> %s</p></div>',
+            \esc_html__( 'Trill AI Chat could not reconnect this site automatically.', 'trill-ai-chat-lite' ),
+            \esc_html__( 'Your site must be publicly reachable (including its REST API) for ownership verification. Deactivate and reactivate the plugin to retry, or contact hello@trillai.io.', 'trill-ai-chat-lite' )
+        );
     }
 
     /**
@@ -230,6 +266,17 @@ final class Plugin {
             $this->components['db_manager']
         );
         $controller->register_routes();
+
+        // Site-ownership verification endpoint for secret rotation
+        // (2.3.0). Serves the pending verify token during a rotation
+        // window; 404 the rest of the time.
+        $verification = new \TrillChatLite\Lite\SiteVerification();
+        $verification->register_routes();
+
+        // Public "Request My Data" endpoint (v2.4 PRV-01) — creates a
+        // native WP personal-data export request from the widget.
+        $privacy_request = new \TrillChatLite\Gdpr\PrivacyRequestController();
+        $privacy_request->register_routes();
     }
 
     /**

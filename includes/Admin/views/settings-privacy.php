@@ -162,6 +162,65 @@ $trcl_wp_policy_url = $trcl_wp_policy_id > 0 ? (string) \get_permalink( $trcl_wp
 
 <hr style="margin: 30px 0;" />
 
+<h2><?php esc_html_e( 'Data retention status', 'trill-ai-chat-lite' ); ?></h2>
+
+<?php
+// Stats cards + manual cleanup (v2.4 PRV-03). Preview is a dry-run;
+// Run Now reuses the exact routine the daily cron executes.
+$trcl_retention_stats = ( new \TrillChatLite\Gdpr\RetentionService() )->get_stats();
+?>
+<div style="display: flex; flex-wrap: wrap; gap: 1em;">
+    <div class="card">
+        <h3><?php esc_html_e( 'Stored conversations', 'trill-ai-chat-lite' ); ?></h3>
+        <p style="font-size: 2em; margin: 0;"><?php echo esc_html( (string) $trcl_retention_stats['conversations'] ); ?></p>
+    </div>
+    <div class="card">
+        <h3><?php esc_html_e( 'Stored messages', 'trill-ai-chat-lite' ); ?></h3>
+        <p style="font-size: 2em; margin: 0;"><?php echo esc_html( (string) $trcl_retention_stats['messages'] ); ?></p>
+    </div>
+    <div class="card">
+        <h3><?php esc_html_e( 'Retention window', 'trill-ai-chat-lite' ); ?></h3>
+        <p style="font-size: 2em; margin: 0;">
+            <?php
+            printf(
+                /* translators: %d: retention period in days */
+                esc_html__( '%d days', 'trill-ai-chat-lite' ),
+                (int) $trcl_retention_stats['retention_days']
+            );
+            ?>
+        </p>
+    </div>
+    <div class="card">
+        <h3><?php esc_html_e( 'Last cleanup', 'trill-ai-chat-lite' ); ?></h3>
+        <p style="margin: 0;">
+            <?php if ( $trcl_retention_stats['last_cleanup_at'] !== '' ) : ?>
+                <?php echo esc_html( $trcl_retention_stats['last_cleanup_at'] ); ?> UTC<br />
+                <?php
+                printf(
+                    /* translators: %d: conversations removed in the last cleanup */
+                    esc_html__( '%d conversations removed', 'trill-ai-chat-lite' ),
+                    (int) $trcl_retention_stats['last_cleanup_count']
+                );
+                ?>
+            <?php else : ?>
+                <?php esc_html_e( 'Never', 'trill-ai-chat-lite' ); ?>
+            <?php endif; ?>
+        </p>
+    </div>
+</div>
+
+<p style="margin-top: 1em;">
+    <button type="button" class="button" id="trcl-retention-preview-btn">
+        <?php esc_html_e( 'Preview Cleanup', 'trill-ai-chat-lite' ); ?>
+    </button>
+    <button type="button" class="button button-link-delete" id="trcl-retention-run-btn">
+        <?php esc_html_e( 'Run Cleanup Now', 'trill-ai-chat-lite' ); ?>
+    </button>
+    <span id="trcl-retention-status" style="margin-left: 8px;"></span>
+</p>
+
+<hr style="margin: 30px 0;" />
+
 <h2><?php esc_html_e( 'DSAR & erasure', 'trill-ai-chat-lite' ); ?></h2>
 
 <p class="description" style="max-width: 720px;">
