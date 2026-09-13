@@ -391,6 +391,37 @@ class DbManager {
     }
 
     /**
+     * Check that a message belongs to the given conversation.
+     *
+     * Ownership gate for POST /feedback: the session UUID acts as the
+     * bearer, so a caller can only rate messages of its own conversation.
+     *
+     * @since 2.4.2
+     *
+     * @param int    $message_id Message ID.
+     * @param string $session_id Session ID (UUID).
+     * @return bool True when the message exists in that conversation.
+     */
+    public function message_belongs_to_session( int $message_id, string $session_id ): bool {
+        if ( $message_id <= 0 ) {
+            return false;
+        }
+
+        $conversation_id = $this->get_conversation_id( $session_id );
+        if ( ! $conversation_id ) {
+            return false;
+        }
+
+        $table = $this->messages_table;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        $sql = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE id = %d AND conversation_id = %d", $message_id, $conversation_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
+        return (int) $this->wpdb->get_var( $sql ) > 0;
+    }
+
+    /**
      * Save feedback.
      *
      * @param int    $message_id Message ID.

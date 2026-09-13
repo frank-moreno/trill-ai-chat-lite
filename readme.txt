@@ -2,9 +2,9 @@
 Contributors: trillai
 Tags: woocommerce, ai chatbot, shopping assistant, product search, order tracking
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.4.1
+Stable tag: 2.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -243,6 +243,18 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 2.4.2 =
+**Security and reliability release. Safe update for all users — no settings change, no database update.**
+
+* **Fixed: chat stopped working for visitors on sites with page caching.** The widget sent a WordPress REST nonce on every request, including for guests. Once the cached page outlived the nonce (12–24 hours), WordPress rejected every guest message with a 403. Guests no longer send a nonce; logged-in users still do, and a stale one is retried once as a guest instead of failing.
+* **Security: per-IP rate limiting could be bypassed** by supplying a forged `X-Forwarded-For` or `Client-IP` header, allowing anyone to exhaust a store's monthly Trill Cloud allowance. The limiter now uses the connection address only. Sites behind a trusted proxy or CDN can resolve the real client address with the new `trcl_client_ip` filter.
+* **Security: password-protected pages and posts are no longer indexed** for the AI, so their content cannot surface in chat answers. Existing entries are removed on the next content re-index.
+* **Security: the feedback endpoint now requires the session UUID** and only accepts ratings for messages of that conversation.
+* **Privacy: debug logging never records visitor messages or search queries any more** (lengths and counts only). `trcl_log()` now honours `WP_DEBUG_LOG` and `TRCL_LOG_LEVEL` (default `info`), so `debug` entries are silent unless you opt in.
+* Products hidden from the catalogue (visibility "Hidden") are no longer recommended in chat.
+* Hardened product-card rendering in the widget (all attributes escaped) and the legacy paid-plugin conflict check (no fatal on the front end).
+* Housekeeping: tested up to WordPress 7.1 and WooCommerce 11.1.
+
 = 2.4.1 =
 * Housekeeping: WooCommerce is now declared as a formal plugin dependency (`Requires Plugins` header, WordPress 6.5+). The directory listing shows the requirement, and WordPress offers a one-click WooCommerce install instead of allowing activation without it. On WordPress 6.0–6.4 the existing runtime check continues to apply. No functional changes.
 
@@ -395,6 +407,9 @@ This release turns Trill AI Chat from a product-search chatbot into a full-stack
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.4.2 =
+Security and reliability fixes: rate-limit bypass closed, chat no longer breaks for guests on page-cached sites, password-protected content excluded from the AI index. Safe update for all users.
 
 = 2.4.1 =
 Declares WooCommerce as a formal plugin dependency (WordPress 6.5+). No functional changes — safe update for all users.

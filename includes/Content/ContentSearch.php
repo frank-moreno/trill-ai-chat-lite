@@ -209,8 +209,8 @@ class ContentSearch {
             }
 
             trcl_log( 'Content search', 'debug', [
-                'query'    => $normalised,
-                'count'    => count( $out ),
+                'query_len' => mb_strlen( $normalised ),
+                'count'     => count( $out ),
                 'titles'   => array_column( $out, 'title' ),
             ] );
 
@@ -218,8 +218,8 @@ class ContentSearch {
 
         } catch ( \Throwable $e ) {
             trcl_log( 'Content search failed', 'warning', [
-                'error' => $e->getMessage(),
-                'query' => $normalised,
+                'error'     => $e->getMessage(),
+                'query_len' => mb_strlen( $normalised ),
             ] );
             return [];
         }

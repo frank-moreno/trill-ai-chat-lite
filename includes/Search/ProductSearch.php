@@ -66,6 +66,7 @@ class ProductSearch {
             foreach ( $variants as $variant ) {
                 $products = \wc_get_products( [
                     'status' => 'publish',
+                    'visibility' => 'visible',
                     'limit'  => 5,
                     's'      => $variant,
                 ] );
@@ -143,6 +144,7 @@ class ProductSearch {
         try {
             $products = \wc_get_products( [
                 'status'   => 'publish',
+                'visibility' => 'visible',
                 'limit'    => $limit,
                 'featured' => true,
             ] );
@@ -155,6 +157,7 @@ class ProductSearch {
 
                 $recent = \wc_get_products( [
                     'status'  => 'publish',
+                    'visibility' => 'visible',
                     'limit'   => $limit,
                     'orderby' => 'date',
                     'order'   => 'DESC',
@@ -287,6 +290,7 @@ class ProductSearch {
             $cat_slugs = \wp_list_pluck( $cat_terms, 'slug' );
             $products  = \wc_get_products( [
                 'status'   => 'publish',
+                'visibility' => 'visible',
                 'limit'    => $limit,
                 'category' => $cat_slugs,
             ] );
@@ -304,6 +308,7 @@ class ProductSearch {
                 $tag_slugs = \wp_list_pluck( $tag_terms, 'slug' );
                 $products  = \wc_get_products( [
                     'status' => 'publish',
+                    'visibility' => 'visible',
                     'limit'  => $limit,
                     'tag'    => $tag_slugs,
                 ] );
@@ -320,6 +325,7 @@ class ProductSearch {
                 foreach ( $word_variants as $wv ) {
                     $products = \wc_get_products( [
                         'status' => 'publish',
+                        'visibility' => 'visible',
                         'limit'  => $limit,
                         's'      => $wv,
                     ] );

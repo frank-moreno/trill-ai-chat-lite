@@ -210,7 +210,12 @@ class Frontend {
         $localize_data = [
             'ajax_url'        => \admin_url( 'admin-ajax.php' ),
             'rest_url'        => \rest_url( 'trcl/v1/' ),
-            'nonce'           => \wp_create_nonce( 'wp_rest' ),
+            // Only logged-in users get a REST nonce: it is what lets
+            // get_current_user_id() resolve in the chat request (order
+            // lookup). Guests must not send one — a nonce baked into a
+            // page-cached HTML expires after 12–24 h and core then answers
+            // 403 (rest_cookie_invalid_nonce) to every visitor (2.4.2).
+            'nonce'           => \is_user_logged_in() ? \wp_create_nonce( 'wp_rest' ) : '',
             'enabled'         => \get_option( 'trcl_chat_enabled', '1' ),
             'widget_position' => \get_option( 'trcl_widget_position', 'bottom-right' ),
             'widget_color'    => \get_option( 'trcl_widget_color', '#10B981' ),

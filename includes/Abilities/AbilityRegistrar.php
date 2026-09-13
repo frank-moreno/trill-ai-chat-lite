@@ -177,11 +177,13 @@ class AbilityRegistrar {
                     ],
                     'requires_plugin' => 'woocommerce',
                 ],
-                // NOTE: WP 7.0.0 (current) does not accept `show_in_rest`
-                // — the documented property appears to land in 7.1. Until
-                // then the ability is only reachable via wp_get_ability()
-                // / $ability->execute() from PHP, which is fine for the
-                // plugin's own consumers. When 7.1 ships we can re-add it.
+                // NOTE: exposure is opt-in. Since WP 7.1 `meta.public`
+                // (default false) is the unified flag and `meta.show_in_rest`
+                // stays authoritative; with neither set the ability is only
+                // reachable via wp_get_ability() / $ability->execute() from
+                // PHP, which is fine for the plugin's own consumers. If this
+                // is ever exposed, keep get-conversation-summary out: its
+                // permission check is the session UUID alone.
             ]
         );
     }

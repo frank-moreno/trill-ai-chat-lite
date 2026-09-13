@@ -148,8 +148,10 @@ class ContentIndexer {
 
         // Only published posts are indexed; everything else (draft, pending,
         // private, trash, auto-draft) gets its chunks cleaned out so the
-        // index can't leak unpublished content into the chat.
-        if ( $post->post_status !== 'publish' ) {
+        // index can't leak unpublished content into the chat. Password-
+        // protected posts are 'publish' too but their content is gated, so
+        // they are excluded the same way (2.4.2).
+        if ( $post->post_status !== 'publish' || '' !== (string) $post->post_password ) {
             $this->delete_for_post( $post_id );
             return false;
         }
@@ -288,6 +290,7 @@ class ContentIndexer {
                 $query = new \WP_Query( [
                     'post_type'              => $post_types,
                     'post_status'            => 'publish',
+                    'has_password'           => false,
                     'posts_per_page'         => 50,
                     'paged'                  => $paged,
                     'fields'                 => 'ids',

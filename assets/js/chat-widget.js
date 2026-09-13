@@ -452,71 +452,98 @@
             $('#trcl-quick-replies').empty();
 
             // Send API request.
-            $.ajax({
-                url: trcl_ajax.rest_url + 'message',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    message: message,
-                    session_id: this.sessionId || '',
-                    context: {
-                        page_url: window.location.href,
-                        page_title: document.title
-                    }
-                }),
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', trcl_ajax.nonce);
-                },
-                success: function (response) {
-                    self.hideTyping();
-
-                    if (response.success) {
-                        // Store session ID.
-                        if (response.session_id) {
-                            self.sessionId = response.session_id;
-                            self.saveSession();
+            //
+            // The X-WP-Nonce header is only sent when the page localised a
+            // nonce (logged-in users). Guests never send one: a nonce baked
+            // into page-cached HTML expires and core would answer 403 to
+            // every visitor. If a logged-in nonce has gone stale (session
+            // expired with the tab open) we retry once without it, so the
+            // request degrades to a guest request instead of an error.
+            var send = function (withNonce) {
+                $.ajax({
+                    url: trcl_ajax.rest_url + 'message',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        message: message,
+                        session_id: self.sessionId || '',
+                        context: {
+                            page_url: window.location.href,
+                            page_title: document.title
                         }
-
-                        // Add AI response.
-                        var content = response.message ? response.message.content : response.response;
-                        self.addMessage('assistant', content);
-
-                        // Show product cards.
-                        if (response.products && response.products.length > 0) {
-                            self.renderProductCards(response.products);
+                    }),
+                    beforeSend: function (xhr) {
+                        if (withNonce && trcl_ajax.nonce) {
+                            xhr.setRequestHeader('X-WP-Nonce', trcl_ajax.nonce);
                         }
+                    },
+                    success: function (response) {
+                        self.hideTyping();
 
-                        // Show quick replies.
-                        if (response.quick_replies && response.quick_replies.length > 0) {
-                            self.renderQuickReplies(response.quick_replies);
+                        if (response.success) {
+                            // Store session ID.
+                            if (response.session_id) {
+                                self.sessionId = response.session_id;
+                                self.saveSession();
+                            }
+
+                            // Add AI response.
+                            var content = response.message ? response.message.content : response.response;
+                            self.addMessage('assistant', content);
+
+                            // Show product cards.
+                            if (response.products && response.products.length > 0) {
+                                self.renderProductCards(response.products);
+                            }
+
+                            // Show quick replies.
+                            if (response.quick_replies && response.quick_replies.length > 0) {
+                                self.renderQuickReplies(response.quick_replies);
+                            }
+                        } else {
+                            self.handleError(response);
                         }
-                    } else {
-                        self.handleError(response);
-                    }
-                },
-                error: function (xhr) {
-                    self.hideTyping();
-
-                    if (xhr.status === 429) {
+                    },
+                    error: function (xhr) {
                         var body = xhr.responseJSON || {};
-                        if (body.code === 'SERVICE_LIMIT_REACHED') {
-                            self.showLimitReached();
+
+                        // Stale nonce: drop it for the rest of the page life
+                        // and retry once as a guest.
+                        if (withNonce && xhr.status === 403 && body.code === 'rest_cookie_invalid_nonce') {
+                            trcl_ajax.nonce = '';
+                            send(false);
                             return;
                         }
-                    }
 
-                    self.addMessage('assistant', self.str('error_message'));
-                },
-                complete: function () {
-                    self.isLoading = false;
-                    $('#trcl-chat-send').prop('disabled', false);
+                        self.hideTyping();
 
-                    // Keep focus on input for mobile continuity.
-                    if (!self.isMobile) {
-                        $('#trcl-chat-input').focus();
+                        if (xhr.status === 429) {
+                            if (body.code === 'SERVICE_LIMIT_REACHED') {
+                                self.showLimitReached();
+                                return;
+                            }
+                        }
+
+                        self.addMessage('assistant', self.str('error_message'));
+                    },
+                    complete: function (xhr) {
+                        // A nonce retry is still in flight — leave the UI locked.
+                        if (withNonce && xhr.status === 403 && (xhr.responseJSON || {}).code === 'rest_cookie_invalid_nonce') {
+                            return;
+                        }
+
+                        self.isLoading = false;
+                        $('#trcl-chat-send').prop('disabled', false);
+
+                        // Keep focus on input for mobile continuity.
+                        if (!self.isMobile) {
+                            $('#trcl-chat-input').focus();
+                        }
                     }
-                }
-            });
+                });
+            };
+
+            send(true);
         },
 
         /**
@@ -574,19 +601,22 @@
          * @param {Array} products Product data.
          */
         renderProductCards: function (products) {
+            var self = this;
             var $container = $('<div class="trcl-product-cards"></div>');
 
             products.forEach(function (product) {
+                // price_html is WooCommerce's own markup (get_price_html());
+                // every other value is escaped for its context.
                 var $card = $(
                     '<div class="trcl-product-card">' +
-                        (product.image ? '<img class="trcl-product-card-image" src="' + product.image + '" alt="" />' : '') +
+                        (product.image ? '<img class="trcl-product-card-image" src="' + self.escapeAttr(product.image) + '" alt="" />' : '') +
                         '<div class="trcl-product-card-body">' +
-                            '<p class="trcl-product-card-name">' + $('<span>').text(product.name).html() + '</p>' +
-                            '<span class="trcl-product-card-price">' + (product.price_html || product.price) + '</span>' +
+                            '<p class="trcl-product-card-name">' + self.escapeHtml(product.name) + '</p>' +
+                            '<span class="trcl-product-card-price">' + (product.price_html || self.escapeHtml(product.price)) + '</span>' +
                         '</div>' +
                         (product.add_to_cart ?
-                            '<button class="trcl-product-card-action" data-product-id="' + product.id + '">Add to Cart</button>' :
-                            '<a href="' + product.url + '" class="trcl-product-card-action" target="_blank">View</a>') +
+                            '<button class="trcl-product-card-action" data-product-id="' + parseInt(product.id, 10) + '">Add to Cart</button>' :
+                            '<a href="' + self.escapeAttr(product.url) + '" class="trcl-product-card-action" target="_blank">View</a>') +
                     '</div>'
                 );
                 $container.append($card);
