@@ -126,6 +126,18 @@ class ContentSearch {
         '/\b(faq|frequently\s+asked|how\s+do\s+i|how\s+can\s+i)\b/i',
         '/\b(about\s+(you|us)|who\s+are\s+you)\b/i',
         '/\b(do\s+you\s+(ship|deliver|accept|offer|provide))\b/i',
+        // Complaints and entitlements — the answer must come from the
+        // indexed policy pages, never from the model's general knowledge (2.6.0).
+        '/\b(refund|refunds|compensation|compensate|guarantee|warranty|consumer\s+rights|complaint|chargeback)\b/i',
+        // Spanish (2.6.0).
+        '/\b(pol[ií]tica|condiciones)\s+de\s+(devoluci[oó]n|devoluciones|reembolso|reembolsos|env[ií]o|env[ií]os|privacidad|pago)\b/iu',
+        '/\b(reembolso|reembolsos|devoluci[oó]n|devoluciones|compensaci[oó]n|garant[ií]a|reclamaci[oó]n|derechos\s+del\s+consumidor)\b/iu',
+        '/\b(env[ií]o|env[ií]os|entrega|gastos\s+de\s+env[ií]o|cu[aá]nto\s+tarda)\b/iu',
+        '/\b(t[eé]rminos\s+y\s+condiciones|aviso\s+legal|privacidad)\b/iu',
+        '/\b(horario|horarios|contacto|contactar|hablar\s+con|soporte|preguntas\s+frecuentes|c[oó]mo\s+(puedo|hago|funciona))\b/iu',
+        '/\b(m[eé]todos?\s+de\s+pago|formas?\s+de\s+pago|pagar\s+con|acept[aá]is)\b/iu',
+        '/\b(cancelar|cambiar|modificar)\s+(mi\s+)?(pedido|suscripci[oó]n)\b/iu',
+        '/\b(sobre\s+(vosotros|nosotros)|qui[eé]nes\s+sois)\b/iu',
     ];
 
     /**

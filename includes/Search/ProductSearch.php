@@ -57,6 +57,13 @@ class ProductSearch {
             return $this->get_catalogue_overview();
         }
 
+        // "What's on sale?" — answer from the products actually on sale
+        // instead of text-matching the word "sale" (2.6.0). An empty
+        // result is a real answer: nothing is discounted right now.
+        if ( $this->is_sale_query( $message ) ) {
+            return $this->get_products_on_sale();
+        }
+
         try {
             $search_query = $this->extract_search_query( $message );
             $variants     = $this->get_search_variants( $search_query );
@@ -94,6 +101,55 @@ class ProductSearch {
     }
 
     /**
+     * Whether the message asks for discounted products.
+     *
+     * @since 2.6.0
+     */
+    public function is_sale_query( string $message ): bool {
+        $patterns = [
+            '/\b(on\s+sale|sale\s+items?|discount(s|ed)?|deals?|special\s+offers?|offers?|promotions?|promo|reduced|clearance|bargains?)\b/i',
+            '/\b(ofertas?|rebajas?|rebajad[oa]s?|descuentos?|promoci[oó]n(es)?|chollos?|en\s+oferta)\b/iu',
+        ];
+        foreach ( $patterns as $pattern ) {
+            if ( preg_match( $pattern, $message ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Products currently on sale (visible, published), best-selling first.
+     *
+     * @since 2.6.0
+     *
+     * @param int $limit Max products.
+     * @return array Formatted results, [] when nothing is discounted.
+     */
+    private function get_products_on_sale( int $limit = 5 ): array {
+        if ( ! function_exists( 'wc_get_product_ids_on_sale' ) ) {
+            return [];
+        }
+        $ids = array_values( array_filter( array_map( 'intval', (array) \wc_get_product_ids_on_sale() ) ) );
+        if ( empty( $ids ) ) {
+            return [];
+        }
+        try {
+            $products = \wc_get_products( [
+                'status'     => 'publish',
+                'visibility' => 'visible',
+                'include'    => $ids,
+                'limit'      => $limit,
+                'orderby'    => 'popularity',
+            ] );
+        } catch ( \Exception $e ) {
+            trcl_log( 'On-sale product query failed', 'warning', [ 'error' => $e->getMessage() ] );
+            return [];
+        }
+        return $this->format_results( is_array( $products ) ? $products : [] );
+    }
+
+    /**
      * Check if the message is a generic catalogue question rather than
      * a search for something specific — "what do you sell?", "what
      * products do you have?", "show me your catalogue".
@@ -118,6 +174,14 @@ class ProductSearch {
             '/\bwhat(\'s|\s+is)\s+in\s+(your|the)\s+(store|shop|catalogue|catalog)\b/i',
             '/\b(list|browse)\s+(all\s+)?(your\s+)?(products?|catalogue|catalog|plans?)\b/i',
             '/\bdo\s+you\s+(have|sell)\s+any\s+products?\b/i',
+            // Spanish (2.6.0): "lista de productos", "qué vendéis", "muéstrame el catálogo"...
+            '/\b(lista|listado|cat[aá]logo)\s+de\s+(productos?|art[ií]culos|planes|servicios)\b/iu',
+            '/\bqu[eé]\s+(productos?|art[ií]culos|planes|servicios|cosas)\s+(ten[eé]is|tienes|tiene|vend[eé]is|vendes|vende|ofrec[eé]is|ofreces|ofrece|hay)\b/iu',
+            '/\bqu[eé]\s+(vend[eé]is|vendes|vende|ofrec[eé]is|ofreces|ofrece)\b/iu',
+            '/\b(mu[eé]strame|ens[eé][ñn]ame|ver)\s+(tus|vuestros|los|el|la)\s+(productos?|cat[aá]logo|planes|art[ií]culos|tienda)\b/iu',
+            '/\bqu[eé]\s+puedo\s+comprar\b/iu',
+            '/\bcu[aá]ntos\s+(productos?|art[ií]culos|planes)\s+(ten[eé]is|tienes|tiene|hay|vend[eé]is|vendes)\b/iu',
+            '/^\s*(productos|cat[aá]logo|tienda|planes)\s*\??\s*$/iu',
         ];
 
         foreach ( $patterns as $pattern ) {
@@ -198,15 +262,33 @@ class ProductSearch {
     private function format_results( array $products ): array {
         $results = [];
         foreach ( $products as $product ) {
+            $on_sale = $product->is_on_sale();
             $results[] = [
-                'product_id' => $product->get_id(),
-                'name'       => $product->get_name(),
-                'price'      => trcl_format_price( $product->get_price() ),
-                'url'        => $product->get_permalink(),
-                'in_stock'   => $product->is_in_stock(),
+                'product_id'    => $product->get_id(),
+                'name'          => $product->get_name(),
+                'price'         => $this->plain_price( (float) $product->get_price() ),
+                'url'           => $product->get_permalink(),
+                'in_stock'      => $product->is_in_stock(),
+                // Sale state (2.6.0) so the assistant can answer "what's on
+                // sale?" consistently with the cards it shows.
+                'on_sale'       => $on_sale,
+                'regular_price' => $on_sale && '' !== (string) $product->get_regular_price()
+                    ? $this->plain_price( (float) $product->get_regular_price() )
+                    : '',
             ];
         }
         return $results;
+    }
+
+    /**
+     * Price as plain text for the prompt ("£16.00"), not wc_price() HTML —
+     * the markup wasted tokens and could leak into replies (2.6.0).
+     *
+     * @since 2.6.0
+     */
+    private function plain_price( float $price ): string {
+        $html = trcl_format_price( $price );
+        return trim( html_entity_decode( \wp_strip_all_tags( $html ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
     }
 
     /**
@@ -239,9 +321,11 @@ class ProductSearch {
 
         // Patterns that indicate non-product queries.
         $non_product_patterns = [
-            '/^(hi|hello|hey|good\s+(morning|afternoon|evening))\b/i',
-            '/^(thanks?|thank\s+you|cheers)\b/i',
-            '/^(bye|goodbye|see\s+you|take\s+care)\b/i',
+            // Pure greetings only — "hi, what do you have on sale?" is a
+            // product question with a greeting in front (2.6.0).
+            '/^(hi|hello|hey|good\s+(morning|afternoon|evening))[\s!.,]*$/i',
+            '/^(thanks?|thank\s+you|cheers)[\s!.,]*$/i',
+            '/^(bye|goodbye|see\s+you|take\s+care)[\s!.,]*$/i',
             '/\b(opening\s+hours?|business\s+hours?|when\s+(are\s+you|do\s+you)\s+open)\b/i',
             '/\b(contact|email|phone|call|speak\s+to|talk\s+to)\s+(a\s+)?(human|person|agent|someone|support|staff)\b/i',
             '/\b(return\s+policy|refund\s+policy|shipping\s+policy|privacy\s+policy|terms\s+and\s+conditions)\b/i',
@@ -251,6 +335,13 @@ class ProductSearch {
             '/\b(where\s+is\s+my\s+order|order\s+status|my\s+order)\b/i',
             '/\b(payment\s+method|pay\s+with|accept\s+(paypal|visa|mastercard|card))\b/i',
             '/\b(cancel|change|amend)\s+(my\s+)?(order|subscription)\b/i',
+            // Spanish (2.6.0).
+            '/^(hola|buenas|buenos\s+d[ií]as|buenas\s+tardes|buenas\s+noches|gracias|adi[oó]s|hasta\s+luego)[\s!.,]*$/iu',
+            '/\b(pol[ií]tica|condiciones)\s+de\s+(devoluci[oó]n|devoluciones|reembolso|reembolsos|env[ií]o|env[ií]os|privacidad)\b/iu',
+            '/\b(t[eé]rminos\s+y\s+condiciones|aviso\s+legal)\b/iu',
+            '/\b(d[oó]nde\s+est[aá]\s+mi\s+pedido|estado\s+de(l)?\s+(mi\s+)?pedido|mi\s+pedido)\b/iu',
+            '/\b(hablar|contactar)\s+con\s+(una?\s+)?(persona|humano|agente|soporte|alguien)\b/iu',
+            '/\b(qui[eé]n\s+eres|qu[eé]\s+eres|qu[eé]\s+puedes\s+hacer)\b/iu',
         ];
 
         foreach ( $non_product_patterns as $pattern ) {

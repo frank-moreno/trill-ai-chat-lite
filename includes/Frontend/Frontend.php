@@ -259,6 +259,9 @@ class Frontend {
                 'request_send'      => __( 'Send request', 'trill-ai-chat-lite' ),
                 'request_sent'      => __( 'Thanks — check your inbox for a confirmation email.', 'trill-ai-chat-lite' ),
                 'request_error'     => __( 'Could not send the request. Please try again later.', 'trill-ai-chat-lite' ),
+                // Rating controls (2.6.0).
+                'rate_up'           => __( 'Helpful', 'trill-ai-chat-lite' ),
+                'rate_down'         => __( 'Not helpful', 'trill-ai-chat-lite' ),
             ],
             'branding' => [
                 'powered_by_text' => LiteConfig::POWERED_BY_TEXT,
@@ -280,7 +283,7 @@ class Frontend {
         }
 
         $localize_data['product_card'] = [
-            'max_products'    => 4,
+            'max_products'    => 5,
             'show_add_to_cart' => true,
         ];
 

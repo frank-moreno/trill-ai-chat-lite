@@ -533,7 +533,7 @@ class RestController {
             //                                     so we can resume
             //                                     verification when
             //                                     they reply with email.
-            $ai_content   = $ai_response['reply'];
+            $ai_content   = $this->strip_reply_urls( (string) $ai_response['reply'], ! empty( $product_results ) );
             $message_meta = [];
             $meta_payload = [];
 
@@ -1091,6 +1091,50 @@ class RestController {
         }
 
         return [];
+    }
+
+    /**
+     * Clean URLs out of the assistant reply (2.6.0).
+     *
+     * Deterministic backstop for the prompt rules: a URL on another
+     * domain is a hallucination and is removed; when product cards are
+     * attached to the reply, every URL is removed (the cards carry the
+     * links and the model was told not to repeat them). Links to this
+     * site in a card-less reply (checkout, a policy page) are kept.
+     *
+     * @since 2.6.0
+     *
+     * @param string $reply      Assistant reply.
+     * @param bool   $with_cards Whether product cards accompany the reply.
+     * @return string
+     */
+    private function strip_reply_urls( string $reply, bool $with_cards ): string {
+        $site_host = strtolower( (string) wp_parse_url( \home_url(), PHP_URL_HOST ) );
+        $site_host = preg_replace( '/^www\./', '', $site_host );
+
+        $cleaned = (string) preg_replace_callback(
+            '#https?://[^\s<>"\')\]]+#i',
+            static function ( array $m ) use ( $site_host, $with_cards ): string {
+                $host = strtolower( (string) wp_parse_url( $m[0], PHP_URL_HOST ) );
+                $host = preg_replace( '/^www\./', '', $host );
+                if ( ! $with_cards && $site_host !== '' && $host === $site_host ) {
+                    return $m[0];
+                }
+                trcl_log( 'URL removed from reply', 'info', [ 'host' => $host, 'with_cards' => $with_cards ] );
+                return '';
+            },
+            $reply
+        );
+
+        // Tidy what the removals leave behind: dangling "Link: " labels,
+        // empty brackets/parentheses and runs of blank lines.
+        $cleaned = preg_replace( '/[ \t]*(?:link|url|enlace)\s*:\s*$/im', '', $cleaned );
+        $cleaned = preg_replace( '/\[([^\]]*)\]\(\s*\)/', '$1', $cleaned );
+        $cleaned = preg_replace( '/\(\s*\)/', '', $cleaned );
+        $cleaned = preg_replace( "/[ \t]+\n/", "\n", $cleaned );
+        $cleaned = preg_replace( "/\n{3,}/", "\n\n", $cleaned );
+
+        return trim( (string) $cleaned );
     }
 
     /**

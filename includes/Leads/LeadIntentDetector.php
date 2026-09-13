@@ -100,15 +100,44 @@ class LeadIntentDetector {
             ];
         }
 
-        if ( $this->matches_any( $message, self::PRICE_DROP_PATTERNS ) ) {
+        if ( $this->matches_any( $message, self::PRICE_DROP_PATTERNS ) && $this->names_a_product( $message ) ) {
             $product_id = $this->extract_first_product_id( $products );
-            return [
-                'type'       => self::INTENT_PRICE_DROP,
-                'product_id' => $product_id,
-            ];
+            // A price-drop alert needs a product to watch. "What's on
+            // sale?" — a generic question — must not trigger the email
+            // offer even when the sale listing returned products (2.6.0, C5).
+            if ( $product_id > 0 ) {
+                return [
+                    'type'       => self::INTENT_PRICE_DROP,
+                    'product_id' => $product_id,
+                ];
+            }
         }
 
         return [ 'type' => self::INTENT_NONE, 'product_id' => 0 ];
+    }
+
+    /**
+     * Whether the message mentions something beyond generic sale/shop
+     * words — i.e. a product the visitor could be asked to watch.
+     *
+     * @since 2.6.0
+     */
+    private function names_a_product( string $message ): bool {
+        $generic = [
+            'what', 'whats', 'which', 'anything', 'something', 'there', 'have', 'got', 'you', 'your',
+            'today', 'now', 'currently', 'right', 'show', 'tell', 'list', 'products', 'items', 'stuff',
+            'things', 'sale', 'sales', 'discount', 'discounts', 'discounted', 'deal', 'deals', 'offer',
+            'offers', 'promo', 'promotion', 'coupon', 'cheaper', 'ever', 'usually', 'store', 'shop',
+            'hay', 'algo', 'tenéis', 'teneis', 'tienes', 'oferta', 'ofertas', 'rebajas', 'descuento',
+            'descuentos', 'promocion', 'promoción', 'productos', 'tienda', 'ahora', 'hoy',
+        ];
+        $words = preg_split( '/[^\p{L}\p{N}]+/u', mb_strtolower( $message ) ) ?: [];
+        foreach ( $words as $word ) {
+            if ( mb_strlen( $word ) >= 4 && ! in_array( $word, $generic, true ) ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -4,7 +4,7 @@ Tags: woocommerce, ai chatbot, shopping assistant, product search, order trackin
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.5.0
+Stable tag: 2.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -247,6 +247,20 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 2.6.0 =
+**Answer quality release, driven by real conversations. Safe update for all users — no settings change, no database update.**
+
+* **Fixed: cart totals shown as 0.00.** When a shopper asked about their basket, the assistant listed the items correctly but reported a £0.00 subtotal and total. Totals are now calculated before they reach the assistant.
+* **Fixed: invented products, prices and links.** When a product search found nothing, the assistant could make up a product from the store name or tagline, complete with a price and a URL on another domain. The assistant is now instructed to name only products, prices and links it was actually given, and any link that does not point at your site is replaced by your store URL.
+* **Improved: policies and product facts come only from your content.** Refunds, shipping, guarantees, legal rights and "how does it work" questions are answered from your indexed pages or handed to your support channel — never improvised. Complaints and compensation demands are acknowledged and handed over, not negotiated.
+* **Improved: stays on topic.** Maths, trivia, jokes, role-play, recommendations outside your catalogue and "help me buy elsewhere" are now declined like other off-topic requests; replies are plain text (bold for product names), so nothing is rendered as raw Markdown or LaTeX.
+* **Improved: Spanish shoppers.** "Lista de productos", "¿qué vendéis?", "política de devoluciones", "¿dónde está mi pedido?" and similar now trigger the catalogue and content lookups they should.
+* **New: 👍/👎 on every assistant reply.** Ratings are stored per conversation (Conversations page) so you can see which answers land.
+* **Changed: a guest conversation now expires after 24 hours of inactivity**, so a returning visitor starts fresh instead of carrying weeks-old context.
+* **Improved: "What's on sale?" now answers with the products that are actually discounted** (and says so when none are), and the assistant sees sale prices, so its text matches the cards it shows.
+* Product cards: the "View" button no longer picks up the theme's link styling.
+* Price-drop email offers are only made when a specific product is being discussed.
+
 = 2.5.0 =
 **Connection resilience release. Safe update for all users — no settings change, no database update.**
 
@@ -419,6 +433,9 @@ This release turns Trill AI Chat from a product-search chatbot into a full-stack
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.6.0 =
+Answer quality: correct cart totals, no invented products or links, policies only from your own content, better Spanish detection, and 👍/👎 on replies. Safe update for all users.
 
 = 2.5.0 =
 Dashboard connection status with a Reconnect button, encrypted site credential, and fixes for reinstall recovery and empty conversations. Safe update for all users.

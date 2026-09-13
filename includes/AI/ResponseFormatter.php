@@ -26,7 +26,7 @@ class ResponseFormatter {
     /**
      * Maximum product cards to return.
      */
-    private const MAX_PRODUCT_CARDS = 4;
+    private const MAX_PRODUCT_CARDS = 5;
 
     /**
      * Format a complete API response.

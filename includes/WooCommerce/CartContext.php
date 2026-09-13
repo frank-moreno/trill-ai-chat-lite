@@ -99,6 +99,14 @@ class CartContext {
                 return [];
             }
 
+            // In a REST request WooCommerce loads the cart but does not
+            // total it, so get_subtotal()/get_total() and each line_total
+            // read 0.00 (2.6.0, C2).
+            if ( method_exists( $wc->cart, 'calculate_totals' ) ) {
+                $wc->cart->calculate_totals();
+                $cart_items = $wc->cart->get_cart();
+            }
+
             $items       = [];
             $rendered    = 0;
             $total_items = 0;

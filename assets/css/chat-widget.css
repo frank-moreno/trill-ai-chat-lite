@@ -296,6 +296,44 @@
     text-decoration: underline;
 }
 
+/* Rating controls under an assistant reply (2.6.0) */
+.trcl-rating {
+    display: flex;
+    gap: 4px;
+    align-self: flex-start;
+    margin: -4px 0 0 6px;
+}
+
+.trcl-rating-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.45;
+    transition: opacity 0.15s, border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.trcl-rating-btn:hover,
+.trcl-rating-btn:focus-visible {
+    opacity: 1;
+    border-color: var(--trcl-primary, #10B981);
+    outline: none;
+}
+
+.trcl-rating--done .trcl-rating-btn {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.trcl-rating--done .trcl-rating-btn.is-selected {
+    opacity: 1;
+    border-color: var(--trcl-primary, #10B981);
+}
+
 /* Typing Indicator */
 .trcl-typing {
     display: flex;
@@ -422,6 +460,18 @@
 
 .trcl-product-card-action:hover {
     opacity: 0.9;
+}
+
+/* The "View" variant is an <a>; beat theme link styles so it matches the button (2.6.0). */
+.trcl-product-cards a.trcl-product-card-action,
+.trcl-product-cards a.trcl-product-card-action:hover,
+.trcl-product-cards a.trcl-product-card-action:focus,
+.trcl-product-cards a.trcl-product-card-action:visited {
+    color: #fff;
+    text-decoration: none;
+    font-size: 11px;
+    line-height: inherit;
+    box-sizing: border-box;
 }
 
 /* ========================================

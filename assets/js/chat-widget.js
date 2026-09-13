@@ -51,7 +51,13 @@
 
         /** sessionStorage key + schema version for the transcript cache. */
         HISTORY_STORAGE_KEY: 'trcl_history',
-        HISTORY_VERSION: 1,
+        HISTORY_VERSION: 2,
+
+        /** Ratings given in this tab, keyed by message id (2.6.0). */
+        ratings: {},
+
+        /** Guest session expires after this much inactivity (2.6.0). */
+        SESSION_TTL_MS: 24 * 60 * 60 * 1000,
 
         /** Soft caps applied before persisting, to keep storage bounded. */
         MAX_HISTORY_MESSAGES: 20,
@@ -237,6 +243,15 @@
                     $('#trcl-chat-input').val(value);
                     self.sendMessage();
                 }
+            });
+
+            // Rating 👍/👎 (2.6.0).
+            $(document).on('click', '.trcl-rating-btn', function () {
+                var $wrap = $(this).closest('.trcl-rating');
+                if ($wrap.hasClass('trcl-rating--done')) {
+                    return;
+                }
+                self.rate(parseInt($wrap.data('message-id'), 10), parseInt($(this).data('rating'), 10), $wrap);
             });
 
             // Product card add-to-cart.
@@ -487,9 +502,10 @@
                                 self.saveSession();
                             }
 
-                            // Add AI response.
+                            // Add AI response (message id enables the 👍/👎 rating).
                             var content = response.message ? response.message.content : response.response;
-                            self.addMessage('assistant', content);
+                            var messageId = response.message && response.message.id ? parseInt(response.message.id, 10) : 0;
+                            self.addMessage('assistant', content, messageId);
 
                             // Show product cards.
                             if (response.products && response.products.length > 0) {
@@ -552,7 +568,7 @@
          * @param {string} role    Message role (user|assistant).
          * @param {string} content Message content.
          */
-        addMessage: function (role, content) {
+        addMessage: function (role, content, messageId) {
             var $messages = $('#trcl-chat-messages');
             var sanitised = $('<div>').text(content).html();
 
@@ -562,12 +578,28 @@
 
             var $msg = $('<div class="trcl-message trcl-message--' + role + '">' + sanitised + '</div>');
             $messages.append($msg);
+
+            // Rating controls (2.6.0): only for assistant replies we have a
+            // server id for. Rehydrated history carries the id too, so the
+            // controls survive a reload; a rating already given is shown
+            // as selected and locked.
+            messageId = parseInt(messageId, 10) || 0;
+            if (role === 'assistant' && messageId > 0) {
+                var given = this.ratings[messageId] || 0;
+                var $rating = $(
+                    '<div class="trcl-rating' + (given ? ' trcl-rating--done' : '') + '" data-message-id="' + messageId + '">' +
+                        '<button type="button" class="trcl-rating-btn' + (given === 5 ? ' is-selected' : '') + '" data-rating="5" aria-label="' + this.escapeAttr(this.str('rate_up')) + '" title="' + this.escapeAttr(this.str('rate_up')) + '">&#128077;</button>' +
+                        '<button type="button" class="trcl-rating-btn' + (given === 1 ? ' is-selected' : '') + '" data-rating="1" aria-label="' + this.escapeAttr(this.str('rate_down')) + '" title="' + this.escapeAttr(this.str('rate_down')) + '">&#128078;</button>' +
+                    '</div>'
+                );
+                $messages.append($rating);
+            }
             this.scrollToBottom();
 
             // Track every rendered turn so we can restore it on reload.
             // During rehydrateHistory() we push but skip the write; the
             // replay code calls saveHistory() once at the end.
-            this.messageHistory.push({ role: role, content: content });
+            this.messageHistory.push({ role: role, content: content, id: messageId });
             if (!this.suppressHistory) {
                 this.saveHistory();
             }
@@ -782,10 +814,62 @@
         /**
          * Save session ID to localStorage.
          */
+        /**
+         * Send a 👍/👎 rating for an assistant message (2.6.0).
+         *
+         * POST /feedback requires the session UUID: the server only
+         * accepts ratings for messages of that conversation. The
+         * control locks optimistically; on failure it unlocks again.
+         *
+         * @param {number} messageId
+         * @param {number} rating   5 (up) or 1 (down).
+         * @param {jQuery} $wrap    The .trcl-rating element.
+         */
+        rate: function (messageId, rating, $wrap) {
+            var self = this;
+            if (!messageId || !this.sessionId) {
+                return;
+            }
+            $wrap.addClass('trcl-rating--done');
+            $wrap.find('.trcl-rating-btn').removeClass('is-selected');
+            $wrap.find('.trcl-rating-btn[data-rating="' + rating + '"]').addClass('is-selected');
+
+            $.ajax({
+                url: trcl_ajax.rest_url + 'feedback',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    session_id: this.sessionId,
+                    message_id: messageId,
+                    rating: rating
+                }),
+                beforeSend: function (xhr) {
+                    if (trcl_ajax.nonce) {
+                        xhr.setRequestHeader('X-WP-Nonce', trcl_ajax.nonce);
+                    }
+                },
+                success: function () {
+                    self.ratings[messageId] = rating;
+                    self.saveHistory();
+                },
+                error: function () {
+                    $wrap.removeClass('trcl-rating--done');
+                    $wrap.find('.trcl-rating-btn').removeClass('is-selected');
+                }
+            });
+        },
+
+        /**
+         * Save session ID to localStorage, with the time of last use so
+         * a guest session expires after SESSION_TTL_MS of inactivity
+         * (2.6.0): a visitor coming back weeks later starts a fresh
+         * conversation instead of dragging stale context into the prompt.
+         */
         saveSession: function () {
             try {
                 if (this.sessionId) {
                     localStorage.setItem('trcl_session_id', this.sessionId);
+                    localStorage.setItem('trcl_session_seen', String(Date.now()));
                 }
             } catch (e) {
                 // localStorage not available.
@@ -793,11 +877,18 @@
         },
 
         /**
-         * Load session ID from localStorage.
+         * Load session ID from localStorage (dropped when expired).
          */
         loadSession: function () {
             try {
-                this.sessionId = localStorage.getItem('trcl_session_id') || null;
+                var id   = localStorage.getItem('trcl_session_id') || null;
+                var seen = parseInt(localStorage.getItem('trcl_session_seen') || '0', 10);
+                if (id && seen && (Date.now() - seen) > this.SESSION_TTL_MS) {
+                    localStorage.removeItem('trcl_session_id');
+                    localStorage.removeItem('trcl_session_seen');
+                    id = null;
+                }
+                this.sessionId = id;
             } catch (e) {
                 this.sessionId = null;
             }
@@ -846,7 +937,8 @@
                 var payload = {
                     version: this.HISTORY_VERSION,
                     session_id: this.sessionId || null,
-                    messages: messages
+                    messages: messages,
+                    ratings: this.ratings
                 };
                 window.sessionStorage.setItem(this.HISTORY_STORAGE_KEY, JSON.stringify(payload));
             } catch (e) {
@@ -886,6 +978,9 @@
                         return m && typeof m.role === 'string' && typeof m.content === 'string';
                     });
                 }
+                if (data.ratings && typeof data.ratings === 'object') {
+                    this.ratings = data.ratings;
+                }
             } catch (e) {
                 // Storage unavailable or payload corrupted — start clean.
                 this.messageHistory = [];
@@ -912,7 +1007,7 @@
             this.messageHistory = [];
             this.suppressHistory = true;
             for (var i = 0; i < original.length; i++) {
-                this.addMessage(original[i].role, original[i].content);
+                this.addMessage(original[i].role, original[i].content, original[i].id || 0);
             }
             this.suppressHistory = false;
             // Single write after the full replay completes.
