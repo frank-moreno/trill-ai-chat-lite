@@ -117,6 +117,10 @@ No OpenAI, Anthropic or Google API key is required. Trill AI manages the AI prov
 
 == Frequently Asked Questions ==
 
+= My store is behind a proxy or CDN — does rate limiting still work? =
+
+Yes. The chat endpoints are rate-limited per visitor IP. Cloudflare is recognised out of the box (the real visitor address is read from `CF-Connecting-IP` only when the connection genuinely comes from a Cloudflare range). Behind any other reverse proxy or CDN, tell the plugin where the real address is with the `trcl_client_ip` filter — for example `add_filter( 'trcl_client_ip', fn() => sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_REAL_IP'] ?? '' ) ) );` — and, if many shoppers legitimately share one address, raise the limit with `trcl_rate_limit_per_minute`.
+
 = Do I need a WooCommerce store to use this plugin? =
 
 Yes. Trill AI Chat Lite is a WooCommerce AI shopping assistant — it reads your WooCommerce product catalogue, your published pages, the current cart and the order history to answer shopper questions. It will not do anything useful on a WordPress site without WooCommerce installed and active.
@@ -247,7 +251,7 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 **Security and reliability release. Safe update for all users — no settings change, no database update.**
 
 * **Fixed: chat stopped working for visitors on sites with page caching.** The widget sent a WordPress REST nonce on every request, including for guests. Once the cached page outlived the nonce (12–24 hours), WordPress rejected every guest message with a 403. Guests no longer send a nonce; logged-in users still do, and a stale one is retried once as a guest instead of failing.
-* **Security: per-IP rate limiting could be bypassed** by supplying a forged `X-Forwarded-For` or `Client-IP` header, allowing anyone to exhaust a store's monthly Trill Cloud allowance. The limiter now uses the connection address only. Sites behind a trusted proxy or CDN can resolve the real client address with the new `trcl_client_ip` filter.
+* **Security: per-IP rate limiting could be bypassed** by supplying a forged `X-Forwarded-For` or `Client-IP` header, allowing anyone to exhaust a store's monthly Trill Cloud allowance. The limiter now uses the connection address; Cloudflare is recognised automatically (`CF-Connecting-IP` is trusted only from Cloudflare ranges), other proxies can resolve the real address with the new `trcl_client_ip` filter, and the limit itself is adjustable with `trcl_rate_limit_per_minute`.
 * **Security: password-protected pages and posts are no longer indexed** for the AI, so their content cannot surface in chat answers. Existing entries are removed on the next content re-index.
 * **Security: the feedback endpoint now requires the session UUID** and only accepts ratings for messages of that conversation.
 * **Privacy: debug logging never records visitor messages or search queries any more** (lengths and counts only). `trcl_log()` now honours `WP_DEBUG_LOG` and `TRCL_LOG_LEVEL` (default `info`), so `debug` entries are silent unless you opt in.

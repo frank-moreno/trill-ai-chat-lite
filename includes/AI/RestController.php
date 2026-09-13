@@ -28,6 +28,7 @@ use TrillChatLite\Leads\LeadIntentDetector;
 use TrillChatLite\Lite\LiteConfig;
 use TrillChatLite\Lite\TrialRegistration;
 use TrillChatLite\Search\ProductSearch;
+use TrillChatLite\Utils\ClientIp;
 use TrillChatLite\WooCommerce\CartContext;
 use TrillChatLite\WooCommerce\OrderIntentDetector;
 use TrillChatLite\WooCommerce\OrderLookup;
@@ -61,6 +62,7 @@ class RestController {
      * Rate limit: max requests per minute per IP.
      */
     private const RATE_LIMIT_PER_MINUTE = 10;
+
 
     /**
      * Database manager.
@@ -811,6 +813,18 @@ class RestController {
      * @return true|\WP_Error
      */
     private function enforce_rate_limit( int $max_per_minute ) {
+        /**
+         * Filter the per-IP request limit per minute.
+         *
+         * Sites where many visitors share one address (an unusual proxy,
+         * a corporate NAT) can raise it. Applies to every public route.
+         *
+         * @since 2.4.2
+         *
+         * @param int $max_per_minute Limit for the current route.
+         */
+        $max_per_minute = max( 1, (int) \apply_filters( 'trcl_rate_limit_per_minute', $max_per_minute ) );
+
         $ip      = $this->get_client_ip();
         $ip_hash = md5( $ip );
         $key     = 'trcl_rate_' . $ip_hash;
@@ -1119,33 +1133,11 @@ class RestController {
     }
 
     /**
-     * Get client IP address.
+     * Get client IP address (see Utils\ClientIp for the trust rules).
      *
-     * Reads REMOTE_ADDR only. X-Forwarded-For / Client-IP are written by
-     * the client, so trusting them lets anyone reset the per-IP rate
-     * limit with a fresh header per request (2.4.2). Sites behind a
-     * trusted reverse proxy or CDN resolve the real address through the
-     * `trcl_client_ip` filter.
-     *
-     * @return string Validated IP, or '0.0.0.0' when none is available.
+     * @return string
      */
     private function get_client_ip(): string {
-        $ip = isset( $_SERVER['REMOTE_ADDR'] )
-            ? \sanitize_text_field( \wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
-            : '';
-
-        /**
-         * Filter the client IP used for REST rate limiting.
-         *
-         * Only trust proxy headers here when REMOTE_ADDR is a proxy you
-         * control (e.g. read CF-Connecting-IP behind Cloudflare).
-         *
-         * @since 2.4.2
-         *
-         * @param string $ip REMOTE_ADDR as received.
-         */
-        $ip = (string) \apply_filters( 'trcl_client_ip', $ip );
-
-        return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '0.0.0.0';
+        return ClientIp::get();
     }
 }

@@ -189,8 +189,24 @@ diff -ruN '--exclude=*.min.js' a/assets/js/chat-widget.js plugin/assets/js/chat-
                  $container.append($card);
 diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/AI/RestController.php
 --- a/includes/AI/RestController.php	2026-09-13 13:18:02.054598946 +0000
-+++ b/includes/AI/RestController.php	2026-09-13 13:49:35.848755469 +0000
-@@ -173,7 +173,7 @@
++++ b/includes/AI/RestController.php	2026-09-13 14:42:47.871911111 +0000
+@@ -28,6 +28,7 @@
+ use TrillChatLite\Lite\LiteConfig;
+ use TrillChatLite\Lite\TrialRegistration;
+ use TrillChatLite\Search\ProductSearch;
++use TrillChatLite\Utils\ClientIp;
+ use TrillChatLite\WooCommerce\CartContext;
+ use TrillChatLite\WooCommerce\OrderIntentDetector;
+ use TrillChatLite\WooCommerce\OrderLookup;
+@@ -62,6 +63,7 @@
+      */
+     private const RATE_LIMIT_PER_MINUTE = 10;
+ 
++
+     /**
+      * Database manager.
+      *
+@@ -173,7 +175,7 @@
          );
  
          // GET /wp-json/trcl/v1/conversation/{session_id}
@@ -199,7 +215,7 @@ diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/
          \register_rest_route(
              self::API_NAMESPACE,
              '/conversation/(?P<session_id>[\w-]+)',
-@@ -193,7 +193,7 @@
+@@ -193,7 +195,7 @@
          );
  
          // POST /wp-json/trcl/v1/feedback
@@ -208,7 +224,7 @@ diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/
          \register_rest_route(
              self::API_NAMESPACE,
              '/feedback',
-@@ -304,7 +304,7 @@
+@@ -304,7 +306,7 @@
              $product_results = $is_product_msg ? $this->search->search( $message ) : [];
  
              trcl_log( 'Product search result', 'debug', [
@@ -217,7 +233,7 @@ diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/
                  'is_product_msg' => $is_product_msg,
                  'products_found' => count( $product_results ),
                  'product_names'  => array_column( $product_results, 'name' ),
-@@ -321,7 +321,7 @@
+@@ -321,7 +323,7 @@
              }
  
              trcl_log( 'Content search result', 'debug', [
@@ -226,7 +242,7 @@ diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/
                  'content_found'   => count( $content_results ),
                  'content_titles'  => array_column( $content_results, 'title' ),
              ] );
-@@ -667,6 +667,18 @@
+@@ -667,6 +669,18 @@
              $message_id = absint( $request->get_param( 'message_id' ) );
              $rating     = absint( $request->get_param( 'rating' ) );
              $comment    = \sanitize_textarea_field( $request->get_param( 'comment' ) ?? '' );
@@ -245,7 +261,7 @@ diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/
  
              $saved = $this->db->save_feedback( $message_id, $rating, $comment );
  
-@@ -726,9 +738,9 @@
+@@ -726,9 +740,9 @@
      /**
       * Permission callback for GET /conversation/{session_id}.
       *
@@ -258,7 +274,26 @@ diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/
       *
       * @param \WP_REST_Request $request Request object.
       * @return true|\WP_Error
-@@ -868,6 +880,13 @@
+@@ -799,6 +813,18 @@
+      * @return true|\WP_Error
+      */
+     private function enforce_rate_limit( int $max_per_minute ) {
++        /**
++         * Filter the per-IP request limit per minute.
++         *
++         * Sites where many visitors share one address (an unusual proxy,
++         * a corporate NAT) can raise it. Applies to every public route.
++         *
++         * @since 2.4.2
++         *
++         * @param int $max_per_minute Limit for the current route.
++         */
++        $max_per_minute = max( 1, (int) \apply_filters( 'trcl_rate_limit_per_minute', $max_per_minute ) );
++
+         $ip      = $this->get_client_ip();
+         $ip_hash = md5( $ip );
+         $key     = 'trcl_rate_' . $ip_hash;
+@@ -868,6 +894,13 @@
       */
      private function get_feedback_args(): array {
          return [
@@ -272,18 +307,14 @@ diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/
              'message_id' => [
                  'required'          => true,
                  'type'              => 'integer',
-@@ -1102,23 +1121,31 @@
+@@ -1100,25 +1133,11 @@
+     }
+ 
      /**
-      * Get client IP address.
+-     * Get client IP address.
++     * Get client IP address (see Utils\ClientIp for the trust rules).
       *
--     * @return string
-+     * Reads REMOTE_ADDR only. X-Forwarded-For / Client-IP are written by
-+     * the client, so trusting them lets anyone reset the per-IP rate
-+     * limit with a fresh header per request (2.4.2). Sites behind a
-+     * trusted reverse proxy or CDN resolve the real address through the
-+     * `trcl_client_ip` filter.
-+     *
-+     * @return string Validated IP, or '0.0.0.0' when none is available.
+      * @return string
       */
      private function get_client_ip(): string {
 -        $ip_keys = [ 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' ];
@@ -299,24 +330,9 @@ diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/
 -                }
 -            }
 -        }
-+        $ip = isset( $_SERVER['REMOTE_ADDR'] )
-+            ? \sanitize_text_field( \wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
-+            : '';
-+
-+        /**
-+         * Filter the client IP used for REST rate limiting.
-+         *
-+         * Only trust proxy headers here when REMOTE_ADDR is a proxy you
-+         * control (e.g. read CF-Connecting-IP behind Cloudflare).
-+         *
-+         * @since 2.4.2
-+         *
-+         * @param string $ip REMOTE_ADDR as received.
-+         */
-+        $ip = (string) \apply_filters( 'trcl_client_ip', $ip );
- 
+-
 -        return '0.0.0.0';
-+        return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '0.0.0.0';
++        return ClientIp::get();
      }
  }
 diff -ruN '--exclude=*.min.js' a/includes/Abilities/AbilityRegistrar.php plugin/includes/Abilities/AbilityRegistrar.php
@@ -448,6 +464,26 @@ diff -ruN '--exclude=*.min.js' a/includes/Frontend/Frontend.php plugin/includes/
              'enabled'         => \get_option( 'trcl_chat_enabled', '1' ),
              'widget_position' => \get_option( 'trcl_widget_position', 'bottom-right' ),
              'widget_color'    => \get_option( 'trcl_widget_color', '#10B981' ),
+diff -ruN '--exclude=*.min.js' a/includes/Gdpr/PrivacyRequestController.php plugin/includes/Gdpr/PrivacyRequestController.php
+--- a/includes/Gdpr/PrivacyRequestController.php	2026-09-13 13:17:59.554598797 +0000
++++ b/includes/Gdpr/PrivacyRequestController.php	2026-09-13 14:42:47.872344454 +0000
+@@ -65,13 +65,13 @@
+     /**
+      * Permission callback: per-IP rate limit.
+      *
+-     * Mirrors RestController::enforce_rate_limit — the IP is hashed
+-     * into a transient key and never stored as data.
++     * Same address rules as the chat routes (Utils\ClientIp); the IP is
++     * hashed into a transient key and never stored as data.
+      *
+      * @return true|\WP_Error
+      */
+     public function check_rate_limit() {
+-        $ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? \sanitize_text_field( \wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
++        $ip      = \TrillChatLite\Utils\ClientIp::get();
+         $key     = 'trcl_privreq_' . md5( $ip );
+         $current = (int) \get_transient( $key );
+ 
 diff -ruN '--exclude=*.min.js' a/includes/Search/ProductSearch.php plugin/includes/Search/ProductSearch.php
 --- a/includes/Search/ProductSearch.php	2026-09-13 13:17:58.778598751 +0000
 +++ b/includes/Search/ProductSearch.php	2026-09-13 13:48:52.064974327 +0000
@@ -499,6 +535,147 @@ diff -ruN '--exclude=*.min.js' a/includes/Search/ProductSearch.php plugin/includ
                          'limit'  => $limit,
                          's'      => $wv,
                      ] );
+diff -ruN '--exclude=*.min.js' a/includes/Utils/ClientIp.php plugin/includes/Utils/ClientIp.php
+--- a/includes/Utils/ClientIp.php	1970-01-01 00:00:00.000000000 +0000
++++ b/includes/Utils/ClientIp.php	2026-09-13 14:42:47.872113606 +0000
+@@ -0,0 +1,137 @@
++<?php
++/**
++ * Client IP resolution for rate limiting.
++ *
++ * @package TrillChatLite\Utils
++ * @since 2.4.2
++ * @license GPL-2.0-or-later
++ */
++
++namespace TrillChatLite\Utils;
++
++if ( ! defined( 'ABSPATH' ) ) {
++    exit;
++}
++
++/**
++ * Class ClientIp
++ *
++ * Single place for "which address do we rate-limit on". Shared by the
++ * chat REST routes and the public privacy-request route so both apply
++ * the same trust rules.
++ */
++class ClientIp {
++
++    /**
++     * Cloudflare edge ranges (https://www.cloudflare.com/ips/, fetched
++     * 2026-09-13). CF-Connecting-IP is only trusted when REMOTE_ADDR is
++     * inside one of these, so the header cannot be forged by a client
++     * that is not actually behind Cloudflare.
++     */
++    private const CLOUDFLARE_RANGES = [
++        '173.245.48.0/20',
++        '103.21.244.0/22',
++        '103.22.200.0/22',
++        '103.31.4.0/22',
++        '141.101.64.0/18',
++        '108.162.192.0/18',
++        '190.93.240.0/20',
++        '188.114.96.0/20',
++        '197.234.240.0/22',
++        '198.41.128.0/17',
++        '162.158.0.0/15',
++        '104.16.0.0/13',
++        '104.24.0.0/14',
++        '172.64.0.0/13',
++        '131.0.72.0/22',
++        '2400:cb00::/32',
++        '2606:4700::/32',
++        '2803:f800::/32',
++        '2405:b500::/32',
++        '2405:8100::/32',
++        '2a06:98c0::/29',
++        '2c0f:f248::/32',
++    ];
++
++    /**
++     * Get client IP address.
++     *
++     * Reads REMOTE_ADDR. X-Forwarded-For / Client-IP are written by the
++     * client, so trusting them lets anyone reset the per-IP rate limit
++     * with a fresh header per request (2.4.2). The one proxy handled out
++     * of the box is Cloudflare: CF-Connecting-IP is honoured only when
++     * the connection itself comes from a Cloudflare range. Any other
++     * reverse proxy or CDN resolves the real address through the
++     * `trcl_client_ip` filter.
++     *
++     * @return string Validated IP, or '0.0.0.0' when none is available.
++     */
++    public static function get(): string {
++        $ip = isset( $_SERVER['REMOTE_ADDR'] )
++            ? \sanitize_text_field( \wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
++            : '';
++
++        if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) && self::is_cloudflare_ip( $ip ) ) {
++            $cf = \sanitize_text_field( \wp_unslash( $_SERVER['HTTP_CF_CONNECTING_IP'] ) );
++            if ( filter_var( $cf, FILTER_VALIDATE_IP ) ) {
++                $ip = $cf;
++            }
++        }
++
++        /**
++         * Filter the client IP used for REST rate limiting.
++         *
++         * Only trust proxy headers here when REMOTE_ADDR is a proxy you
++         * control (e.g. read CF-Connecting-IP behind Cloudflare).
++         *
++         * @since 2.4.2
++         *
++         * @param string $ip REMOTE_ADDR as received.
++         */
++        $ip = (string) \apply_filters( 'trcl_client_ip', $ip );
++
++        return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '0.0.0.0';
++    }
++
++    /**
++     * Whether an address belongs to a Cloudflare edge range.
++     *
++     * @since 2.4.2
++     *
++     * @param string $ip Candidate address (already validated or empty).
++     * @return bool
++     */
++    private static function is_cloudflare_ip( string $ip ): bool {
++        $packed = @inet_pton( $ip ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Invalid input handled below.
++        if ( false === $packed ) {
++            return false;
++        }
++        $bits = strlen( $packed ) * 8;
++
++        foreach ( self::CLOUDFLARE_RANGES as $range ) {
++            [ $subnet, $prefix ] = explode( '/', $range, 2 );
++            $subnet_packed       = inet_pton( $subnet );
++            $prefix              = (int) $prefix;
++
++            if ( false === $subnet_packed || strlen( $subnet_packed ) !== strlen( $packed ) || $prefix > $bits ) {
++                continue;
++            }
++
++            $full_bytes = intdiv( $prefix, 8 );
++            $rest_bits  = $prefix % 8;
++
++            if ( $full_bytes > 0 && substr( $packed, 0, $full_bytes ) !== substr( $subnet_packed, 0, $full_bytes ) ) {
++                continue;
++            }
++            if ( $rest_bits > 0 ) {
++                $mask = ( 0xFF << ( 8 - $rest_bits ) ) & 0xFF;
++                if ( ( ord( $packed[ $full_bytes ] ) & $mask ) !== ( ord( $subnet_packed[ $full_bytes ] ) & $mask ) ) {
++                    continue;
++                }
++            }
++            return true;
++        }
++
++        return false;
++    }
++}
 diff -ruN '--exclude=*.min.js' a/includes/functions.php plugin/includes/functions.php
 --- a/includes/functions.php	2026-09-13 13:17:40.614597671 +0000
 +++ b/includes/functions.php	2026-09-13 13:48:27.991279959 +0000
@@ -564,7 +741,7 @@ diff -ruN '--exclude=*.min.js' a/includes/functions.php plugin/includes/function
  /**
 diff -ruN '--exclude=*.min.js' a/readme.txt plugin/readme.txt
 --- a/readme.txt	2026-09-13 13:18:06.062599184 +0000
-+++ b/readme.txt	2026-09-13 13:49:21.070113568 +0000
++++ b/readme.txt	2026-09-13 14:43:10.855396287 +0000
 @@ -2,9 +2,9 @@
  Contributors: trillai
  Tags: woocommerce, ai chatbot, shopping assistant, product search, order tracking
@@ -577,7 +754,18 @@ diff -ruN '--exclude=*.min.js' a/readme.txt plugin/readme.txt
  License: GPLv2 or later
  License URI: https://www.gnu.org/licenses/gpl-2.0.html
  
-@@ -243,6 +243,18 @@
+@@ -117,6 +117,10 @@
+ 
+ == Frequently Asked Questions ==
+ 
++= My store is behind a proxy or CDN — does rate limiting still work? =
++
++Yes. The chat endpoints are rate-limited per visitor IP. Cloudflare is recognised out of the box (the real visitor address is read from `CF-Connecting-IP` only when the connection genuinely comes from a Cloudflare range). Behind any other reverse proxy or CDN, tell the plugin where the real address is with the `trcl_client_ip` filter — for example `add_filter( 'trcl_client_ip', fn() => sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_REAL_IP'] ?? '' ) ) );` — and, if many shoppers legitimately share one address, raise the limit with `trcl_rate_limit_per_minute`.
++
+ = Do I need a WooCommerce store to use this plugin? =
+ 
+ Yes. Trill AI Chat Lite is a WooCommerce AI shopping assistant — it reads your WooCommerce product catalogue, your published pages, the current cart and the order history to answer shopper questions. It will not do anything useful on a WordPress site without WooCommerce installed and active.
+@@ -243,6 +247,18 @@
  
  == Changelog ==
  
@@ -585,7 +773,7 @@ diff -ruN '--exclude=*.min.js' a/readme.txt plugin/readme.txt
 +**Security and reliability release. Safe update for all users — no settings change, no database update.**
 +
 +* **Fixed: chat stopped working for visitors on sites with page caching.** The widget sent a WordPress REST nonce on every request, including for guests. Once the cached page outlived the nonce (12–24 hours), WordPress rejected every guest message with a 403. Guests no longer send a nonce; logged-in users still do, and a stale one is retried once as a guest instead of failing.
-+* **Security: per-IP rate limiting could be bypassed** by supplying a forged `X-Forwarded-For` or `Client-IP` header, allowing anyone to exhaust a store's monthly Trill Cloud allowance. The limiter now uses the connection address only. Sites behind a trusted proxy or CDN can resolve the real client address with the new `trcl_client_ip` filter.
++* **Security: per-IP rate limiting could be bypassed** by supplying a forged `X-Forwarded-For` or `Client-IP` header, allowing anyone to exhaust a store's monthly Trill Cloud allowance. The limiter now uses the connection address; Cloudflare is recognised automatically (`CF-Connecting-IP` is trusted only from Cloudflare ranges), other proxies can resolve the real address with the new `trcl_client_ip` filter, and the limit itself is adjustable with `trcl_rate_limit_per_minute`.
 +* **Security: password-protected pages and posts are no longer indexed** for the AI, so their content cannot surface in chat answers. Existing entries are removed on the next content re-index.
 +* **Security: the feedback endpoint now requires the session UUID** and only accepts ratings for messages of that conversation.
 +* **Privacy: debug logging never records visitor messages or search queries any more** (lengths and counts only). `trcl_log()` now honours `WP_DEBUG_LOG` and `TRCL_LOG_LEVEL` (default `info`), so `debug` entries are silent unless you opt in.
@@ -596,7 +784,7 @@ diff -ruN '--exclude=*.min.js' a/readme.txt plugin/readme.txt
  = 2.4.1 =
  * Housekeeping: WooCommerce is now declared as a formal plugin dependency (`Requires Plugins` header, WordPress 6.5+). The directory listing shows the requirement, and WordPress offers a one-click WooCommerce install instead of allowing activation without it. On WordPress 6.0–6.4 the existing runtime check continues to apply. No functional changes.
  
-@@ -396,6 +408,9 @@
+@@ -396,6 +412,9 @@
  
  == Upgrade Notice ==
  

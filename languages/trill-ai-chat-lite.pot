@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.4.0\n"
+"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.4.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/trill-ai-chat-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-18T21:23:01+00:00\n"
+"POT-Creation-Date: 2026-09-13T14:37:11+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: trill-ai-chat-lite\n"
@@ -51,24 +51,24 @@ msgstr ""
 msgid "Search the WooCommerce catalogue for products matching a natural-language query and return up to ten compact product cards (name, price, URL, stock status). Uses WooCommerce native full-text search as the primary strategy, with category/tag taxonomy fallback and English de-pluralisation so plural queries match singular product titles. Best for product discovery, \"do you have X?\" questions, and price/availability lookups."
 msgstr ""
 
-#: includes/Abilities/AbilityRegistrar.php:208
+#: includes/Abilities/AbilityRegistrar.php:210
 msgid "Get Store Context"
 msgstr ""
 
-#: includes/Abilities/AbilityRegistrar.php:209
+#: includes/Abilities/AbilityRegistrar.php:211
 msgid "Returns metadata about the WooCommerce store: name, URL, tagline, currency code, currency symbol, total published product count, and up to five top categories ordered by product count. Designed as a one-shot context primer for AI agents before they call other Trill abilities or compose a response."
 msgstr ""
 
-#: includes/Abilities/AbilityRegistrar.php:307
+#: includes/Abilities/AbilityRegistrar.php:309
 msgid "Get Conversation Summary"
 msgstr ""
 
-#: includes/Abilities/AbilityRegistrar.php:308
+#: includes/Abilities/AbilityRegistrar.php:310
 msgid "Retrieves up to fifty most-recent messages from a Trill chat session identified by its UUID session_id. Each message includes id, role (user or assistant), content, and timestamp. Returns an empty messages array if the session is unknown."
 msgstr ""
 
-#: includes/Abilities/AbilityRegistrar.php:399
-#: includes/AI/RestController.php:752
+#: includes/Abilities/AbilityRegistrar.php:401
+#: includes/AI/RestController.php:764
 msgid "Invalid session identifier."
 msgstr ""
 
@@ -1029,7 +1029,7 @@ msgstr ""
 
 #. translators: %s: assistant display name
 #: includes/Admin/views/settings-appearance.php:90
-#: includes/Frontend/Frontend.php:526
+#: includes/Frontend/Frontend.php:531
 #, php-format
 msgid "Hi there! I'm %s, your AI shopping assistant. How can I help you today?"
 msgstr ""
@@ -1141,12 +1141,12 @@ msgid "Live Preview"
 msgstr ""
 
 #: includes/Admin/views/settings-appearance.php:379
-#: includes/Frontend/Frontend.php:238
+#: includes/Frontend/Frontend.php:243
 msgid "AI Assistant"
 msgstr ""
 
 #: includes/Admin/views/settings-appearance.php:380
-#: includes/Frontend/Frontend.php:239
+#: includes/Frontend/Frontend.php:244
 msgid "Online"
 msgstr ""
 
@@ -1159,7 +1159,7 @@ msgid "Yes! We have 3 wireless headphone models in stock. Would you like me to s
 msgstr ""
 
 #: includes/Admin/views/settings-appearance.php:390
-#: includes/Frontend/Frontend.php:231
+#: includes/Frontend/Frontend.php:236
 msgid "Type your message..."
 msgstr ""
 
@@ -1588,129 +1588,133 @@ msgstr ""
 msgid "Failed to retrieve conversation."
 msgstr ""
 
-#: includes/AI/RestController.php:675
-#: includes/AI/RestController.php:690
+#: includes/AI/RestController.php:677
+msgid "Message not found."
+msgstr ""
+
+#: includes/AI/RestController.php:687
+#: includes/AI/RestController.php:702
 msgid "Failed to save feedback."
 msgstr ""
 
-#: includes/AI/RestController.php:683
+#: includes/AI/RestController.php:695
 msgid "Thank you for your feedback!"
 msgstr ""
 
-#: includes/AI/RestController.php:717
-#: includes/AI/RestController.php:742
-#: includes/AI/RestController.php:776
+#: includes/AI/RestController.php:729
+#: includes/AI/RestController.php:754
+#: includes/AI/RestController.php:788
 msgid "Invalid security token. Please refresh the page."
 msgstr ""
 
-#: includes/AI/RestController.php:786
+#: includes/AI/RestController.php:798
 msgid "Invalid message identifier."
 msgstr ""
 
-#: includes/AI/RestController.php:810
+#: includes/AI/RestController.php:822
 #: includes/Gdpr/PrivacyRequestController.php:81
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: includes/AI/RestController.php:1053
+#: includes/AI/RestController.php:1072
 msgid "If you give me your email, I'll only use it to notify you once when this item is back in stock."
 msgstr ""
 
-#: includes/AI/RestController.php:1056
+#: includes/AI/RestController.php:1075
 msgid "If you give me your email, I'll only use it to notify you once if there is a sale or price drop on this item."
 msgstr ""
 
-#: includes/AI/RestController.php:1058
+#: includes/AI/RestController.php:1077
 msgid "If you give me your email, I'll only use it to send you one follow-up about this item."
 msgstr ""
 
-#: includes/Frontend/Frontend.php:232
+#: includes/Frontend/Frontend.php:237
 msgid "Send"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:233
+#: includes/Frontend/Frontend.php:238
 msgid "Chat with us!"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:235
+#: includes/Frontend/Frontend.php:240
 msgid "Sorry, I encountered an error. Please try again."
 msgstr ""
 
-#: includes/Frontend/Frontend.php:236
+#: includes/Frontend/Frontend.php:241
 msgid "Connection error. Please check your internet and try again."
 msgstr ""
 
 #. translators: %s: assistant display name
-#: includes/Frontend/Frontend.php:242
+#: includes/Frontend/Frontend.php:247
 #, php-format
 msgid "%s is typing..."
 msgstr ""
 
-#: includes/Frontend/Frontend.php:245
+#: includes/Frontend/Frontend.php:250
 msgid "Close chat"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:246
+#: includes/Frontend/Frontend.php:251
 msgid "Expand chat"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:247
+#: includes/Frontend/Frontend.php:252
 msgid "Collapse chat"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:248
+#: includes/Frontend/Frontend.php:253
 msgid "Monthly Limit Reached"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:250
+#: includes/Frontend/Frontend.php:255
 msgid "Please accept the privacy notice to start chatting"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:251
+#: includes/Frontend/Frontend.php:256
 msgid "I Understand"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:252
+#: includes/Frontend/Frontend.php:257
 msgid "Request My Data"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:253
+#: includes/Frontend/Frontend.php:258
 msgid "Your email address"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:254
+#: includes/Frontend/Frontend.php:259
 msgid "Send request"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:255
+#: includes/Frontend/Frontend.php:260
 msgid "Thanks — check your inbox for a confirmation email."
 msgstr ""
 
-#: includes/Frontend/Frontend.php:256
+#: includes/Frontend/Frontend.php:261
 msgid "Could not send the request. Please try again later."
 msgstr ""
 
-#: includes/Frontend/Frontend.php:333
+#: includes/Frontend/Frontend.php:338
 msgid "JavaScript is required for the chat widget."
 msgstr ""
 
-#: includes/Frontend/Frontend.php:350
+#: includes/Frontend/Frontend.php:355
 msgid "Chat with us"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:351
+#: includes/Frontend/Frontend.php:356
 msgid "Open Chat"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:375
+#: includes/Frontend/Frontend.php:380
 msgid "Start Chat"
 msgstr ""
 
-#: includes/Frontend/Frontend.php:502
+#: includes/Frontend/Frontend.php:507
 msgid "Privacy Policy"
 msgstr ""
 
-#: includes/functions.php:92
+#: includes/functions.php:108
 msgid "Hi there! I'm Robin, your AI shopping assistant. How can I help you today?"
 msgstr ""
 
@@ -1772,18 +1776,18 @@ msgstr ""
 msgid "Your site must be publicly reachable (including its REST API) for ownership verification. Deactivate and reactivate the plugin to retry, or contact hello@trillai.io."
 msgstr ""
 
-#: trill-ai-chat-lite.php:53
+#: trill-ai-chat-lite.php:54
 msgid "Trill AI Product Chat requires PHP 8.0 or higher."
 msgstr ""
 
-#: trill-ai-chat-lite.php:87
+#: trill-ai-chat-lite.php:91
 msgid "Trill AI Product Chat has been deactivated because the full version is installed."
 msgstr ""
 
-#: trill-ai-chat-lite.php:89
+#: trill-ai-chat-lite.php:93
 msgid "Manage plugins"
 msgstr ""
 
-#: trill-ai-chat-lite.php:112
+#: trill-ai-chat-lite.php:116
 msgid "Trill AI Product Chat requires WooCommerce to be installed and active."
 msgstr ""

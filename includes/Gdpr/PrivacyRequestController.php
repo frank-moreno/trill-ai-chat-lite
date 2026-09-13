@@ -65,13 +65,13 @@ class PrivacyRequestController {
     /**
      * Permission callback: per-IP rate limit.
      *
-     * Mirrors RestController::enforce_rate_limit — the IP is hashed
-     * into a transient key and never stored as data.
+     * Same address rules as the chat routes (Utils\ClientIp); the IP is
+     * hashed into a transient key and never stored as data.
      *
      * @return true|\WP_Error
      */
     public function check_rate_limit() {
-        $ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? \sanitize_text_field( \wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+        $ip      = \TrillChatLite\Utils\ClientIp::get();
         $key     = 'trcl_privreq_' . md5( $ip );
         $current = (int) \get_transient( $key );
 
