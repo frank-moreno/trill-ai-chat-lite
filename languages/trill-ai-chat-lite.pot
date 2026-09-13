@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.4.2\n"
+"Project-Id-Version: Trill AI Product Chat for WooCommerce 2.5.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/trill-ai-chat-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-13T14:37:11+00:00\n"
+"POT-Creation-Date: 2026-09-13T15:54:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: trill-ai-chat-lite\n"
@@ -68,7 +68,7 @@ msgid "Retrieves up to fifty most-recent messages from a Trill chat session iden
 msgstr ""
 
 #: includes/Abilities/AbilityRegistrar.php:401
-#: includes/AI/RestController.php:764
+#: includes/AI/RestController.php:789
 msgid "Invalid session identifier."
 msgstr ""
 
@@ -76,191 +76,204 @@ msgstr ""
 msgid "Trill Chat Lite activation failed: "
 msgstr ""
 
-#: includes/Admin/Admin.php:105
-#: includes/Admin/Admin.php:106
+#: includes/Admin/Admin.php:108
+#: includes/Admin/Admin.php:109
 msgid "Trill Chat"
 msgstr ""
 
-#: includes/Admin/Admin.php:117
-#: includes/Admin/Admin.php:118
+#: includes/Admin/Admin.php:120
+#: includes/Admin/Admin.php:121
 msgid "Dashboard"
 msgstr ""
 
-#: includes/Admin/Admin.php:127
-#: includes/Admin/Admin.php:128
+#: includes/Admin/Admin.php:130
+#: includes/Admin/Admin.php:131
 msgid "Products"
 msgstr ""
 
-#: includes/Admin/Admin.php:137
-#: includes/Admin/Admin.php:138
+#: includes/Admin/Admin.php:140
+#: includes/Admin/Admin.php:141
 #: includes/Admin/views/conversations.php:59
 #: includes/Admin/views/gdpr-tools.php:96
 msgid "Conversations"
 msgstr ""
 
-#: includes/Admin/Admin.php:147
-#: includes/Admin/Admin.php:148
+#: includes/Admin/Admin.php:150
+#: includes/Admin/Admin.php:151
 #: includes/Admin/views/gdpr-tools.php:104
 msgid "Leads"
 msgstr ""
 
-#: includes/Admin/Admin.php:157
-#: includes/Admin/Admin.php:158
+#: includes/Admin/Admin.php:160
+#: includes/Admin/Admin.php:161
 msgid "Settings"
 msgstr ""
 
-#: includes/Admin/Admin.php:167
-#: includes/Admin/Admin.php:168
+#: includes/Admin/Admin.php:170
+#: includes/Admin/Admin.php:171
 msgid "About"
 msgstr ""
 
-#: includes/Admin/Admin.php:228
+#: includes/Admin/Admin.php:231
 msgid "Saving..."
 msgstr ""
 
-#: includes/Admin/Admin.php:229
+#: includes/Admin/Admin.php:232
 msgid "Settings saved successfully!"
 msgstr ""
 
-#: includes/Admin/Admin.php:230
+#: includes/Admin/Admin.php:233
 msgid "An error occurred. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php:231
+#: includes/Admin/Admin.php:234
 msgid "Indexing..."
 msgstr ""
 
-#: includes/Admin/Admin.php:232
+#: includes/Admin/Admin.php:235
 msgid "Please wait..."
 msgstr ""
 
-#: includes/Admin/Admin.php:233
+#: includes/Admin/Admin.php:236
 msgid "Indexing failed."
 msgstr ""
 
-#: includes/Admin/Admin.php:234
+#: includes/Admin/Admin.php:237
 msgid "Request failed. Please try again."
 msgstr ""
 
-#: includes/Admin/Admin.php:235
+#: includes/Admin/Admin.php:238
 #: includes/Admin/views/products.php:64
 msgid "Reindex Products Now"
 msgstr ""
 
-#: includes/Admin/Admin.php:236
+#: includes/Admin/Admin.php:239
 msgid "Run the cleanup now? Conversations older than the retention window will be permanently deleted."
 msgstr ""
 
-#: includes/Admin/Admin.php:237
+#: includes/Admin/Admin.php:240
 msgid "Permanently delete this conversation? This cannot be undone."
 msgstr ""
 
-#: includes/Admin/Admin.php:238
+#: includes/Admin/Admin.php:241
 msgid "Permanently delete the selected conversations? This cannot be undone."
 msgstr ""
 
-#: includes/Admin/Admin.php:239
+#: includes/Admin/Admin.php:242
 msgid "Please select at least one conversation."
 msgstr ""
 
-#: includes/Admin/Admin.php:253
-#: includes/Admin/Admin.php:264
-#: includes/Admin/Admin.php:275
-#: includes/Admin/Admin.php:336
-#: includes/Admin/Admin.php:364
-#: includes/Admin/Admin.php:404
-#: includes/Admin/Admin.php:512
-#: includes/Admin/Admin.php:523
-#: includes/Admin/Admin.php:534
-#: includes/Admin/Admin.php:597
-#: includes/Admin/Admin.php:668
-#: includes/Admin/Admin.php:747
-#: includes/Admin/Admin.php:821
+#: includes/Admin/Admin.php:256
+#: includes/Admin/Admin.php:267
+#: includes/Admin/Admin.php:278
+#: includes/Admin/Admin.php:339
+#: includes/Admin/Admin.php:367
+#: includes/Admin/Admin.php:407
+#: includes/Admin/Admin.php:515
+#: includes/Admin/Admin.php:526
+#: includes/Admin/Admin.php:537
+#: includes/Admin/Admin.php:600
+#: includes/Admin/Admin.php:671
+#: includes/Admin/Admin.php:750
+#: includes/Admin/Admin.php:824
+#: includes/Admin/Admin.php:875
 #: includes/Admin/GdprToolsPage.php:109
 #: includes/Admin/GdprToolsPage.php:319
 msgid "You do not have sufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:292
-#: includes/Admin/Admin.php:551
-#: includes/Admin/Admin.php:879
-#: includes/Admin/Admin.php:910
-#: includes/Admin/Admin.php:937
+#: includes/Admin/Admin.php:295
+#: includes/Admin/Admin.php:554
+#: includes/Admin/Admin.php:936
+#: includes/Admin/Admin.php:967
+#: includes/Admin/Admin.php:994
 msgid "Insufficient permissions."
 msgstr ""
 
-#: includes/Admin/Admin.php:301
-#: includes/Admin/Admin.php:374
-#: includes/AI/RestController.php:625
+#: includes/Admin/Admin.php:304
+#: includes/Admin/Admin.php:377
+#: includes/AI/RestController.php:650
 msgid "Conversation not found."
 msgstr ""
 
-#: includes/Admin/Admin.php:425
+#: includes/Admin/Admin.php:428
 msgid "No conversations were selected."
 msgstr ""
 
 #. translators: 1: number of conversations deleted, 2: number of database rows removed
-#: includes/Admin/Admin.php:438
+#: includes/Admin/Admin.php:441
 #, php-format
 msgid "Deleted %1$d conversation (%2$d records removed)."
 msgid_plural "Deleted %1$d conversations (%2$d records removed)."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Admin/Admin.php:452
+#: includes/Admin/Admin.php:455
 msgid "Could not delete the selected conversations."
 msgstr ""
 
-#: includes/Admin/Admin.php:504
+#: includes/Admin/Admin.php:507
 msgid "Guest"
 msgstr ""
 
-#: includes/Admin/Admin.php:572
+#: includes/Admin/Admin.php:575
 msgid "Settings saved."
 msgstr ""
 
 #. translators: 1: posts indexed, 2: terms indexed, 3: total chunks
-#: includes/Admin/Admin.php:614
+#: includes/Admin/Admin.php:617
 #, php-format
 msgid "Reindex complete — %1$d posts, %2$d categories, %3$d chunks in total."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Admin/Admin.php:632
+#: includes/Admin/Admin.php:635
 #, php-format
 msgid "Reindex failed: %s"
 msgstr ""
 
-#: includes/Admin/Admin.php:677
+#: includes/Admin/Admin.php:680
 msgid "Invalid lead action."
 msgstr ""
 
-#: includes/Admin/Admin.php:690
+#: includes/Admin/Admin.php:693
 msgid "Lead marked as contacted."
 msgstr ""
 
-#: includes/Admin/Admin.php:691
+#: includes/Admin/Admin.php:694
 msgid "Could not update the lead."
 msgstr ""
 
 #. translators: %d: lead rows removed
-#: includes/Admin/Admin.php:712
+#: includes/Admin/Admin.php:715
 #, php-format
 msgid "Erased %d lead row(s) for that email."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Admin/Admin.php:724
+#: includes/Admin/Admin.php:727
 #, php-format
 msgid "Action failed: %s"
 msgstr ""
 
-#: includes/Admin/Admin.php:847
+#: includes/Admin/Admin.php:850
 msgid "Appearance settings reset to defaults. Your welcome message was kept."
 msgstr ""
 
+#: includes/Admin/Admin.php:899
+msgid "Connected to Trill Cloud."
+msgstr ""
+
+#: includes/Admin/Admin.php:905
+msgid "Trill Cloud could not verify this site. Make sure it is publicly reachable over https (including /wp-json/), then try again or contact hello@trillai.io."
+msgstr ""
+
+#: includes/Admin/Admin.php:906
+msgid "Could not reach Trill Cloud. The plugin will retry automatically on the next admin page load."
+msgstr ""
+
 #. translators: 1: number of conversations, 2: retention days
-#: includes/Admin/Admin.php:889
+#: includes/Admin/Admin.php:946
 #, php-format
 msgid "%1$d conversation is older than %2$d days and would be deleted."
 msgid_plural "%1$d conversations are older than %2$d days and would be deleted."
@@ -268,19 +281,19 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of conversations deleted
-#: includes/Admin/Admin.php:919
+#: includes/Admin/Admin.php:976
 #, php-format
 msgid "Cleanup complete — %d conversation deleted."
 msgid_plural "Cleanup complete — %d conversations deleted."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/Admin/Admin.php:941
+#: includes/Admin/Admin.php:998
 msgid "WooCommerce is not active."
 msgstr ""
 
 #. translators: %d: number of products indexed
-#: includes/Admin/Admin.php:950
+#: includes/Admin/Admin.php:1007
 #, php-format
 msgid "%d products indexed successfully."
 msgstr ""
@@ -331,12 +344,12 @@ msgid "Robin"
 msgstr ""
 
 #: includes/Admin/views/about.php:51
-#: includes/Admin/views/dashboard.php:25
+#: includes/Admin/views/dashboard.php:44
 msgid "Active"
 msgstr ""
 
 #: includes/Admin/views/about.php:52
-#: includes/Admin/views/dashboard.php:28
+#: includes/Admin/views/dashboard.php:47
 msgid "Disabled"
 msgstr ""
 
@@ -598,89 +611,160 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:18
-msgid "Trill AI Product Chat — Dashboard"
+#: includes/Admin/views/dashboard.php:22
+msgid "Could not reach Trill Cloud from this server (network, DNS or firewall)."
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:22
-msgid "Chat Status"
+#: includes/Admin/views/dashboard.php:23
+msgid "Trill Cloud took too long to answer."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:24
+msgid "Trill Cloud is temporarily unavailable."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:25
+msgid "This site's credentials were rejected by Trill Cloud."
 msgstr ""
 
 #: includes/Admin/views/dashboard.php:26
+#: includes/AI/ProxyClient.php:253
+msgid "This site is not registered with Trill Cloud yet."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:27
+msgid "Monthly conversation limit reached."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:28
+msgid "Too many requests in a short time."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:37
+msgid "Trill AI Product Chat — Dashboard"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:41
+msgid "Chat Status"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:45
 msgid "The chat widget is visible on your store."
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:29
+#: includes/Admin/views/dashboard.php:48
 msgid "Enable in Settings"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:73
+#: includes/Admin/views/dashboard.php:55
+msgid "Trill Cloud Connection"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:65
+msgid "Connected"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:66
+msgid "This site is registered and the last chat request succeeded."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:68
+msgid "Connected, last request failed"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:70
+msgid "Not connected"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:71
+msgid "The chat cannot answer visitors until this site is registered with Trill Cloud."
+msgstr ""
+
+#. translators: 1: human explanation, 2: error code, 3: date/time
+#: includes/Admin/views/dashboard.php:81
+#, php-format
+msgid "Last error: %1$s (%2$s, %3$s)"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:82
+msgid "Unexpected error."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:93
+msgid "Reconnect"
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:94
+msgid "Re-registers this site with Trill Cloud. Your plan and usage are kept."
+msgstr ""
+
+#: includes/Admin/views/dashboard.php:137
 msgid "Monthly Usage"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:75
+#: includes/Admin/views/dashboard.php:139
 msgid "Conversations used this month. Limits are managed by the Trill AI service."
 msgstr ""
 
 #. translators: 1: conversations used, 2: monthly limit
-#: includes/Admin/views/dashboard.php:93
+#: includes/Admin/views/dashboard.php:157
 #, php-format
 msgid "%1$d of %2$d conversations"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:106
+#: includes/Admin/views/dashboard.php:170
 msgid "You have reached your monthly conversation limit. New conversations will be declined until next month."
 msgstr ""
 
 #. translators: %d: remaining conversations
-#: includes/Admin/views/dashboard.php:115
+#: includes/Admin/views/dashboard.php:179
 #, php-format
 msgid "You have %d conversations remaining this month."
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:152
+#: includes/Admin/views/dashboard.php:216
 msgid "Performance"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:154
+#: includes/Admin/views/dashboard.php:218
 msgid "Last:"
 msgstr ""
 
 #. translators: %d: number of days
 #. translators: %d: retention period in days
-#: includes/Admin/views/dashboard.php:163
+#: includes/Admin/views/dashboard.php:227
 #: includes/Admin/views/settings-privacy.php:187
 #, php-format
 msgid "%d days"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:173
+#: includes/Admin/views/dashboard.php:237
 msgid "Activity over the selected window. An order is \"from chat\" when the customer had a chat conversation in the 24 hours before placing the order."
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:181
+#: includes/Admin/views/dashboard.php:245
 msgid "Chats started"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:191
+#: includes/Admin/views/dashboard.php:255
 msgid "Orders completed"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:201
+#: includes/Admin/views/dashboard.php:265
 msgid "Orders from chat"
 msgstr ""
 
 #. translators: %s: attribution rate as a percentage
-#: includes/Admin/views/dashboard.php:209
+#: includes/Admin/views/dashboard.php:273
 #, php-format
 msgid "%s%% attribution rate"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:217
+#: includes/Admin/views/dashboard.php:281
 msgid "Revenue from chat"
 msgstr ""
 
-#: includes/Admin/views/dashboard.php:228
+#: includes/Admin/views/dashboard.php:292
 msgid "No chat activity yet in this window. Once shoppers start chatting, you'll see chats, attributed orders, and revenue here."
 msgstr ""
 
@@ -1464,10 +1548,6 @@ msgstr ""
 msgid "Could not reach Trill Cloud to reconnect this site."
 msgstr ""
 
-#: includes/AI/ProxyClient.php:253
-msgid "This site is not registered with Trill Cloud yet."
-msgstr ""
-
 #: includes/AI/ProxyClient.php:269
 msgid "Trill Cloud could not verify ownership of this site."
 msgstr ""
@@ -1542,89 +1622,89 @@ msgstr ""
 msgid "Shipping info"
 msgstr ""
 
-#: includes/AI/RestController.php:231
+#: includes/AI/RestController.php:232
 msgid "Message cannot be empty."
 msgstr ""
 
 #. translators: %d: maximum character length
-#: includes/AI/RestController.php:241
+#: includes/AI/RestController.php:242
 #, php-format
 msgid "Message exceeds maximum length of %d characters."
 msgstr ""
 
-#: includes/AI/RestController.php:259
+#: includes/AI/RestController.php:260
 msgid "Failed to create conversation."
 msgstr ""
 
-#: includes/AI/RestController.php:275
+#: includes/AI/RestController.php:271
 msgid "Invalid session ID format."
 msgstr ""
 
-#: includes/AI/RestController.php:283
+#: includes/AI/RestController.php:279
 msgid "Session not found. Please start a new conversation."
 msgstr ""
 
-#: includes/AI/RestController.php:296
+#: includes/AI/RestController.php:292
 msgid "Failed to store message."
 msgstr ""
 
-#: includes/AI/RestController.php:481
+#: includes/AI/RestController.php:493
 msgid "Monthly trial limit reached."
 msgstr ""
 
-#: includes/AI/RestController.php:491
+#: includes/AI/RestController.php:503
 msgid "Too many requests."
 msgstr ""
 
-#: includes/AI/RestController.php:508
+#: includes/AI/RestController.php:520
 msgid "AI service temporarily unavailable."
 msgstr ""
 
-#: includes/AI/RestController.php:606
+#: includes/AI/RestController.php:631
 msgid "An unexpected error occurred. Please try again."
 msgstr ""
 
-#: includes/AI/RestController.php:652
+#: includes/AI/RestController.php:677
 msgid "Failed to retrieve conversation."
 msgstr ""
 
-#: includes/AI/RestController.php:677
+#: includes/AI/RestController.php:702
 msgid "Message not found."
 msgstr ""
 
-#: includes/AI/RestController.php:687
-#: includes/AI/RestController.php:702
+#: includes/AI/RestController.php:712
+#: includes/AI/RestController.php:727
 msgid "Failed to save feedback."
 msgstr ""
 
-#: includes/AI/RestController.php:695
+#: includes/AI/RestController.php:720
 msgid "Thank you for your feedback!"
 msgstr ""
 
-#: includes/AI/RestController.php:729
 #: includes/AI/RestController.php:754
-#: includes/AI/RestController.php:788
+#: includes/AI/RestController.php:779
+#: includes/AI/RestController.php:813
 msgid "Invalid security token. Please refresh the page."
 msgstr ""
 
-#: includes/AI/RestController.php:798
+#: includes/AI/RestController.php:823
 msgid "Invalid message identifier."
 msgstr ""
 
-#: includes/AI/RestController.php:822
+#: includes/AI/RestController.php:859
 #: includes/Gdpr/PrivacyRequestController.php:81
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: includes/AI/RestController.php:1072
+#: includes/AI/RestController.php:1125
 msgid "If you give me your email, I'll only use it to notify you once when this item is back in stock."
 msgstr ""
 
-#: includes/AI/RestController.php:1075
+#: includes/AI/RestController.php:1128
 msgid "If you give me your email, I'll only use it to notify you once if there is a sale or price drop on this item."
 msgstr ""
 
-#: includes/AI/RestController.php:1077
+#: includes/AI/RestController.php:1130
 msgid "If you give me your email, I'll only use it to send you one follow-up about this item."
 msgstr ""
 
@@ -1773,7 +1853,7 @@ msgid "Trill AI Chat could not reconnect this site automatically."
 msgstr ""
 
 #: includes/Plugin.php:230
-msgid "Your site must be publicly reachable (including its REST API) for ownership verification. Deactivate and reactivate the plugin to retry, or contact hello@trillai.io."
+msgid "Your site must be publicly reachable (including its REST API) for ownership verification. Use \"Reconnect\" on the Trill Chat dashboard to retry, or contact hello@trillai.io."
 msgstr ""
 
 #: trill-ai-chat-lite.php:54

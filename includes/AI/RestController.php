@@ -63,7 +63,6 @@ class RestController {
      */
     private const RATE_LIMIT_PER_MINUTE = 10;
 
-
     /**
      * Database manager.
      *
@@ -265,11 +264,6 @@ class RestController {
                 }
 
                 $is_new_conversation = true;
-
-                // Block 3 — record chat_started event so the dashboard
-                // analytics layer can attribute later orders to this
-                // visit. Fire-and-forget; never blocks the chat flow.
-                ( new AnalyticsRecorder() )->record_chat_started( $session_id, $user_id );
             } else {
                 // Validate existing session.
                 if ( ! preg_match( self::UUID_PATTERN, $session_id ) ) {
@@ -475,6 +469,22 @@ class RestController {
 
                 $error_code = $ai_response['error_code'] ?? 'AI_ERROR';
 
+                // Surface the failure on the dashboard (2.5.0, B8).
+                \update_option( LiteConfig::OPT_LAST_PROXY_ERROR, [
+                    'code'        => (string) $error_code,
+                    'http_status' => (int) ( $ai_response['http_status'] ?? 0 ),
+                    'at'          => time(),
+                ], false );
+
+                // A conversation that never got a reply is noise for the
+                // merchant (Conversations page, retention counters) — drop
+                // it so every failed request does not leave an empty row
+                // behind (2.5.0). The widget keeps no session on error, so
+                // the next attempt starts cleanly.
+                if ( $is_new_conversation ) {
+                    $this->discard_conversation( $session_id );
+                }
+
                 // Trial monthly cap reached → 429 with upgrade_url for the
                 // widget to render a "Get more conversations" CTA.
                 if ( $error_code === 'TRIAL_EXHAUSTED' ) {
@@ -550,6 +560,19 @@ class RestController {
                     'session_id' => $session_id,
                 ] );
                 $ai_message_id = 0;
+            }
+
+            // Block 3 — record chat_started so the dashboard analytics
+            // layer can attribute later orders to this visit. Recorded
+            // once the first reply exists (2.5.0): a conversation the
+            // backend never answered is discarded above and must not
+            // count as a started chat. Fire-and-forget.
+            if ( $is_new_conversation ) {
+                ( new AnalyticsRecorder() )->record_chat_started( $session_id, (int) \get_current_user_id() );
+            }
+
+            if ( \get_option( LiteConfig::OPT_LAST_PROXY_ERROR ) ) {
+                \delete_option( LiteConfig::OPT_LAST_PROXY_ERROR );
             }
 
             // 11. Stash the X-Trill-Trial-Remaining / X-Trill-Trial-Cap
@@ -1068,6 +1091,22 @@ class RestController {
         }
 
         return [];
+    }
+
+    /**
+     * Remove a conversation that never received a reply (same cascade
+     * as the admin/GDPR delete: feedback → messages → conversation).
+     *
+     * @since 2.5.0
+     *
+     * @param string $session_id Session UUID.
+     */
+    private function discard_conversation( string $session_id ): void {
+        $conversation_id = $this->db->get_conversation_id( $session_id );
+        if ( ! $conversation_id ) {
+            return;
+        }
+        ( new \TrillChatLite\Gdpr\ConversationManager() )->delete_by_ids( [ $conversation_id ] );
     }
 
     /**

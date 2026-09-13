@@ -227,7 +227,7 @@ final class Plugin {
         printf(
             '<div class="notice notice-error"><p><strong>%s</strong> %s</p></div>',
             \esc_html__( 'Trill AI Chat could not reconnect this site automatically.', 'trill-ai-chat-lite' ),
-            \esc_html__( 'Your site must be publicly reachable (including its REST API) for ownership verification. Deactivate and reactivate the plugin to retry, or contact hello@trillai.io.', 'trill-ai-chat-lite' )
+            \esc_html__( 'Your site must be publicly reachable (including its REST API) for ownership verification. Use "Reconnect" on the Trill Chat dashboard to retry, or contact hello@trillai.io.', 'trill-ai-chat-lite' )
         );
     }
 

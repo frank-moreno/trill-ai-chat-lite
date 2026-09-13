@@ -124,9 +124,29 @@ class TrialRegistration {
                 self::clear_perma_fail_flag();
                 return false;
             }
-            if ( self::attempt_rotation() ) {
+            $rotation = self::attempt_rotation();
+            if ( $rotation === true ) {
                 return true;
             }
+
+            // 404 from rotate = the backend has no registration to rotate
+            // after all (cleared server-side, or a backend without the
+            // route). ProxyClient documents this as "fall back to
+            // register" — one plain register() attempt before giving up
+            // (2.5.0, B7).
+            if ( $rotation === 'SITE_NOT_REGISTERED' ) {
+                trcl_log( 'TrialRegistration: rotate says not registered, retrying register', 'info' );
+                $retry = $client->register();
+                if ( ! empty( $retry['success'] ) && ! empty( $retry['secret'] ) && TrialSecretStore::set_secret( $retry['secret'] ) ) {
+                    trcl_log( 'TrialRegistration: secret stored after rotate fallback', 'info', [
+                        'site_id' => $retry['site_id'] ?? '',
+                    ] );
+                    self::clear_retry_flag();
+                    self::clear_perma_fail_flag();
+                    return true;
+                }
+            }
+
             trcl_log( 'TrialRegistration: rotation failed, permanent failure', 'warning' );
             self::clear_retry_flag();
             self::set_perma_fail_flag();
@@ -178,9 +198,11 @@ class TrialRegistration {
      *
      * @since 2.3.0
      *
-     * @return bool True iff a rotated secret was obtained and stored.
+     * @return true|string|false True iff a rotated secret was obtained and stored;
+     *                           the error_code string when the backend rejected it;
+     *                           false when no token could be staged or storage failed.
      */
-    private static function attempt_rotation(): bool {
+    private static function attempt_rotation() {
         $token = SiteVerification::issue_token();
         if ( $token === '' ) {
             return false;
@@ -211,7 +233,7 @@ class TrialRegistration {
             'error_code'  => $result['error_code'] ?? 'UNKNOWN',
             'http_status' => $result['http_status'] ?? null,
         ] );
-        return false;
+        return (string) ( $result['error_code'] ?? 'UNKNOWN' );
     }
 
     /**

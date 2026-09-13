@@ -1,12 +1,10 @@
 <?php
 /**
- * Encryption utility.
- *
- * Provides simple encryption/decryption for sensitive data
- * using WordPress salts and OpenSSL.
+ * Encryption helper for secrets stored in wp_options.
  *
  * @package TrillChatLite\Utils
  * @since 1.0.0
+ * @since 2.5.0 AES-256-GCM (authenticated), no plaintext fallback.
  * @license GPL-2.0-or-later
  */
 
@@ -19,77 +17,98 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Class Encryptor
  *
- * SOLID: Single Responsibility — only encryption operations.
+ * AES-256-GCM with a key derived from AUTH_KEY. The IV and the
+ * authentication tag travel with the ciphertext, so a tampered or
+ * truncated value fails to decrypt instead of yielding garbage.
+ *
+ * Callers must check is_available() and keep their own plaintext path
+ * (with a warning) when it returns false — this class never pretends
+ * to encrypt.
  */
 class Encryptor {
 
     /**
-     * Cipher method.
+     * Cipher. GCM = authenticated encryption; 12-byte IV, 16-byte tag.
      */
-    private const CIPHER = 'aes-256-cbc';
+    private const CIPHER = 'aes-256-gcm';
+
+    private const IV_LENGTH  = 12;
+    private const TAG_LENGTH = 16;
 
     /**
-     * Get the encryption key from WordPress salts.
+     * Whether encryption can be used on this site.
      *
-     * @return string Encryption key.
+     * Requires the OpenSSL extension with GCM support and a real AUTH_KEY
+     * (the wp-config.php default placeholder is not a key).
+     *
+     * @since 2.5.0
+     */
+    public static function is_available(): bool {
+        if ( ! extension_loaded( 'openssl' ) || ! in_array( self::CIPHER, openssl_get_cipher_methods(), true ) ) {
+            return false;
+        }
+        return defined( 'AUTH_KEY' ) && is_string( AUTH_KEY ) && AUTH_KEY !== '' && AUTH_KEY !== 'put your unique phrase here';
+    }
+
+    /**
+     * Derive the 32-byte key from AUTH_KEY.
      */
     private static function get_key(): string {
-        $salt = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'trcl-default-encryption-key';
-        return hash( 'sha256', $salt, true );
+        return hash( 'sha256', (string) AUTH_KEY, true );
     }
 
     /**
-     * Encrypt a value.
+     * Encrypt a string.
      *
-     * @param string $value Value to encrypt.
-     * @return string|false Encrypted value (base64 encoded) or false on failure.
+     * @param string $value Plaintext.
+     * @return string|false base64( iv . tag . ciphertext ), or false when
+     *                      encryption is unavailable or fails.
      */
     public static function encrypt( string $value ) {
-        if ( ! extension_loaded( 'openssl' ) ) {
-            trcl_log( 'OpenSSL extension not loaded, returning raw value', 'warning' );
-            return base64_encode( $value ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-        }
-
-        $iv_length = openssl_cipher_iv_length( self::CIPHER );
-        $iv        = openssl_random_pseudo_bytes( $iv_length );
-        $encrypted = openssl_encrypt( $value, self::CIPHER, self::get_key(), 0, $iv );
-
-        if ( false === $encrypted ) {
+        if ( ! self::is_available() ) {
             return false;
         }
 
-        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-        return base64_encode( $iv . $encrypted );
+        try {
+            $iv = random_bytes( self::IV_LENGTH );
+        } catch ( \Exception $e ) {
+            return false;
+        }
+
+        $tag        = '';
+        $ciphertext = openssl_encrypt( $value, self::CIPHER, self::get_key(), OPENSSL_RAW_DATA, $iv, $tag, '', self::TAG_LENGTH );
+        if ( false === $ciphertext || strlen( $tag ) !== self::TAG_LENGTH ) {
+            return false;
+        }
+
+        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Binary-safe storage in wp_options, not obfuscation.
+        return base64_encode( $iv . $tag . $ciphertext );
     }
 
     /**
-     * Decrypt a value.
+     * Decrypt a value produced by encrypt().
      *
-     * @param string $encrypted Encrypted value (base64 encoded).
-     * @return string|false Decrypted value or false on failure.
+     * @param string $encrypted base64 payload.
+     * @return string|false Plaintext, or false when unavailable, malformed,
+     *                      tampered, or encrypted under a different AUTH_KEY.
      */
     public static function decrypt( string $encrypted ) {
-        if ( ! extension_loaded( 'openssl' ) ) {
-            // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-            return base64_decode( $encrypted, true );
+        if ( ! self::is_available() ) {
+            return false;
         }
 
-        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- See encrypt().
         $data = base64_decode( $encrypted, true );
-
-        if ( false === $data ) {
+        if ( false === $data || strlen( $data ) <= self::IV_LENGTH + self::TAG_LENGTH ) {
             return false;
         }
 
-        $iv_length = openssl_cipher_iv_length( self::CIPHER );
+        $iv         = substr( $data, 0, self::IV_LENGTH );
+        $tag        = substr( $data, self::IV_LENGTH, self::TAG_LENGTH );
+        $ciphertext = substr( $data, self::IV_LENGTH + self::TAG_LENGTH );
 
-        if ( strlen( $data ) < $iv_length ) {
-            return false;
-        }
+        $plain = openssl_decrypt( $ciphertext, self::CIPHER, self::get_key(), OPENSSL_RAW_DATA, $iv, $tag );
 
-        $iv            = substr( $data, 0, $iv_length );
-        $encrypted_data = substr( $data, $iv_length );
-
-        return openssl_decrypt( $encrypted_data, self::CIPHER, self::get_key(), 0, $iv );
+        return false === $plain ? false : $plain;
     }
 }

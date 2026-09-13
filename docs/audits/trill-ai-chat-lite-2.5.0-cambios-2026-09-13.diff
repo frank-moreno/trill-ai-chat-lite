@@ -1,0 +1,671 @@
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/includes/AI/RestController.php plugin/includes/AI/RestController.php
+--- a/includes/AI/RestController.php	2026-09-13 15:33:10.000000000 +0000
++++ b/includes/AI/RestController.php	2026-09-13 15:46:16.504624574 +0000
+@@ -63,7 +63,6 @@
+      */
+     private const RATE_LIMIT_PER_MINUTE = 10;
+ 
+-
+     /**
+      * Database manager.
+      *
+@@ -265,11 +264,6 @@
+                 }
+ 
+                 $is_new_conversation = true;
+-
+-                // Block 3 — record chat_started event so the dashboard
+-                // analytics layer can attribute later orders to this
+-                // visit. Fire-and-forget; never blocks the chat flow.
+-                ( new AnalyticsRecorder() )->record_chat_started( $session_id, $user_id );
+             } else {
+                 // Validate existing session.
+                 if ( ! preg_match( self::UUID_PATTERN, $session_id ) ) {
+@@ -475,6 +469,22 @@
+ 
+                 $error_code = $ai_response['error_code'] ?? 'AI_ERROR';
+ 
++                // Surface the failure on the dashboard (2.5.0, B8).
++                \update_option( LiteConfig::OPT_LAST_PROXY_ERROR, [
++                    'code'        => (string) $error_code,
++                    'http_status' => (int) ( $ai_response['http_status'] ?? 0 ),
++                    'at'          => time(),
++                ], false );
++
++                // A conversation that never got a reply is noise for the
++                // merchant (Conversations page, retention counters) — drop
++                // it so every failed request does not leave an empty row
++                // behind (2.5.0). The widget keeps no session on error, so
++                // the next attempt starts cleanly.
++                if ( $is_new_conversation ) {
++                    $this->discard_conversation( $session_id );
++                }
++
+                 // Trial monthly cap reached → 429 with upgrade_url for the
+                 // widget to render a "Get more conversations" CTA.
+                 if ( $error_code === 'TRIAL_EXHAUSTED' ) {
+@@ -552,6 +562,19 @@
+                 $ai_message_id = 0;
+             }
+ 
++            // Block 3 — record chat_started so the dashboard analytics
++            // layer can attribute later orders to this visit. Recorded
++            // once the first reply exists (2.5.0): a conversation the
++            // backend never answered is discarded above and must not
++            // count as a started chat. Fire-and-forget.
++            if ( $is_new_conversation ) {
++                ( new AnalyticsRecorder() )->record_chat_started( $session_id, (int) \get_current_user_id() );
++            }
++
++            if ( \get_option( LiteConfig::OPT_LAST_PROXY_ERROR ) ) {
++                \delete_option( LiteConfig::OPT_LAST_PROXY_ERROR );
++            }
++
+             // 11. Stash the X-Trill-Trial-Remaining / X-Trill-Trial-Cap
+             //     values for the dashboard widget. Don't fail the request
+             //     if the option writes fail.
+@@ -1071,6 +1094,22 @@
+     }
+ 
+     /**
++     * Remove a conversation that never received a reply (same cascade
++     * as the admin/GDPR delete: feedback → messages → conversation).
++     *
++     * @since 2.5.0
++     *
++     * @param string $session_id Session UUID.
++     */
++    private function discard_conversation( string $session_id ): void {
++        $conversation_id = $this->db->get_conversation_id( $session_id );
++        if ( ! $conversation_id ) {
++            return;
++        }
++        ( new \TrillChatLite\Gdpr\ConversationManager() )->delete_by_ids( [ $conversation_id ] );
++    }
++
++    /**
+      * Produce the exact opt-in consent line Robin should use for a
+      * given intent. Stored verbatim in trcl_leads.opt_in_consent so
+      * the merchant can show in a DSAR audit what the visitor agreed
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/includes/Admin/Admin.php plugin/includes/Admin/Admin.php
+--- a/includes/Admin/Admin.php	2026-07-18 21:27:24.000000000 +0000
++++ b/includes/Admin/Admin.php	2026-09-13 15:46:44.017096234 +0000
+@@ -85,6 +85,9 @@
+         // Appearance reset (v2.1).
+         \add_action( 'admin_post_trcl_reset_appearance', [ $this, 'handle_reset_appearance_post' ] );
+ 
++        // Trill Cloud "Reconnect" on the dashboard (v2.5 B8).
++        \add_action( 'admin_post_trcl_reconnect', [ $this, 'handle_reconnect_post' ] );
++
+         // Retention UI on Settings → Privacy (v2.4 PRV-03).
+         \add_action( 'wp_ajax_trcl_retention_preview', [ $this, 'ajax_retention_preview' ] );
+         \add_action( 'wp_ajax_trcl_retention_run', [ $this, 'ajax_retention_run' ] );
+@@ -856,6 +859,60 @@
+         exit;
+     }
+ 
++    /**
++     * admin-post handler: reconnect this site to Trill Cloud (v2.5 B8).
++     *
++     * Replaces the "deactivate and reactivate" advice: clears the
++     * registration flags (retry / perma-fail), drops a secret the backend
++     * has rejected, and runs TrialRegistration::ensure_registered() once.
++     * Outcome is shown on the dashboard via a one-shot transient.
++     */
++    public function handle_reconnect_post(): void {
++        \check_admin_referer( 'trcl_reconnect' );
++
++        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
++            \wp_die(
++                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
++                '',
++                [ 'response' => 403 ]
++            );
++        }
++
++        $last_error = \get_option( \TrillChatLite\Lite\LiteConfig::OPT_LAST_PROXY_ERROR, [] );
++        $last_code  = is_array( $last_error ) ? (string) ( $last_error['code'] ?? '' ) : '';
++
++        \TrillChatLite\Lite\TrialRegistration::reset_flags();
++
++        // A secret the backend refuses is worth nothing; drop it so
++        // ensure_registered() actually registers/rotates instead of
++        // returning early on has_secret().
++        if ( in_array( $last_code, [ 'AUTH_INVALID', 'NOT_REGISTERED' ], true ) ) {
++            \TrillChatLite\Lite\TrialSecretStore::clear_secret();
++        }
++
++        $connected = \TrillChatLite\Lite\TrialRegistration::ensure_registered();
++
++        if ( $connected ) {
++            \delete_option( \TrillChatLite\Lite\LiteConfig::OPT_LAST_PROXY_ERROR );
++            $notice = [
++                'type'    => 'success',
++                'message' => __( 'Connected to Trill Cloud.', 'trill-ai-chat-lite' ),
++            ];
++        } else {
++            $notice = [
++                'type'    => 'error',
++                'message' => \TrillChatLite\Lite\TrialRegistration::has_perma_fail()
++                    ? __( 'Trill Cloud could not verify this site. Make sure it is publicly reachable over https (including /wp-json/), then try again or contact hello@trillai.io.', 'trill-ai-chat-lite' )
++                    : __( 'Could not reach Trill Cloud. The plugin will retry automatically on the next admin page load.', 'trill-ai-chat-lite' ),
++            ];
++        }
++
++        \set_transient( 'trcl_reconnect_notice', $notice, 60 );
++
++        \wp_safe_redirect( \add_query_arg( [ 'page' => 'trcl-chat' ], \admin_url( 'admin.php' ) ) );
++        exit;
++    }
++
+     /**
+      * Redirect to the Leads admin page (used by lead action handlers).
+      */
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/includes/Admin/views/dashboard.php plugin/includes/Admin/views/dashboard.php
+--- a/includes/Admin/views/dashboard.php	2026-07-17 17:07:52.000000000 +0000
++++ b/includes/Admin/views/dashboard.php	2026-09-13 15:46:44.028733519 +0000
+@@ -12,6 +12,25 @@
+ }
+ 
+ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
++
++// Trill Cloud connection state (v2.5 B8).
++$trcl_has_secret   = \TrillChatLite\Lite\TrialSecretStore::has_secret();
++$trcl_perma_fail   = \TrillChatLite\Lite\TrialRegistration::has_perma_fail();
++$trcl_last_error   = get_option( \TrillChatLite\Lite\LiteConfig::OPT_LAST_PROXY_ERROR, [] );
++$trcl_last_error   = is_array( $trcl_last_error ) ? $trcl_last_error : [];
++$trcl_error_labels = [
++    'NETWORK_ERROR'       => __( 'Could not reach Trill Cloud from this server (network, DNS or firewall).', 'trill-ai-chat-lite' ),
++    'SERVICE_TIMEOUT'     => __( 'Trill Cloud took too long to answer.', 'trill-ai-chat-lite' ),
++    'SERVICE_UNAVAILABLE' => __( 'Trill Cloud is temporarily unavailable.', 'trill-ai-chat-lite' ),
++    'AUTH_INVALID'        => __( 'This site\'s credentials were rejected by Trill Cloud.', 'trill-ai-chat-lite' ),
++    'NOT_REGISTERED'      => __( 'This site is not registered with Trill Cloud yet.', 'trill-ai-chat-lite' ),
++    'TRIAL_EXHAUSTED'     => __( 'Monthly conversation limit reached.', 'trill-ai-chat-lite' ),
++    'RATE_LIMITED'        => __( 'Too many requests in a short time.', 'trill-ai-chat-lite' ),
++];
++$trcl_reconnect_notice = get_transient( 'trcl_reconnect_notice' );
++if ( is_array( $trcl_reconnect_notice ) ) {
++    delete_transient( 'trcl_reconnect_notice' );
++}
+ ?>
+ 
+ <div class="wrap trcl-dashboard">
+@@ -31,6 +50,51 @@
+         </p>
+     </div>
+ 
++    <!-- Trill Cloud Connection Card (v2.5) -->
++    <div class="trcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">
++        <h2 style="margin-top: 0;"><?php esc_html_e( 'Trill Cloud Connection', 'trill-ai-chat-lite' ); ?></h2>
++
++        <?php if ( is_array( $trcl_reconnect_notice ) && ! empty( $trcl_reconnect_notice['message'] ) ) : ?>
++            <div class="notice notice-<?php echo esc_attr( $trcl_reconnect_notice['type'] === 'success' ? 'success' : 'error' ); ?> inline" style="margin: 0 0 12px;">
++                <p><?php echo esc_html( $trcl_reconnect_notice['message'] ); ?></p>
++            </div>
++        <?php endif; ?>
++
++        <p>
++            <?php if ( $trcl_has_secret && ! $trcl_perma_fail && empty( $trcl_last_error ) ) : ?>
++                <span style="color: #00a32a; font-weight: 600;">&#9679; <?php esc_html_e( 'Connected', 'trill-ai-chat-lite' ); ?></span>
++                — <?php esc_html_e( 'This site is registered and the last chat request succeeded.', 'trill-ai-chat-lite' ); ?>
++            <?php elseif ( $trcl_has_secret && ! $trcl_perma_fail ) : ?>
++                <span style="color: #dba617; font-weight: 600;">&#9679; <?php esc_html_e( 'Connected, last request failed', 'trill-ai-chat-lite' ); ?></span>
++            <?php else : ?>
++                <span style="color: #d63638; font-weight: 600;">&#9679; <?php esc_html_e( 'Not connected', 'trill-ai-chat-lite' ); ?></span>
++                — <?php esc_html_e( 'The chat cannot answer visitors until this site is registered with Trill Cloud.', 'trill-ai-chat-lite' ); ?>
++            <?php endif; ?>
++        </p>
++
++        <?php if ( ! empty( $trcl_last_error['code'] ) ) : ?>
++            <p style="color: #50575e;">
++                <?php
++                $trcl_code = (string) $trcl_last_error['code'];
++                printf(
++                    /* translators: 1: human explanation, 2: error code, 3: date/time */
++                    esc_html__( 'Last error: %1$s (%2$s, %3$s)', 'trill-ai-chat-lite' ),
++                    esc_html( $trcl_error_labels[ $trcl_code ] ?? __( 'Unexpected error.', 'trill-ai-chat-lite' ) ),
++                    esc_html( $trcl_code ),
++                    esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) ( $trcl_last_error['at'] ?? 0 ) ) )
++                );
++                ?>
++            </p>
++        <?php endif; ?>
++
++        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 8px;">
++            <input type="hidden" name="action" value="trcl_reconnect" />
++            <?php wp_nonce_field( 'trcl_reconnect' ); ?>
++            <button type="submit" class="button button-secondary"><?php esc_html_e( 'Reconnect', 'trill-ai-chat-lite' ); ?></button>
++            <span style="color: #50575e; margin-left: 8px;"><?php esc_html_e( 'Re-registers this site with Trill Cloud. Your plan and usage are kept.', 'trill-ai-chat-lite' ); ?></span>
++        </form>
++    </div>
++
+     <!-- Monthly Usage Card -->
+     <?php
+     $trcl_db = new \TrillChatLite\Database\DbManager();
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/includes/Lite/LiteConfig.php plugin/includes/Lite/LiteConfig.php
+--- a/includes/Lite/LiteConfig.php	2026-07-17 17:07:52.000000000 +0000
++++ b/includes/Lite/LiteConfig.php	2026-09-13 15:46:16.504234298 +0000
+@@ -185,6 +185,14 @@
+      */
+     public const OPT_TRIAL_CAP = 'trcl_trial_cap';
+ 
++    /**
++     * wp_option holding the last Trill Cloud request failure seen by the
++     * chat endpoint (2.5.0): `[ 'code' => ..., 'http_status' => ..., 'at' => ts ]`.
++     * Cleared on the next successful chat. Lets the dashboard show WHY
++     * the chat is failing instead of leaving it in debug.log only.
++     */
++    public const OPT_LAST_PROXY_ERROR = 'trcl_last_proxy_error';
++
+     // =========================================================================
+     // Branding (unchanged from v1.x)
+     // =========================================================================
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/includes/Lite/TrialRegistration.php plugin/includes/Lite/TrialRegistration.php
+--- a/includes/Lite/TrialRegistration.php	2026-07-16 23:18:08.000000000 +0000
++++ b/includes/Lite/TrialRegistration.php	2026-09-13 15:43:28.465815838 +0000
+@@ -124,9 +124,29 @@
+                 self::clear_perma_fail_flag();
+                 return false;
+             }
+-            if ( self::attempt_rotation() ) {
++            $rotation = self::attempt_rotation();
++            if ( $rotation === true ) {
+                 return true;
+             }
++
++            // 404 from rotate = the backend has no registration to rotate
++            // after all (cleared server-side, or a backend without the
++            // route). ProxyClient documents this as "fall back to
++            // register" — one plain register() attempt before giving up
++            // (2.5.0, B7).
++            if ( $rotation === 'SITE_NOT_REGISTERED' ) {
++                trcl_log( 'TrialRegistration: rotate says not registered, retrying register', 'info' );
++                $retry = $client->register();
++                if ( ! empty( $retry['success'] ) && ! empty( $retry['secret'] ) && TrialSecretStore::set_secret( $retry['secret'] ) ) {
++                    trcl_log( 'TrialRegistration: secret stored after rotate fallback', 'info', [
++                        'site_id' => $retry['site_id'] ?? '',
++                    ] );
++                    self::clear_retry_flag();
++                    self::clear_perma_fail_flag();
++                    return true;
++                }
++            }
++
+             trcl_log( 'TrialRegistration: rotation failed, permanent failure', 'warning' );
+             self::clear_retry_flag();
+             self::set_perma_fail_flag();
+@@ -178,9 +198,11 @@
+      *
+      * @since 2.3.0
+      *
+-     * @return bool True iff a rotated secret was obtained and stored.
++     * @return true|string|false True iff a rotated secret was obtained and stored;
++     *                           the error_code string when the backend rejected it;
++     *                           false when no token could be staged or storage failed.
+      */
+-    private static function attempt_rotation(): bool {
++    private static function attempt_rotation() {
+         $token = SiteVerification::issue_token();
+         if ( $token === '' ) {
+             return false;
+@@ -211,7 +233,7 @@
+             'error_code'  => $result['error_code'] ?? 'UNKNOWN',
+             'http_status' => $result['http_status'] ?? null,
+         ] );
+-        return false;
++        return (string) ( $result['error_code'] ?? 'UNKNOWN' );
+     }
+ 
+     /**
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/includes/Lite/TrialSecretStore.php plugin/includes/Lite/TrialSecretStore.php
+--- a/includes/Lite/TrialSecretStore.php	2026-05-26 20:17:20.000000000 +0000
++++ b/includes/Lite/TrialSecretStore.php	2026-09-13 15:45:05.723329749 +0000
+@@ -21,6 +21,8 @@
+     exit;
+ }
+ 
++use TrillChatLite\Utils\Encryptor;
++
+ /**
+  * Wraps wp_option access for the trial bearer secret.
+  *
+@@ -29,22 +31,63 @@
+  * store the plaintext because the plugin needs to send it on every
+  * chat request as `Authorization: Bearer ...`.
+  *
++ * Storage (2.5.0): encrypted at rest with Utils\Encryptor (AES-256-GCM,
++ * key derived from AUTH_KEY) and stored as `enc:v1:<payload>`. A value
++ * that still starts with `tt_trial_` is a plaintext secret written by
++ * 2.4.x and earlier; it is re-stored encrypted on first read. When
++ * encryption is unavailable (no OpenSSL/GCM, placeholder AUTH_KEY) the
++ * secret is kept in plaintext and a warning is logged — never a fake
++ * "encoding".
++ *
+  * Threat model:
+- *   - WP database dump → exposes the secret. Blast radius: the attacker
+- *     can consume 50 trial messages/month for THIS specific site. We
+- *     accept this trade-off (anonymous trial, no user data exposed).
+- *   - Plugin uninstall → uninstall.php should clear this option.
++ *   - WP database dump alone → no longer exposes the secret; AUTH_KEY
++ *     (wp-config.php) is needed as well. Blast radius if both leak:
++ *     the attacker can consume this site's Trill Cloud allowance.
++ *   - AUTH_KEY rotated by the host → decrypt fails → get_secret() returns
++ *     '' → the existing AUTH_INVALID / re-register flow recovers.
++ *   - Plugin uninstall → uninstall.php clears this option.
+  */
+ class TrialSecretStore {
+ 
+     /**
++     * Prefix marking an encrypted value. Versioned so a future cipher
++     * change can coexist with stored values.
++     */
++    private const ENC_PREFIX = 'enc:v1:';
++
++    /**
++     * Shape of a plaintext secret as issued by the backend.
++     */
++    private const PLAIN_PREFIX = 'tt_trial_';
++
++    /**
+      * Read the stored secret.
+      *
+      * @return string Empty string if none stored.
+      */
+     public static function get_secret(): string {
+         $value = \get_option( LiteConfig::OPT_TRIAL_SECRET, '' );
+-        return is_string( $value ) ? $value : '';
++        if ( ! is_string( $value ) || $value === '' ) {
++            return '';
++        }
++
++        if ( str_starts_with( $value, self::ENC_PREFIX ) ) {
++            $plain = Encryptor::decrypt( substr( $value, strlen( self::ENC_PREFIX ) ) );
++            if ( ! is_string( $plain ) || $plain === '' ) {
++                // Different AUTH_KEY or corrupted row: behave as "no
++                // secret" so the registration flow re-registers/rotates.
++                trcl_log( 'TrialSecretStore: stored secret could not be decrypted', 'warning' );
++                return '';
++            }
++            return $plain;
++        }
++
++        // Legacy plaintext (<= 2.4.x): migrate in place when possible.
++        if ( str_starts_with( $value, self::PLAIN_PREFIX ) && Encryptor::is_available() ) {
++            self::write( $value );
++        }
++
++        return $value;
+     }
+ 
+     /**
+@@ -58,15 +101,44 @@
+         if ( $secret === '' ) {
+             return false;
+         }
++        return self::write( $secret );
++    }
++
++    /**
++     * Encrypt (when possible) and persist. autoload=no — secrets must
++     * never load on every WordPress page request.
++     *
++     * @since 2.5.0
++     *
++     * @param string $secret Plaintext secret.
++     * @return bool True if the row now holds the secret.
++     */
++    private static function write( string $secret ): bool {
++        $stored = $secret;
++
++        if ( Encryptor::is_available() ) {
++            $payload = Encryptor::encrypt( $secret );
++            if ( is_string( $payload ) ) {
++                $stored = self::ENC_PREFIX . $payload;
++            } else {
++                trcl_log( 'TrialSecretStore: encryption failed, storing plaintext', 'warning' );
++            }
++        } else {
++            trcl_log( 'TrialSecretStore: encryption unavailable (OpenSSL/GCM or AUTH_KEY), storing plaintext', 'warning' );
++        }
+ 
+         // \add_option supports the third autoload param ('no'); on existing
+         // rows it returns false and we fall through to update_option which
+         // doesn't change autoload — both branches end up autoload=no.
+-        $added = \add_option( LiteConfig::OPT_TRIAL_SECRET, $secret, '', 'no' );
+-        if ( $added ) {
++        if ( \add_option( LiteConfig::OPT_TRIAL_SECRET, $stored, '', 'no' ) ) {
++            return true;
++        }
++        if ( \update_option( LiteConfig::OPT_TRIAL_SECRET, $stored ) ) {
+             return true;
+         }
+-        return (bool) \update_option( LiteConfig::OPT_TRIAL_SECRET, $secret );
++        // update_option() returns false when the value is unchanged; that
++        // still means the row holds what we asked for.
++        return \get_option( LiteConfig::OPT_TRIAL_SECRET, '' ) === $stored;
+     }
+ 
+     /**
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/includes/Plugin.php plugin/includes/Plugin.php
+--- a/includes/Plugin.php	2026-07-18 21:27:24.000000000 +0000
++++ b/includes/Plugin.php	2026-09-13 15:46:50.064599505 +0000
+@@ -227,7 +227,7 @@
+         printf(
+             '<div class="notice notice-error"><p><strong>%s</strong> %s</p></div>',
+             \esc_html__( 'Trill AI Chat could not reconnect this site automatically.', 'trill-ai-chat-lite' ),
+-            \esc_html__( 'Your site must be publicly reachable (including its REST API) for ownership verification. Deactivate and reactivate the plugin to retry, or contact hello@trillai.io.', 'trill-ai-chat-lite' )
++            \esc_html__( 'Your site must be publicly reachable (including its REST API) for ownership verification. Use "Reconnect" on the Trill Chat dashboard to retry, or contact hello@trillai.io.', 'trill-ai-chat-lite' )
+         );
+     }
+ 
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/includes/Utils/Encryptor.php plugin/includes/Utils/Encryptor.php
+--- a/includes/Utils/Encryptor.php	2026-03-12 19:37:24.000000000 +0000
++++ b/includes/Utils/Encryptor.php	2026-09-13 15:44:42.215732187 +0000
+@@ -1,12 +1,10 @@
+ <?php
+ /**
+- * Encryption utility.
+- *
+- * Provides simple encryption/decryption for sensitive data
+- * using WordPress salts and OpenSSL.
++ * Encryption helper for secrets stored in wp_options.
+  *
+  * @package TrillChatLite\Utils
+  * @since 1.0.0
++ * @since 2.5.0 AES-256-GCM (authenticated), no plaintext fallback.
+  * @license GPL-2.0-or-later
+  */
+ 
+@@ -19,77 +17,98 @@
+ /**
+  * Class Encryptor
+  *
+- * SOLID: Single Responsibility — only encryption operations.
++ * AES-256-GCM with a key derived from AUTH_KEY. The IV and the
++ * authentication tag travel with the ciphertext, so a tampered or
++ * truncated value fails to decrypt instead of yielding garbage.
++ *
++ * Callers must check is_available() and keep their own plaintext path
++ * (with a warning) when it returns false — this class never pretends
++ * to encrypt.
+  */
+ class Encryptor {
+ 
+     /**
+-     * Cipher method.
++     * Cipher. GCM = authenticated encryption; 12-byte IV, 16-byte tag.
+      */
+-    private const CIPHER = 'aes-256-cbc';
++    private const CIPHER = 'aes-256-gcm';
++
++    private const IV_LENGTH  = 12;
++    private const TAG_LENGTH = 16;
+ 
+     /**
+-     * Get the encryption key from WordPress salts.
++     * Whether encryption can be used on this site.
+      *
+-     * @return string Encryption key.
++     * Requires the OpenSSL extension with GCM support and a real AUTH_KEY
++     * (the wp-config.php default placeholder is not a key).
++     *
++     * @since 2.5.0
++     */
++    public static function is_available(): bool {
++        if ( ! extension_loaded( 'openssl' ) || ! in_array( self::CIPHER, openssl_get_cipher_methods(), true ) ) {
++            return false;
++        }
++        return defined( 'AUTH_KEY' ) && is_string( AUTH_KEY ) && AUTH_KEY !== '' && AUTH_KEY !== 'put your unique phrase here';
++    }
++
++    /**
++     * Derive the 32-byte key from AUTH_KEY.
+      */
+     private static function get_key(): string {
+-        $salt = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'trcl-default-encryption-key';
+-        return hash( 'sha256', $salt, true );
++        return hash( 'sha256', (string) AUTH_KEY, true );
+     }
+ 
+     /**
+-     * Encrypt a value.
++     * Encrypt a string.
+      *
+-     * @param string $value Value to encrypt.
+-     * @return string|false Encrypted value (base64 encoded) or false on failure.
++     * @param string $value Plaintext.
++     * @return string|false base64( iv . tag . ciphertext ), or false when
++     *                      encryption is unavailable or fails.
+      */
+     public static function encrypt( string $value ) {
+-        if ( ! extension_loaded( 'openssl' ) ) {
+-            trcl_log( 'OpenSSL extension not loaded, returning raw value', 'warning' );
+-            return base64_encode( $value ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
++        if ( ! self::is_available() ) {
++            return false;
+         }
+ 
+-        $iv_length = openssl_cipher_iv_length( self::CIPHER );
+-        $iv        = openssl_random_pseudo_bytes( $iv_length );
+-        $encrypted = openssl_encrypt( $value, self::CIPHER, self::get_key(), 0, $iv );
++        try {
++            $iv = random_bytes( self::IV_LENGTH );
++        } catch ( \Exception $e ) {
++            return false;
++        }
+ 
+-        if ( false === $encrypted ) {
++        $tag        = '';
++        $ciphertext = openssl_encrypt( $value, self::CIPHER, self::get_key(), OPENSSL_RAW_DATA, $iv, $tag, '', self::TAG_LENGTH );
++        if ( false === $ciphertext || strlen( $tag ) !== self::TAG_LENGTH ) {
+             return false;
+         }
+ 
+-        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+-        return base64_encode( $iv . $encrypted );
++        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Binary-safe storage in wp_options, not obfuscation.
++        return base64_encode( $iv . $tag . $ciphertext );
+     }
+ 
+     /**
+-     * Decrypt a value.
++     * Decrypt a value produced by encrypt().
+      *
+-     * @param string $encrypted Encrypted value (base64 encoded).
+-     * @return string|false Decrypted value or false on failure.
++     * @param string $encrypted base64 payload.
++     * @return string|false Plaintext, or false when unavailable, malformed,
++     *                      tampered, or encrypted under a different AUTH_KEY.
+      */
+     public static function decrypt( string $encrypted ) {
+-        if ( ! extension_loaded( 'openssl' ) ) {
+-            // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+-            return base64_decode( $encrypted, true );
++        if ( ! self::is_available() ) {
++            return false;
+         }
+ 
+-        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
++        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- See encrypt().
+         $data = base64_decode( $encrypted, true );
+-
+-        if ( false === $data ) {
++        if ( false === $data || strlen( $data ) <= self::IV_LENGTH + self::TAG_LENGTH ) {
+             return false;
+         }
+ 
+-        $iv_length = openssl_cipher_iv_length( self::CIPHER );
+-
+-        if ( strlen( $data ) < $iv_length ) {
+-            return false;
+-        }
++        $iv         = substr( $data, 0, self::IV_LENGTH );
++        $tag        = substr( $data, self::IV_LENGTH, self::TAG_LENGTH );
++        $ciphertext = substr( $data, self::IV_LENGTH + self::TAG_LENGTH );
+ 
+-        $iv            = substr( $data, 0, $iv_length );
+-        $encrypted_data = substr( $data, $iv_length );
++        $plain = openssl_decrypt( $ciphertext, self::CIPHER, self::get_key(), OPENSSL_RAW_DATA, $iv, $tag );
+ 
+-        return openssl_decrypt( $encrypted_data, self::CIPHER, self::get_key(), 0, $iv );
++        return false === $plain ? false : $plain;
+     }
+ }
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/readme.txt plugin/readme.txt
+--- a/readme.txt	2026-09-13 15:33:10.000000000 +0000
++++ b/readme.txt	2026-09-13 15:47:33.684131397 +0000
+@@ -4,7 +4,7 @@
+ Requires at least: 6.0
+ Tested up to: 7.1
+ Requires PHP: 8.0
+-Stable tag: 2.4.2
++Stable tag: 2.5.0
+ License: GPLv2 or later
+ License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ 
+@@ -247,6 +247,14 @@
+ 
+ == Changelog ==
+ 
++= 2.5.0 =
++**Connection resilience release. Safe update for all users — no settings change, no database update.**
++
++* **New: "Trill Cloud Connection" card on the dashboard** showing whether this site is connected, the last request failure in plain words (network, timeout, credentials rejected, limit reached…) with its code and time, and a **Reconnect** button. No more "deactivate and reactivate" to recover a stuck site.
++* **Security: the Trill Cloud site credential is now encrypted at rest** (AES-256-GCM, key derived from your site's `AUTH_KEY`). Existing installs are migrated transparently on first use. If the host ever rotates `AUTH_KEY`, the plugin simply reconnects.
++* **Fixed: reinstall recovery could dead-end.** When the backend reported no registration to rotate, the plugin gave up permanently instead of registering again. It now falls back to a fresh registration.
++* **Fixed: failed requests no longer leave empty conversations** in the Conversations page and retention counters; a conversation is kept only once the assistant has actually replied, and "chats started" analytics count the same way.
++
+ = 2.4.2 =
+ **Security and reliability release. Safe update for all users — no settings change, no database update.**
+ 
+@@ -412,6 +420,9 @@
+ 
+ == Upgrade Notice ==
+ 
++= 2.5.0 =
++Dashboard connection status with a Reconnect button, encrypted site credential, and fixes for reinstall recovery and empty conversations. Safe update for all users.
++
+ = 2.4.2 =
+ Security and reliability fixes: rate-limit bypass closed, chat no longer breaks for guests on page-cached sites, password-protected content excluded from the AI index. Safe update for all users.
+ 
+diff -ruN '--exclude=*.min.*' '--exclude=LICENSE' '--exclude=images' '--exclude=languages' '--exclude=docs' '--exclude=tests' '--exclude=bin' '--exclude=wporg-assets' '--exclude=README.md' '--exclude=.distignore' a/trill-ai-chat-lite.php plugin/trill-ai-chat-lite.php
+--- a/trill-ai-chat-lite.php	2026-09-13 15:33:10.000000000 +0000
++++ b/trill-ai-chat-lite.php	2026-09-13 15:47:33.683615291 +0000
+@@ -2,7 +2,7 @@
+ /**
+  * Plugin Name: Trill AI Product Chat for WooCommerce
+  * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically.
+- * Version: 2.4.2
++ * Version: 2.5.0
+  * Requires at least: 6.0
+  * Requires PHP: 8.0
+  * Requires Plugins: woocommerce
+@@ -25,7 +25,7 @@
+ // =========================================================================
+ // CONSTANTS
+ // =========================================================================
+-define( 'TRCL_VERSION', '2.4.2' );
++define( 'TRCL_VERSION', '2.5.0' );
+ define( 'TRCL_PLUGIN_FILE', __FILE__ );
+ define( 'TRCL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+ define( 'TRCL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

@@ -4,7 +4,7 @@ Tags: woocommerce, ai chatbot, shopping assistant, product search, order trackin
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 2.4.2
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -247,6 +247,14 @@ Use the [WordPress.org support forum](https://wordpress.org/support/plugin/trill
 
 == Changelog ==
 
+= 2.5.0 =
+**Connection resilience release. Safe update for all users — no settings change, no database update.**
+
+* **New: "Trill Cloud Connection" card on the dashboard** showing whether this site is connected, the last request failure in plain words (network, timeout, credentials rejected, limit reached…) with its code and time, and a **Reconnect** button. No more "deactivate and reactivate" to recover a stuck site.
+* **Security: the Trill Cloud site credential is now encrypted at rest** (AES-256-GCM, key derived from your site's `AUTH_KEY`). Existing installs are migrated transparently on first use. If the host ever rotates `AUTH_KEY`, the plugin simply reconnects.
+* **Fixed: reinstall recovery could dead-end.** When the backend reported no registration to rotate, the plugin gave up permanently instead of registering again. It now falls back to a fresh registration.
+* **Fixed: failed requests no longer leave empty conversations** in the Conversations page and retention counters; a conversation is kept only once the assistant has actually replied, and "chats started" analytics count the same way.
+
 = 2.4.2 =
 **Security and reliability release. Safe update for all users — no settings change, no database update.**
 
@@ -411,6 +419,9 @@ This release turns Trill AI Chat from a product-search chatbot into a full-stack
 * Initial release
 
 == Upgrade Notice ==
+
+= 2.5.0 =
+Dashboard connection status with a Reconnect button, encrypted site credential, and fixes for reinstall recovery and empty conversations. Safe update for all users.
 
 = 2.4.2 =
 Security and reliability fixes: rate-limit bypass closed, chat no longer breaks for guests on page-cached sites, password-protected content excluded from the AI index. Safe update for all users.

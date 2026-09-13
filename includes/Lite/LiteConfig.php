@@ -185,6 +185,14 @@ class LiteConfig {
      */
     public const OPT_TRIAL_CAP = 'trcl_trial_cap';
 
+    /**
+     * wp_option holding the last Trill Cloud request failure seen by the
+     * chat endpoint (2.5.0): `[ 'code' => ..., 'http_status' => ..., 'at' => ts ]`.
+     * Cleared on the next successful chat. Lets the dashboard show WHY
+     * the chat is failing instead of leaving it in debug.log only.
+     */
+    public const OPT_LAST_PROXY_ERROR = 'trcl_last_proxy_error';
+
     // =========================================================================
     // Branding (unchanged from v1.x)
     // =========================================================================

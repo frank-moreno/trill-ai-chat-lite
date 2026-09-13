@@ -85,6 +85,9 @@ class Admin {
         // Appearance reset (v2.1).
         \add_action( 'admin_post_trcl_reset_appearance', [ $this, 'handle_reset_appearance_post' ] );
 
+        // Trill Cloud "Reconnect" on the dashboard (v2.5 B8).
+        \add_action( 'admin_post_trcl_reconnect', [ $this, 'handle_reconnect_post' ] );
+
         // Retention UI on Settings → Privacy (v2.4 PRV-03).
         \add_action( 'wp_ajax_trcl_retention_preview', [ $this, 'ajax_retention_preview' ] );
         \add_action( 'wp_ajax_trcl_retention_run', [ $this, 'ajax_retention_run' ] );
@@ -853,6 +856,60 @@ class Admin {
                 \admin_url( 'admin.php' )
             )
         );
+        exit;
+    }
+
+    /**
+     * admin-post handler: reconnect this site to Trill Cloud (v2.5 B8).
+     *
+     * Replaces the "deactivate and reactivate" advice: clears the
+     * registration flags (retry / perma-fail), drops a secret the backend
+     * has rejected, and runs TrialRegistration::ensure_registered() once.
+     * Outcome is shown on the dashboard via a one-shot transient.
+     */
+    public function handle_reconnect_post(): void {
+        \check_admin_referer( 'trcl_reconnect' );
+
+        if ( ! \current_user_can( 'manage_trcl_chat' ) ) {
+            \wp_die(
+                esc_html__( 'You do not have sufficient permissions.', 'trill-ai-chat-lite' ),
+                '',
+                [ 'response' => 403 ]
+            );
+        }
+
+        $last_error = \get_option( \TrillChatLite\Lite\LiteConfig::OPT_LAST_PROXY_ERROR, [] );
+        $last_code  = is_array( $last_error ) ? (string) ( $last_error['code'] ?? '' ) : '';
+
+        \TrillChatLite\Lite\TrialRegistration::reset_flags();
+
+        // A secret the backend refuses is worth nothing; drop it so
+        // ensure_registered() actually registers/rotates instead of
+        // returning early on has_secret().
+        if ( in_array( $last_code, [ 'AUTH_INVALID', 'NOT_REGISTERED' ], true ) ) {
+            \TrillChatLite\Lite\TrialSecretStore::clear_secret();
+        }
+
+        $connected = \TrillChatLite\Lite\TrialRegistration::ensure_registered();
+
+        if ( $connected ) {
+            \delete_option( \TrillChatLite\Lite\LiteConfig::OPT_LAST_PROXY_ERROR );
+            $notice = [
+                'type'    => 'success',
+                'message' => __( 'Connected to Trill Cloud.', 'trill-ai-chat-lite' ),
+            ];
+        } else {
+            $notice = [
+                'type'    => 'error',
+                'message' => \TrillChatLite\Lite\TrialRegistration::has_perma_fail()
+                    ? __( 'Trill Cloud could not verify this site. Make sure it is publicly reachable over https (including /wp-json/), then try again or contact hello@trillai.io.', 'trill-ai-chat-lite' )
+                    : __( 'Could not reach Trill Cloud. The plugin will retry automatically on the next admin page load.', 'trill-ai-chat-lite' ),
+            ];
+        }
+
+        \set_transient( 'trcl_reconnect_notice', $notice, 60 );
+
+        \wp_safe_redirect( \add_query_arg( [ 'page' => 'trcl-chat' ], \admin_url( 'admin.php' ) ) );
         exit;
     }
 

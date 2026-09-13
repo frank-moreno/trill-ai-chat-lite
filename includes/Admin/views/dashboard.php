@@ -12,6 +12,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
+
+// Trill Cloud connection state (v2.5 B8).
+$trcl_has_secret   = \TrillChatLite\Lite\TrialSecretStore::has_secret();
+$trcl_perma_fail   = \TrillChatLite\Lite\TrialRegistration::has_perma_fail();
+$trcl_last_error   = get_option( \TrillChatLite\Lite\LiteConfig::OPT_LAST_PROXY_ERROR, [] );
+$trcl_last_error   = is_array( $trcl_last_error ) ? $trcl_last_error : [];
+$trcl_error_labels = [
+    'NETWORK_ERROR'       => __( 'Could not reach Trill Cloud from this server (network, DNS or firewall).', 'trill-ai-chat-lite' ),
+    'SERVICE_TIMEOUT'     => __( 'Trill Cloud took too long to answer.', 'trill-ai-chat-lite' ),
+    'SERVICE_UNAVAILABLE' => __( 'Trill Cloud is temporarily unavailable.', 'trill-ai-chat-lite' ),
+    'AUTH_INVALID'        => __( 'This site\'s credentials were rejected by Trill Cloud.', 'trill-ai-chat-lite' ),
+    'NOT_REGISTERED'      => __( 'This site is not registered with Trill Cloud yet.', 'trill-ai-chat-lite' ),
+    'TRIAL_EXHAUSTED'     => __( 'Monthly conversation limit reached.', 'trill-ai-chat-lite' ),
+    'RATE_LIMITED'        => __( 'Too many requests in a short time.', 'trill-ai-chat-lite' ),
+];
+$trcl_reconnect_notice = get_transient( 'trcl_reconnect_notice' );
+if ( is_array( $trcl_reconnect_notice ) ) {
+    delete_transient( 'trcl_reconnect_notice' );
+}
 ?>
 
 <div class="wrap trcl-dashboard">
@@ -29,6 +48,51 @@ $trcl_chat_enabled = get_option( 'trcl_chat_enabled', '1' ) === '1';
                 — <a href="<?php echo esc_url( admin_url( 'admin.php?page=trcl-settings' ) ); ?>"><?php esc_html_e( 'Enable in Settings', 'trill-ai-chat-lite' ); ?></a>
             <?php endif; ?>
         </p>
+    </div>
+
+    <!-- Trill Cloud Connection Card (v2.5) -->
+    <div class="trcl-card" style="background: #fff; padding: 20px; border: 1px solid #c3c4c7; border-radius: 4px; margin: 20px 0;">
+        <h2 style="margin-top: 0;"><?php esc_html_e( 'Trill Cloud Connection', 'trill-ai-chat-lite' ); ?></h2>
+
+        <?php if ( is_array( $trcl_reconnect_notice ) && ! empty( $trcl_reconnect_notice['message'] ) ) : ?>
+            <div class="notice notice-<?php echo esc_attr( $trcl_reconnect_notice['type'] === 'success' ? 'success' : 'error' ); ?> inline" style="margin: 0 0 12px;">
+                <p><?php echo esc_html( $trcl_reconnect_notice['message'] ); ?></p>
+            </div>
+        <?php endif; ?>
+
+        <p>
+            <?php if ( $trcl_has_secret && ! $trcl_perma_fail && empty( $trcl_last_error ) ) : ?>
+                <span style="color: #00a32a; font-weight: 600;">&#9679; <?php esc_html_e( 'Connected', 'trill-ai-chat-lite' ); ?></span>
+                — <?php esc_html_e( 'This site is registered and the last chat request succeeded.', 'trill-ai-chat-lite' ); ?>
+            <?php elseif ( $trcl_has_secret && ! $trcl_perma_fail ) : ?>
+                <span style="color: #dba617; font-weight: 600;">&#9679; <?php esc_html_e( 'Connected, last request failed', 'trill-ai-chat-lite' ); ?></span>
+            <?php else : ?>
+                <span style="color: #d63638; font-weight: 600;">&#9679; <?php esc_html_e( 'Not connected', 'trill-ai-chat-lite' ); ?></span>
+                — <?php esc_html_e( 'The chat cannot answer visitors until this site is registered with Trill Cloud.', 'trill-ai-chat-lite' ); ?>
+            <?php endif; ?>
+        </p>
+
+        <?php if ( ! empty( $trcl_last_error['code'] ) ) : ?>
+            <p style="color: #50575e;">
+                <?php
+                $trcl_code = (string) $trcl_last_error['code'];
+                printf(
+                    /* translators: 1: human explanation, 2: error code, 3: date/time */
+                    esc_html__( 'Last error: %1$s (%2$s, %3$s)', 'trill-ai-chat-lite' ),
+                    esc_html( $trcl_error_labels[ $trcl_code ] ?? __( 'Unexpected error.', 'trill-ai-chat-lite' ) ),
+                    esc_html( $trcl_code ),
+                    esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) ( $trcl_last_error['at'] ?? 0 ) ) )
+                );
+                ?>
+            </p>
+        <?php endif; ?>
+
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 8px;">
+            <input type="hidden" name="action" value="trcl_reconnect" />
+            <?php wp_nonce_field( 'trcl_reconnect' ); ?>
+            <button type="submit" class="button button-secondary"><?php esc_html_e( 'Reconnect', 'trill-ai-chat-lite' ); ?></button>
+            <span style="color: #50575e; margin-left: 8px;"><?php esc_html_e( 'Re-registers this site with Trill Cloud. Your plan and usage are kept.', 'trill-ai-chat-lite' ); ?></span>
+        </form>
     </div>
 
     <!-- Monthly Usage Card -->
