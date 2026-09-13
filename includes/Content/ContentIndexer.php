@@ -148,8 +148,10 @@ class ContentIndexer {
 
         // Only published posts are indexed; everything else (draft, pending,
         // private, trash, auto-draft) gets its chunks cleaned out so the
-        // index can't leak unpublished content into the chat.
-        if ( $post->post_status !== 'publish' ) {
+        // index can't leak unpublished content into the chat. Password-
+        // protected posts are 'publish' too but their content is gated, so
+        // they are excluded the same way (2.4.2).
+        if ( $post->post_status !== 'publish' || '' !== (string) $post->post_password ) {
             $this->delete_for_post( $post_id );
             return false;
         }
@@ -288,6 +290,7 @@ class ContentIndexer {
                 $query = new \WP_Query( [
                     'post_type'              => $post_types,
                     'post_status'            => 'publish',
+                    'has_password'           => false,
                     'posts_per_page'         => 50,
                     'paged'                  => $paged,
                     'fields'                 => 'ids',
@@ -360,13 +363,14 @@ class ContentIndexer {
 
         $table = $wpdb->prefix . self::TABLE;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table from $wpdb->prefix (trusted); id bound via prepare. Block-scoped for the multi-line statement.
         $affected = $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM {$table} WHERE post_id = %d AND post_type NOT IN ('product_cat')",
                 $post_id
             )
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         return $affected !== false && $affected > 0;
     }
@@ -423,10 +427,11 @@ class ContentIndexer {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table from $wpdb->prefix (trusted); no user input. Block-scoped for the multi-line statement.
         $sources = (int) $wpdb->get_var(
             "SELECT COUNT(DISTINCT post_id, post_type) FROM {$table}"
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
         return [
             'indexed_sources' => $sources,

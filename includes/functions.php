@@ -24,14 +24,23 @@ function trcl_get_plugin() {
 /**
  * Log debug information.
  *
- * Only logs when WP_DEBUG is enabled.
+ * Thin wrapper over TrillChatLite\Utils\Logger since 2.4.2, so there is a
+ * single logging path: nothing is written unless WP_DEBUG and WP_DEBUG_LOG
+ * are both on, and entries below TRCL_LOG_LEVEL (default 'info') are
+ * dropped. Never pass visitor-authored content (messages, emails) in
+ * $message or $context — log lengths, counts and ids instead.
  *
  * @param mixed  $message Message to log.
  * @param string $level   Log level (info, warning, error, debug).
  * @param array  $context Optional context data.
  */
 function trcl_log( $message, string $level = 'info', array $context = [] ): void {
-    if ( ! WP_DEBUG ) {
+    if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+        return;
+    }
+
+    // uninstall.php loads this file without the autoloader.
+    if ( ! class_exists( \TrillChatLite\Utils\Logger::class ) ) {
         return;
     }
 
@@ -40,17 +49,24 @@ function trcl_log( $message, string $level = 'info', array $context = [] ): void
         $message = print_r( $message, true );
     }
 
-    $prefix = '[Trill Chat Lite] ';
-    $label  = strtoupper( $level === 'warning' || $level === 'error' || $level === 'debug' ? $level : 'INFO' );
-    $entry  = $prefix . $label . ': ' . $message;
-
-    if ( ! empty( $context ) ) {
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r -- Intentional debug context
-        $entry .= ' | ' . wp_json_encode( $context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+    static $logger = null;
+    if ( null === $logger ) {
+        $logger = new \TrillChatLite\Utils\Logger( 'Plugin' );
     }
 
-    // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging
-    error_log( $entry );
+    switch ( $level ) {
+        case 'debug':
+            $logger->debug( (string) $message, $context );
+            break;
+        case 'warning':
+            $logger->warning( (string) $message, $context );
+            break;
+        case 'error':
+            $logger->error( (string) $message, $context );
+            break;
+        default:
+            $logger->info( (string) $message, $context );
+    }
 }
 
 /**

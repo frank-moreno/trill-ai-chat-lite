@@ -30,6 +30,18 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+//
+// Same rationale as Gdpr\ConversationManager's file-level disable:
+// every query in this file binds its VALUES through $wpdb->prepare();
+// what PHPCS cannot statically verify is (a) table names interpolated
+// from $wpdb->prefix concat with hard-coded suffixes (trusted, the
+// idiomatic WP pattern) and (b) SQL assembled in local variables
+// ($count_sql / $rows_sql) before the prepare() call. Plugin Check 2.x
+// additionally flags the INTERIOR lines of multi-line statements,
+// which single-line phpcs:ignore comments cannot cover — hence the
+// file-level scope. Every individual query is documented inline.
+
 use TrillChatLite\Database\Migrations;
 
 /**

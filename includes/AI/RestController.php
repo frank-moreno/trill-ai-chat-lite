@@ -173,7 +173,7 @@ class RestController {
         );
 
         // GET /wp-json/trcl/v1/conversation/{session_id}
-        // Semi-public: validates session ownership via cookie/fingerprint.
+        // Semi-public: the session UUID is the bearer (see check_conversation_permissions).
         \register_rest_route(
             self::API_NAMESPACE,
             '/conversation/(?P<session_id>[\w-]+)',
@@ -193,7 +193,7 @@ class RestController {
         );
 
         // POST /wp-json/trcl/v1/feedback
-        // Semi-public: validates that message_id belongs to an active session.
+        // Semi-public: requires the session UUID; message_id must belong to it.
         \register_rest_route(
             self::API_NAMESPACE,
             '/feedback',
@@ -304,7 +304,7 @@ class RestController {
             $product_results = $is_product_msg ? $this->search->search( $message ) : [];
 
             trcl_log( 'Product search result', 'debug', [
-                'message'        => $message,
+                'message_len'    => mb_strlen( $message ),
                 'is_product_msg' => $is_product_msg,
                 'products_found' => count( $product_results ),
                 'product_names'  => array_column( $product_results, 'name' ),
@@ -321,7 +321,7 @@ class RestController {
             }
 
             trcl_log( 'Content search result', 'debug', [
-                'message'         => $message,
+                'message_len'     => mb_strlen( $message ),
                 'content_found'   => count( $content_results ),
                 'content_titles'  => array_column( $content_results, 'title' ),
             ] );
@@ -550,12 +550,20 @@ class RestController {
                 $ai_message_id = 0;
             }
 
-            // 11. Stash the X-Trill-Trial-Remaining value for the dashboard
-            //     widget. Don't fail the request if the option write fails.
+            // 11. Stash the X-Trill-Trial-Remaining / X-Trill-Trial-Cap
+            //     values for the dashboard widget. Don't fail the request
+            //     if the option writes fail.
             if ( isset( $ai_response['trial_remaining'] ) ) {
                 \update_option(
                     LiteConfig::OPT_TRIAL_REMAINING,
                     (int) $ai_response['trial_remaining'],
+                    false
+                );
+            }
+            if ( isset( $ai_response['trial_cap'] ) && (int) $ai_response['trial_cap'] > 0 ) {
+                \update_option(
+                    LiteConfig::OPT_TRIAL_CAP,
+                    (int) $ai_response['trial_cap'],
                     false
                 );
             }
@@ -659,6 +667,18 @@ class RestController {
             $message_id = absint( $request->get_param( 'message_id' ) );
             $rating     = absint( $request->get_param( 'rating' ) );
             $comment    = \sanitize_textarea_field( $request->get_param( 'comment' ) ?? '' );
+            $session_id = \sanitize_text_field( $request->get_param( 'session_id' ) ?? '' );
+
+            // The session UUID is the caller's proof of ownership (same
+            // posture as GET /conversation). Only messages of that
+            // conversation can be rated (2.4.2).
+            if ( ! $this->db->message_belongs_to_session( $message_id, $session_id ) ) {
+                return $this->formatter->format_error(
+                    __( 'Message not found.', 'trill-ai-chat-lite' ),
+                    'NOT_FOUND',
+                    404
+                );
+            }
 
             $saved = $this->db->save_feedback( $message_id, $rating, $comment );
 
@@ -718,9 +738,9 @@ class RestController {
     /**
      * Permission callback for GET /conversation/{session_id}.
      *
-     * Semi-public — validates that the requester owns the session by
-     * checking the session_id exists and was created recently.
-     * The session_id itself acts as a bearer token (UUID is unguessable).
+     * Semi-public — the session_id itself acts as the bearer token (a
+     * v4 UUID from wp_generate_uuid4(), not enumerable). There is no
+     * cookie or fingerprint check beyond that.
      *
      * @param \WP_REST_Request $request Request object.
      * @return true|\WP_Error
@@ -860,6 +880,13 @@ class RestController {
      */
     private function get_feedback_args(): array {
         return [
+            'session_id' => [
+                'required'          => true,
+                'type'              => 'string',
+                'description'       => 'Session UUID the message belongs to',
+                'sanitize_callback' => 'sanitize_text_field',
+                'validate_callback' => [ $this, 'validate_uuid' ],
+            ],
             'message_id' => [
                 'required'          => true,
                 'type'              => 'integer',
@@ -1094,23 +1121,31 @@ class RestController {
     /**
      * Get client IP address.
      *
-     * @return string
+     * Reads REMOTE_ADDR only. X-Forwarded-For / Client-IP are written by
+     * the client, so trusting them lets anyone reset the per-IP rate
+     * limit with a fresh header per request (2.4.2). Sites behind a
+     * trusted reverse proxy or CDN resolve the real address through the
+     * `trcl_client_ip` filter.
+     *
+     * @return string Validated IP, or '0.0.0.0' when none is available.
      */
     private function get_client_ip(): string {
-        $ip_keys = [ 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' ];
+        $ip = isset( $_SERVER['REMOTE_ADDR'] )
+            ? \sanitize_text_field( \wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+            : '';
 
-        foreach ( $ip_keys as $key ) {
-            if ( ! empty( $_SERVER[ $key ] ) ) {
-                $ip = \sanitize_text_field( \wp_unslash( $_SERVER[ $key ] ) );
-                if ( strpos( $ip, ',' ) !== false ) {
-                    $ip = trim( explode( ',', $ip )[0] );
-                }
-                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-                    return $ip;
-                }
-            }
-        }
+        /**
+         * Filter the client IP used for REST rate limiting.
+         *
+         * Only trust proxy headers here when REMOTE_ADDR is a proxy you
+         * control (e.g. read CF-Connecting-IP behind Cloudflare).
+         *
+         * @since 2.4.2
+         *
+         * @param string $ip REMOTE_ADDR as received.
+         */
+        $ip = (string) \apply_filters( 'trcl_client_ip', $ip );
 
-        return '0.0.0.0';
+        return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '0.0.0.0';
     }
 }

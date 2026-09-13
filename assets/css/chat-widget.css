@@ -512,6 +512,81 @@
     color: #374151;
 }
 
+/* Consent gate card (v2.4 D11) — rendered in the messages area until
+   the visitor accepts the privacy notice. */
+.trcl-consent-gate {
+    margin: 12px;
+    padding: 14px 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #374151;
+    text-align: center;
+}
+
+.trcl-consent-gate p {
+    margin: 0 0 10px;
+}
+
+.trcl-consent-gate a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.trcl-consent-accept {
+    background: var(--trcl-primary, #10B981);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.trcl-consent-accept:hover {
+    filter: brightness(0.95);
+}
+
+/* Request My Data mini-form (v2.4) — sits under the privacy notice. */
+.trcl-request-data-form {
+    display: flex;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    font-size: 11px;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+.trcl-request-data-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+.trcl-request-data-send {
+    background: var(--trcl-primary, #10B981);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.trcl-request-data-send:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
 /* ========================================
    Powered By Badge
    ======================================== */

@@ -175,6 +175,61 @@ class ConversationManager {
     }
 
     /**
+     * Data-subject summary for the GDPR Tools lookup (v2.4 PRV-01).
+     *
+     * Composes the existing finders plus one COUNT over messages so
+     * the admin page can show scope-of-data at a glance without any
+     * SQL of its own. Read-only — nothing is exported or mutated.
+     *
+     * @since 2.4.0
+     *
+     * @param string $email Email address (sanitised here).
+     * @return array{email: string, conversations: int, messages: int,
+     *               leads: int, first_activity: string, last_activity: string}
+     */
+    public function summarise_for_email( string $email ): array {
+        $summary = [
+            'email'          => \sanitize_email( $email ),
+            'conversations'  => 0,
+            'messages'       => 0,
+            'leads'          => 0,
+            'first_activity' => '',
+            'last_activity'  => '',
+        ];
+
+        if ( $summary['email'] === '' ) {
+            return $summary;
+        }
+
+        $conversations = $this->find_by_email( $summary['email'] );
+
+        $summary['conversations'] = count( $conversations );
+        $summary['leads']         = count( $this->find_leads_by_email( $summary['email'] ) );
+
+        if ( empty( $conversations ) ) {
+            return $summary;
+        }
+
+        // find_by_email orders by started_at ASC.
+        $summary['first_activity'] = (string) $conversations[0]->started_at;
+        $summary['last_activity']  = (string) end( $conversations )->started_at;
+
+        $conv_ids     = array_map( static fn( $c ): int => (int) $c->id, $conversations );
+        $placeholders = implode( ',', array_fill( 0, count( $conv_ids ), '%d' ) );
+        $msg_table    = $this->messages_table;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $summary['messages'] = (int) $this->wpdb->get_var(
+            $this->wpdb->prepare(
+                "SELECT COUNT(*) FROM {$msg_table} WHERE conversation_id IN ({$placeholders})",
+                ...$conv_ids
+            )
+        );
+
+        return $summary;
+    }
+
+    /**
      * Build a WP Privacy API exporter payload for the given email.
      *
      * Each conversation is a separate "item" inside the
@@ -495,10 +550,13 @@ class ConversationManager {
      * domain, e.g. "f***@example.com". Prevents PII leaking into
      * server logs / error trackers.
      *
+     * Public since 2.4.0 — AuditLogger reuses it so masking rules
+     * live in exactly one place (PRV-02).
+     *
      * @param string $email
      * @return string
      */
-    private static function mask_email( string $email ): string {
+    public static function mask_email( string $email ): string {
         $at = strpos( $email, '@' );
         if ( $at === false || $at < 1 ) {
             return '***';

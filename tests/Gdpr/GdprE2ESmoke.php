@@ -271,6 +271,123 @@ trcl_assert(
 );
 
 // ---------------------------------------------------------------------
+// v2.4 PRV-02: audit logger.
+// ---------------------------------------------------------------------
+echo "\nF2. Audit logger (v2.4)\n";
+
+$trcl_audit_table = $wpdb->prefix . 'trcl_gdpr_audit';
+trcl_assert(
+    $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $trcl_audit_table ) ) === $trcl_audit_table,
+    'trcl_gdpr_audit table exists (schema 1.5.0)'
+);
+
+$trcl_audit_before = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$trcl_audit_table}" );
+
+$trcl_logger = new \TrillChatLite\Gdpr\AuditLogger();
+$trcl_logger->log( \TrillChatLite\Gdpr\AuditLogger::ACTION_SEARCH, 'smoke-test@example.com', 3 );
+
+$trcl_audit_after = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$trcl_audit_table}" );
+trcl_assert(
+    $trcl_audit_after === $trcl_audit_before + 1,
+    'audit log writes exactly one row per action'
+);
+
+$trcl_audit_row = $wpdb->get_row(
+    "SELECT * FROM {$trcl_audit_table} ORDER BY id DESC LIMIT 1"
+);
+trcl_assert(
+    $trcl_audit_row && $trcl_audit_row->target_email === 's*********@example.com',
+    'audit row stores the email MASKED',
+    'got: ' . ( $trcl_audit_row->target_email ?? 'null' )
+);
+trcl_assert(
+    $trcl_audit_row && (int) $trcl_audit_row->records_affected === 3,
+    'audit row records_affected persisted'
+);
+
+// Unknown action must be rejected, not written.
+$trcl_logger->log( 'bogus', 'smoke-test@example.com', 1 );
+trcl_assert(
+    (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$trcl_audit_table}" ) === $trcl_audit_after,
+    'unknown audit action rejected'
+);
+
+$trcl_recent = $trcl_logger->get_recent( 5 );
+trcl_assert(
+    is_array( $trcl_recent ) && count( $trcl_recent ) >= 1 && $trcl_recent[0]->action === 'search',
+    'get_recent returns newest first'
+);
+
+// Remove the smoke rows so repeated runs stay clean.
+$wpdb->query( $wpdb->prepare( "DELETE FROM {$trcl_audit_table} WHERE target_email = %s", 's*********@example.com' ) );
+
+// ---------------------------------------------------------------------
+// v2.4 PRV-03: retention service (preview must match run, dry-run
+// must not delete).
+// ---------------------------------------------------------------------
+echo "\nF3. Retention service (v2.4)\n";
+
+$trcl_retention = new \TrillChatLite\Gdpr\RetentionService();
+
+$trcl_conv_total_before = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}trcl_conversations" );
+$trcl_preview_count     = $trcl_retention->preview();
+
+trcl_assert(
+    (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}trcl_conversations" ) === $trcl_conv_total_before,
+    'preview() is a dry-run — no rows deleted'
+);
+trcl_assert(
+    $trcl_preview_count >= 0 && $trcl_preview_count <= $trcl_conv_total_before,
+    'preview() count within sane bounds'
+);
+
+$trcl_stats = $trcl_retention->get_stats();
+trcl_assert(
+    $trcl_stats['conversations'] === $trcl_conv_total_before,
+    'get_stats() conversation total matches DB'
+);
+trcl_assert(
+    $trcl_stats['retention_days'] >= 7 && $trcl_stats['retention_days'] <= 3650,
+    'get_stats() retention respects the clamp'
+);
+
+// ---------------------------------------------------------------------
+// v2.4 D11: consent key derivation.
+// ---------------------------------------------------------------------
+echo "\nF4. Consent key (v2.4)\n";
+
+$trcl_gdpr_settings = new \TrillChatLite\Gdpr\GdprSettings();
+$trcl_prev_url      = get_option( \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_URL, '' );
+
+update_option( \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_URL, 'https://example.com/privacy/' );
+$trcl_key_a = $trcl_gdpr_settings->get_consent_key();
+
+update_option( \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_URL, 'https://example.com/privacy-v2/' );
+$trcl_key_b = $trcl_gdpr_settings->get_consent_key();
+
+trcl_assert(
+    $trcl_key_a !== '' && strpos( $trcl_key_a, 'trcl_consent_' ) === 0,
+    'consent key derives with the expected prefix'
+);
+trcl_assert(
+    $trcl_key_a !== $trcl_key_b,
+    'consent key changes when the notice changes (forces re-consent)'
+);
+
+update_option( \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_URL, '' );
+trcl_assert(
+    $trcl_gdpr_settings->get_consent_key() === '',
+    'no notice configured → no consent key (gate disabled)'
+);
+
+// Restore whatever the site had.
+if ( $trcl_prev_url !== '' ) {
+    update_option( \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_URL, $trcl_prev_url );
+} else {
+    delete_option( \TrillChatLite\Gdpr\GdprSettings::OPT_PRIVACY_NOTICE_URL );
+}
+
+// ---------------------------------------------------------------------
 // Cleanup fixture user.
 // ---------------------------------------------------------------------
 echo "\nG. Fixture teardown\n";

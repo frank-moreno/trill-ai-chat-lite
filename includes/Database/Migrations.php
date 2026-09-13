@@ -14,6 +14,7 @@
  *   1.3.0 — lead capture (adds trcl_leads, v2.0 Block 4)
  *   1.4.0 — conversations admin page (adds FULLTEXT index on
  *           trcl_messages.content for transcript search, v2.2 CNV-02)
+ *   1.5.0 — GDPR audit log (adds trcl_gdpr_audit, v2.4 PRV-02)
  *
  * @package TrillChatLite\Database
  * @since 1.0.0
@@ -36,7 +37,7 @@ class Migrations {
     /**
      * Current schema version.
      */
-    private const SCHEMA_VERSION = '1.4.0';
+    private const SCHEMA_VERSION = '1.5.0';
 
     /**
      * Option flag: whether the FULLTEXT index on trcl_messages.content
@@ -73,6 +74,7 @@ class Migrations {
         self::create_content_index_table( $wpdb, $charset_collate );
         self::create_analytics_events_table( $wpdb, $charset_collate );
         self::create_leads_table( $wpdb, $charset_collate );
+        self::create_gdpr_audit_table( $wpdb, $charset_collate );
 
         \update_option( 'trcl_db_version', self::SCHEMA_VERSION );
 
@@ -365,14 +367,57 @@ class Migrations {
     }
 
     /**
+     * Create GDPR audit log table (v1.5.0 — v2.4 PRV-02).
+     *
+     * Append-only record of every GDPR action performed from the
+     * GDPR Tools admin page (search / view / export / erase), giving
+     * the merchant an accountability trail for data subject requests.
+     *
+     * Privacy posture (deliberate, documented in the 2.4.0 functional
+     * analysis):
+     *   - `target_email` is stored MASKED (via
+     *     ConversationManager::mask_email) — never in clear.
+     *   - NO IP address column. Lite never stores IPs; adding one
+     *     here would break that product stance.
+     *   - The retention cleanup does NOT prune this table (decision
+     *     D3) — it is the compliance record itself.
+     *
+     * @since 2.4.0
+     *
+     * @param \wpdb  $wpdb            WordPress database object.
+     * @param string $charset_collate Charset and collation.
+     */
+    private static function create_gdpr_audit_table( \wpdb $wpdb, string $charset_collate ): void {
+        $table_name = $wpdb->prefix . 'trcl_gdpr_audit';
+
+        $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            action varchar(20) NOT NULL,
+            target_email varchar(255) NOT NULL,
+            performed_by bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+            records_affected int(10) UNSIGNED NOT NULL DEFAULT 0,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_action (action),
+            KEY idx_created (created_at)
+        ) {$charset_collate};";
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table creation DDL.
+        dbDelta( $sql );
+    }
+
+    /**
      * Drop all plugin tables.
      *
-     * Called during uninstall.
+     * Called from uninstall.php (since 2.4.0 — before that the
+     * uninstaller kept its own, drifted copy of this list; this
+     * method is the single source of truth now).
      */
     public static function drop_tables(): void {
         global $wpdb;
 
         $tables = [
+            $wpdb->prefix . 'trcl_gdpr_audit',
             $wpdb->prefix . 'trcl_leads',
             $wpdb->prefix . 'trcl_analytics_events',
             $wpdb->prefix . 'trcl_content_index',

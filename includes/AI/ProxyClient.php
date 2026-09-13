@@ -51,6 +51,13 @@ class ProxyClient {
      */
     private const SHORT_TIMEOUT = 10;
 
+    /**
+     * Request timeout for rotate (2.3.0). Longer than SHORT_TIMEOUT
+     * because the backend performs its own 5 s verification fetch back
+     * to this site inside the request.
+     */
+    private const ROTATE_TIMEOUT = 15;
+
     // =========================================================================
     // Register
     // =========================================================================
@@ -123,14 +130,14 @@ class ProxyClient {
 
         // 409 already_registered → site URL collision (likely the plugin
         // re-installed and lost its secret). The backend won't give us
-        // the original secret back, ever.
+        // the original secret back — the caller recovers via rotate().
         if ( $status_code === 409 ) {
             trcl_log( 'ProxyClient::register duplicate', 'warning', [
                 'site_url' => $body['siteUrl'],
             ] );
             return [
                 'success'     => false,
-                'error'       => __( 'This site already has a trial registered. If you lost the secret, the trial will reset next calendar month.', 'trill-ai-chat-lite' ),
+                'error'       => __( 'This site is already registered. The plugin will verify site ownership and reconnect automatically.', 'trill-ai-chat-lite' ),
                 'error_code'  => 'ALREADY_REGISTERED',
                 'http_status' => 409,
             ];
@@ -164,6 +171,132 @@ class ProxyClient {
     }
 
     // =========================================================================
+    // Rotate (2.3.0 — reinstall recovery)
+    // =========================================================================
+
+    /**
+     * Call POST /v1/trial/rotate to replace this site's secret after a
+     * 409 from register (typically a delete + reinstall).
+     *
+     * The caller (TrialRegistration) must have staged $verify_token via
+     * SiteVerification::issue_token() FIRST — the backend fetches
+     * GET /wp-json/trcl/v1/verify on this site during the request and
+     * only rotates if the served token matches.
+     *
+     * @since 2.3.0
+     *
+     * @param string $verify_token The staged 64-hex verify token.
+     * @return array{
+     *     success: bool,
+     *     secret?: string,
+     *     site_id?: string,
+     *     error?: string,
+     *     error_code?: string,
+     *     http_status?: int,
+     * }
+     */
+    public function rotate( string $verify_token ): array {
+        $url  = LiteConfig::get_trial_rotate_url();
+        $body = [
+            'siteUrl'     => \get_site_url(),
+            'verifyToken' => $verify_token,
+        ];
+
+        trcl_log( 'ProxyClient::rotate sending', 'debug', [
+            'url'      => $url,
+            'site_url' => $body['siteUrl'],
+        ] );
+
+        $response = \wp_remote_post( $url, [
+            'headers' => [
+                'Content-Type'       => 'application/json',
+                'Accept'             => 'application/json',
+                'User-Agent'         => $this->user_agent(),
+                'X-Trill-Plugin-Ver' => defined( 'TRCL_VERSION' ) ? TRCL_VERSION : '0.0.0',
+            ],
+            'body'    => \wp_json_encode( $body ),
+            'timeout' => self::ROTATE_TIMEOUT,
+        ] );
+
+        if ( \is_wp_error( $response ) ) {
+            trcl_log( 'ProxyClient::rotate network error', 'error', [
+                'error' => $response->get_error_message(),
+            ] );
+            return [
+                'success'    => false,
+                'error'      => __( 'Could not reach Trill Cloud to reconnect this site.', 'trill-ai-chat-lite' ),
+                'error_code' => 'NETWORK_ERROR',
+            ];
+        }
+
+        $status_code = \wp_remote_retrieve_response_code( $response );
+        $body_raw    = \wp_remote_retrieve_body( $response );
+        $decoded     = json_decode( $body_raw, true );
+
+        // Happy path: 201 with the replacement secret.
+        if ( $status_code === 201 && is_array( $decoded ) && ! empty( $decoded['secret'] ) ) {
+            trcl_log( 'ProxyClient::rotate success', 'info', [
+                'site_id' => $decoded['siteId'] ?? null,
+            ] );
+            return [
+                'success' => true,
+                'secret'  => (string) $decoded['secret'],
+                'site_id' => isset( $decoded['siteId'] ) ? (string) $decoded['siteId'] : '',
+            ];
+        }
+
+        // 404 → no registration to rotate; caller falls back to register.
+        if ( $status_code === 404 ) {
+            trcl_log( 'ProxyClient::rotate site not registered', 'warning' );
+            return [
+                'success'     => false,
+                'error'       => __( 'This site is not registered with Trill Cloud yet.', 'trill-ai-chat-lite' ),
+                'error_code'  => 'SITE_NOT_REGISTERED',
+                'http_status' => 404,
+            ];
+        }
+
+        // 409 → the backend could not verify ownership (site unreachable,
+        // REST API blocked, token mismatch...). Reason is logged for
+        // support; the user-facing copy lives in the admin notice.
+        if ( $status_code === 409 ) {
+            $reason = is_array( $decoded ) ? (string) ( $decoded['reason'] ?? '' ) : '';
+            trcl_log( 'ProxyClient::rotate verification failed', 'warning', [
+                'reason' => $reason,
+            ] );
+            return [
+                'success'     => false,
+                'error'       => __( 'Trill Cloud could not verify ownership of this site.', 'trill-ai-chat-lite' ),
+                'error_code'  => 'VERIFICATION_FAILED',
+                'http_status' => 409,
+            ];
+        }
+
+        // 429 → rotation budget exhausted for today.
+        if ( $status_code === 429 ) {
+            trcl_log( 'ProxyClient::rotate rate limited', 'warning' );
+            return [
+                'success'     => false,
+                'error'       => __( 'Too many reconnection attempts today. Please try again tomorrow.', 'trill-ai-chat-lite' ),
+                'error_code'  => 'RATE_LIMITED',
+                'http_status' => 429,
+            ];
+        }
+
+        // Anything else (400 validation, 5xx...).
+        trcl_log( 'ProxyClient::rotate unexpected response', 'error', [
+            'status_code' => $status_code,
+            'body'        => mb_substr( (string) $body_raw, 0, 300 ),
+        ] );
+        return [
+            'success'     => false,
+            'error'       => __( 'Unexpected response from Trill Cloud while reconnecting this site.', 'trill-ai-chat-lite' ),
+            'error_code'  => 'UNEXPECTED',
+            'http_status' => (int) $status_code,
+        ];
+    }
+
+    // =========================================================================
     // Chat
     // =========================================================================
 
@@ -179,6 +312,7 @@ class ProxyClient {
      *     reply?: string,
      *     provider?: string,
      *     trial_remaining?: int,
+     *     trial_cap?: int,
      *     error?: string,
      *     error_code?: string,
      *     http_status?: int,
@@ -237,15 +371,22 @@ class ProxyClient {
         $decoded     = json_decode( $body_raw, true );
 
         // Read the remaining trial allowance — backend exposes it on every
-        // 200, useful for the dashboard widget + chat UI countdown.
+        // 200, useful for the dashboard widget + chat UI countdown. Since
+        // 2.3.1 the plan-aware cap travels alongside it (X-Trill-Trial-Cap)
+        // so the dashboard can show the real allowance per plan.
         $headers   = \wp_remote_retrieve_headers( $response );
         $remaining = null;
+        $cap       = null;
         if ( $headers ) {
             // wp_remote_retrieve_headers returns a Requests_Utility_CaseInsensitiveDictionary
             // (or array, depending on WP version); both support array access.
             $raw = $headers['x-trill-trial-remaining'] ?? null;
             if ( $raw !== null && $raw !== '' && is_numeric( $raw ) ) {
                 $remaining = (int) $raw;
+            }
+            $raw_cap = $headers['x-trill-trial-cap'] ?? null;
+            if ( $raw_cap !== null && $raw_cap !== '' && is_numeric( $raw_cap ) ) {
+                $cap = (int) $raw_cap;
             }
         }
 
@@ -255,6 +396,7 @@ class ProxyClient {
                 'reply'           => (string) $decoded['reply'],
                 'provider'        => (string) ( $decoded['provider'] ?? 'openai' ),
                 'trial_remaining' => $remaining,
+                'trial_cap'       => $cap,
             ];
         }
 

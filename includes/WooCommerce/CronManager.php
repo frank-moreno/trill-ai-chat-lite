@@ -103,8 +103,10 @@ class CronManager {
             'retention_days' => $retention_days,
         ] );
 
-        $db      = new DbManager();
-        $deleted = $db->cleanup_old_conversations( $retention_days );
+        // Since 2.4.0 the cron funnels through RetentionService::run()
+        // (same as the Privacy tab's "Run Cleanup Now") so the last-
+        // cleanup stats reflect cron runs too.
+        $deleted = ( new \TrillChatLite\Gdpr\RetentionService() )->run();
 
         trcl_log( 'Cron: cleanup complete', 'info', [
             'deleted'        => $deleted,

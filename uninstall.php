@@ -24,35 +24,38 @@ global $wpdb;
 // =========================================================================
 // 1. DROP CUSTOM TABLES
 // =========================================================================
-$trcl_tables = [
-    $wpdb->prefix . 'trcl_conversations',
-    $wpdb->prefix . 'trcl_messages',
-    $wpdb->prefix . 'trcl_feedback',
-    $wpdb->prefix . 'trcl_product_index',
-];
+// Delegated to Migrations::drop_tables() since 2.4.0 (decision D4).
+// This file previously kept its own table list, which had drifted:
+// it dropped a non-existent trcl_product_index and left trcl_leads,
+// trcl_analytics_events and trcl_content_index behind — orphaning
+// lead PII after uninstall. Migrations owns the schema, so it owns
+// the teardown too. functions.php is required first because
+// drop_tables() logs through trcl_log() (the plugin itself is NOT
+// loaded during uninstall).
+require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/Database/Migrations.php';
 
-foreach ( $trcl_tables as $trcl_table ) {
-    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup, table name from $wpdb->prefix.
-    $wpdb->query( "DROP TABLE IF EXISTS {$trcl_table}" );
-}
+\TrillChatLite\Database\Migrations::drop_tables();
 
 // =========================================================================
 // 2. DELETE ALL OPTIONS WITH trcl_ PREFIX
 // =========================================================================
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup.
+// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup on core options table; fixed literal pattern, no user input. Block-scoped for the multi-line statement.
 $wpdb->query(
     "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'trcl_%'"
 );
+// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 // =========================================================================
 // 3. DELETE ALL TRANSIENTS WITH trcl_ PREFIX
 // =========================================================================
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup.
+// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Uninstall cleanup on core options table; fixed literal patterns, no user input. Block-scoped for the multi-line statement.
 $wpdb->query(
     "DELETE FROM {$wpdb->options}
      WHERE option_name LIKE '_transient_trcl_%'
      OR option_name LIKE '_transient_timeout_trcl_%'"
 );
+// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 // =========================================================================
 // 4. REMOVE CUSTOM ROLES AND CAPABILITIES

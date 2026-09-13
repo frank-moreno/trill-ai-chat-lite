@@ -261,7 +261,7 @@ class DbManager {
 
         // Subquery: take the N most recent rows, then re-sort ascending
         // so the result is the conversation in chronological order.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is built from $wpdb->prefix, not user input; values bound via prepare. Block-scoped for the multi-line statement.
         $sql = $this->wpdb->prepare(
             "SELECT role, content
                FROM (
@@ -275,6 +275,7 @@ class DbManager {
             $conversation_id,
             $limit
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
         $rows = $this->wpdb->get_results( $sql, ARRAY_A );
@@ -321,7 +322,7 @@ class DbManager {
 
         $table = $this->messages_table;
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+        // phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is built from $wpdb->prefix, not user input; value bound via prepare. Block-scoped for the multi-line statement.
         $sql = $this->wpdb->prepare(
             "SELECT * FROM {$table}
               WHERE conversation_id = %d AND role = 'assistant'
@@ -329,6 +330,7 @@ class DbManager {
               LIMIT 1",
             $conversation_id
         );
+        // phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
         $row = $this->wpdb->get_row( $sql );
@@ -386,6 +388,37 @@ class DbManager {
             'avg_messages_per_conversation' => $avg_messages,
             'active_conversations' => $active_conversations,
         ];
+    }
+
+    /**
+     * Check that a message belongs to the given conversation.
+     *
+     * Ownership gate for POST /feedback: the session UUID acts as the
+     * bearer, so a caller can only rate messages of its own conversation.
+     *
+     * @since 2.4.2
+     *
+     * @param int    $message_id Message ID.
+     * @param string $session_id Session ID (UUID).
+     * @return bool True when the message exists in that conversation.
+     */
+    public function message_belongs_to_session( int $message_id, string $session_id ): bool {
+        if ( $message_id <= 0 ) {
+            return false;
+        }
+
+        $conversation_id = $this->get_conversation_id( $session_id );
+        if ( ! $conversation_id ) {
+            return false;
+        }
+
+        $table = $this->messages_table;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
+        $sql = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE id = %d AND conversation_id = %d", $message_id, $conversation_id );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
+        return (int) $this->wpdb->get_var( $sql ) > 0;
     }
 
     /**
@@ -453,9 +486,22 @@ class DbManager {
             return 0;
         }
 
-        // Delete messages first.
         $ids_placeholders = implode( ',', array_fill( 0, count( $conversation_ids ), '%d' ) );
 
+        // Delete feedback first (children of messages). Added in 2.4.0:
+        // before that, retention cleanup orphaned feedback rows — and a
+        // feedback comment is visitor-authored content, so leaving it
+        // behind undercut the retention promise. Same order as the GDPR
+        // cascade: feedback → messages → conversations.
+        $fb_table = $this->wpdb->prefix . 'trcl_feedback';
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Tables from $wpdb->prefix; dynamic placeholders for IN clause.
+        $sql_delete_fb = $this->wpdb->prepare( "DELETE FROM {$fb_table} WHERE message_id IN (SELECT id FROM {$msg_table} WHERE conversation_id IN ({$ids_placeholders}))", ...$conversation_ids );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql_delete_fb is prepared above.
+        $this->wpdb->query( $sql_delete_fb );
+
+        // Delete messages.
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $msg_table from $wpdb->prefix; dynamic placeholders for IN clause.
         $sql_delete_msgs = $this->wpdb->prepare( "DELETE FROM {$msg_table} WHERE conversation_id IN ({$ids_placeholders})", ...$conversation_ids );
 

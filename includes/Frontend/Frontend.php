@@ -210,7 +210,12 @@ class Frontend {
         $localize_data = [
             'ajax_url'        => \admin_url( 'admin-ajax.php' ),
             'rest_url'        => \rest_url( 'trcl/v1/' ),
-            'nonce'           => \wp_create_nonce( 'wp_rest' ),
+            // Only logged-in users get a REST nonce: it is what lets
+            // get_current_user_id() resolve in the chat request (order
+            // lookup). Guests must not send one — a nonce baked into a
+            // page-cached HTML expires after 12–24 h and core then answers
+            // 403 (rest_cookie_invalid_nonce) to every visitor (2.4.2).
+            'nonce'           => \is_user_logged_in() ? \wp_create_nonce( 'wp_rest' ) : '',
             'enabled'         => \get_option( 'trcl_chat_enabled', '1' ),
             'widget_position' => \get_option( 'trcl_widget_position', 'bottom-right' ),
             'widget_color'    => \get_option( 'trcl_widget_color', '#10B981' ),
@@ -246,6 +251,14 @@ class Frontend {
                 'expand_chat'     => __( 'Expand chat', 'trill-ai-chat-lite' ),
                 'collapse_chat'   => __( 'Collapse chat', 'trill-ai-chat-lite' ),
                 'limit_reached'   => __( 'Monthly Limit Reached', 'trill-ai-chat-lite' ),
+                // Consent gate + Request My Data (v2.4 PRV-01).
+                'consent_blocked'   => __( 'Please accept the privacy notice to start chatting', 'trill-ai-chat-lite' ),
+                'i_understand'      => __( 'I Understand', 'trill-ai-chat-lite' ),
+                'request_my_data'   => __( 'Request My Data', 'trill-ai-chat-lite' ),
+                'request_email'     => __( 'Your email address', 'trill-ai-chat-lite' ),
+                'request_send'      => __( 'Send request', 'trill-ai-chat-lite' ),
+                'request_sent'      => __( 'Thanks — check your inbox for a confirmation email.', 'trill-ai-chat-lite' ),
+                'request_error'     => __( 'Could not send the request. Please try again later.', 'trill-ai-chat-lite' ),
             ],
             'branding' => [
                 'powered_by_text' => LiteConfig::POWERED_BY_TEXT,
@@ -488,10 +501,13 @@ class Frontend {
     private function build_privacy_localize_block(): array {
         $gdpr = new \TrillChatLite\Gdpr\GdprSettings();
         return [
-            'show'       => $gdpr->should_render_widget_notice() ? '1' : '0',
-            'text'       => $gdpr->get_privacy_notice_text(),
-            'url'        => $gdpr->get_privacy_notice_url(),
-            'link_label' => __( 'Privacy Policy', 'trill-ai-chat-lite' ),
+            'show'        => $gdpr->should_render_widget_notice() ? '1' : '0',
+            'text'        => $gdpr->get_privacy_notice_text(),
+            'url'         => $gdpr->get_privacy_notice_url(),
+            'link_label'  => __( 'Privacy Policy', 'trill-ai-chat-lite' ),
+            // Consent gate (v2.4 D11/D2): versioned localStorage key.
+            // '' disables the gate (no notice configured).
+            'consent_key' => $gdpr->get_consent_key(),
         ];
     }
 

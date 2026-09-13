@@ -2,9 +2,10 @@
 /**
  * Plugin Name: Trill AI Product Chat for WooCommerce
  * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically.
- * Version: 2.2.2
+ * Version: 2.4.2
  * Requires at least: 6.0
  * Requires PHP: 8.0
+ * Requires Plugins: woocommerce
  * Author: Trill AI
  * Author URI: https://trillai.io
  * License: GPL v2 or later
@@ -12,7 +13,7 @@
  * Text Domain: trill-ai-chat-lite
  * Domain Path: /languages
  * WC requires at least: 8.0
- * WC tested up to: 9.5
+ * WC tested up to: 11.1
  *
  * @package TrillChatLite
  */
@@ -24,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // =========================================================================
 // CONSTANTS
 // =========================================================================
-define( 'TRCL_VERSION', '2.2.2' );
+define( 'TRCL_VERSION', '2.4.2' );
 define( 'TRCL_PLUGIN_FILE', __FILE__ );
 define( 'TRCL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TRCL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -78,9 +79,12 @@ register_deactivation_hook( __FILE__, [ 'TrillChatLite\\Deactivator', 'deactivat
 add_action( 'plugins_loaded', function () {
 
     // =====================================================================
-    // CONFLICT DETECTION: Deactivate if paid plugin is active
+    // CONFLICT DETECTION: Deactivate if the legacy paid plugin is active
     // =====================================================================
-    if ( defined( 'WCAI_VERSION' ) || defined( 'WCAI_TIER' ) ) {
+    // deactivate_plugins() lives in wp-admin/includes/plugin.php and is
+    // not loaded on the front end; without the guard this branch is a
+    // fatal on every public page while both plugins are active (2.4.2).
+    if ( ( defined( 'WCAI_VERSION' ) || defined( 'WCAI_TIER' ) ) && function_exists( 'deactivate_plugins' ) ) {
         add_action( 'admin_notices', function () {
             printf(
                 '<div class="notice notice-warning is-dismissible"><p>%s <a href="%s">%s</a></p></div>',

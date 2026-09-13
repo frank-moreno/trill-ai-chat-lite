@@ -70,6 +70,7 @@
             this.bindEvents();
             this.loadSession();
             this.applyThemeColour();
+            this.applyConsentGate();
         },
 
         /**
@@ -158,13 +159,22 @@
                                 '</svg>' +
                             '</button>' +
                         '</div>' +
-                        '<!-- Privacy notice -->' +
+                        '<!-- Privacy notice + Request My Data (v2.4) -->' +
                         (trcl_ajax.privacy && trcl_ajax.privacy.show === '1' && trcl_ajax.privacy.url ?
                             '<div class="trcl-privacy-notice">' +
                                 this.escapeHtml(trcl_ajax.privacy.text) + ' ' +
                                 '<a href="' + this.escapeAttr(trcl_ajax.privacy.url) + '" target="_blank" rel="noopener">' +
                                     this.escapeHtml(trcl_ajax.privacy.link_label || 'Privacy Policy') +
                                 '</a>' +
+                                ' &middot; <a href="#" id="trcl-request-data" role="button">' +
+                                    this.escapeHtml(this.str('request_my_data')) +
+                                '</a>' +
+                            '</div>' +
+                            '<div class="trcl-request-data-form" id="trcl-request-data-form" style="display:none">' +
+                                '<input type="email" id="trcl-request-data-email" placeholder="' + this.escapeAttr(this.str('request_email')) + '" maxlength="254" />' +
+                                '<button type="button" id="trcl-request-data-send" class="trcl-request-data-send">' +
+                                    this.escapeHtml(this.str('request_send')) +
+                                '</button>' +
                             '</div>' : '') +
                         '<!-- Powered By -->' +
                         (trcl_ajax.branding && trcl_ajax.branding.show_powered_by ?
@@ -235,6 +245,35 @@
                 var productId = $(this).data('product-id');
                 if (productId) {
                     self.addToCart(productId, $(this));
+                }
+            });
+
+            // Consent gate accept (v2.4 D11).
+            $(document).on('click', '#trcl-consent-accept', function () {
+                self.grantConsent();
+            });
+
+            // Request My Data: slide the mini-form open/closed (v2.4).
+            // Collapsed by default via inline display:none — an inline
+            // style, not the `hidden` attribute, because the class's
+            // display:flex would override [hidden] in the cascade.
+            $(document).on('click', '#trcl-request-data', function (e) {
+                e.preventDefault();
+                $('#trcl-request-data-form').stop(true, true).slideToggle(150, function () {
+                    if ($(this).is(':visible')) {
+                        $('#trcl-request-data-email').trigger('focus');
+                    }
+                });
+            });
+
+            // Request My Data: submit (v2.4).
+            $(document).on('click', '#trcl-request-data-send', function () {
+                self.submitDataRequest();
+            });
+            $(document).on('keypress', '#trcl-request-data-email', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    self.submitDataRequest();
                 }
             });
 
@@ -393,6 +432,13 @@
                 return;
             }
 
+            // Consent gate (v2.4 D11): belt-and-braces guard — the input
+            // is disabled while consent is pending, but quick replies and
+            // programmatic calls funnel through here too.
+            if (this.needsConsent()) {
+                return;
+            }
+
             // Add user message to chat.
             this.addMessage('user', message);
             $input.val('');
@@ -406,71 +452,98 @@
             $('#trcl-quick-replies').empty();
 
             // Send API request.
-            $.ajax({
-                url: trcl_ajax.rest_url + 'message',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    message: message,
-                    session_id: this.sessionId || '',
-                    context: {
-                        page_url: window.location.href,
-                        page_title: document.title
-                    }
-                }),
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', trcl_ajax.nonce);
-                },
-                success: function (response) {
-                    self.hideTyping();
-
-                    if (response.success) {
-                        // Store session ID.
-                        if (response.session_id) {
-                            self.sessionId = response.session_id;
-                            self.saveSession();
+            //
+            // The X-WP-Nonce header is only sent when the page localised a
+            // nonce (logged-in users). Guests never send one: a nonce baked
+            // into page-cached HTML expires and core would answer 403 to
+            // every visitor. If a logged-in nonce has gone stale (session
+            // expired with the tab open) we retry once without it, so the
+            // request degrades to a guest request instead of an error.
+            var send = function (withNonce) {
+                $.ajax({
+                    url: trcl_ajax.rest_url + 'message',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        message: message,
+                        session_id: self.sessionId || '',
+                        context: {
+                            page_url: window.location.href,
+                            page_title: document.title
                         }
-
-                        // Add AI response.
-                        var content = response.message ? response.message.content : response.response;
-                        self.addMessage('assistant', content);
-
-                        // Show product cards.
-                        if (response.products && response.products.length > 0) {
-                            self.renderProductCards(response.products);
+                    }),
+                    beforeSend: function (xhr) {
+                        if (withNonce && trcl_ajax.nonce) {
+                            xhr.setRequestHeader('X-WP-Nonce', trcl_ajax.nonce);
                         }
+                    },
+                    success: function (response) {
+                        self.hideTyping();
 
-                        // Show quick replies.
-                        if (response.quick_replies && response.quick_replies.length > 0) {
-                            self.renderQuickReplies(response.quick_replies);
+                        if (response.success) {
+                            // Store session ID.
+                            if (response.session_id) {
+                                self.sessionId = response.session_id;
+                                self.saveSession();
+                            }
+
+                            // Add AI response.
+                            var content = response.message ? response.message.content : response.response;
+                            self.addMessage('assistant', content);
+
+                            // Show product cards.
+                            if (response.products && response.products.length > 0) {
+                                self.renderProductCards(response.products);
+                            }
+
+                            // Show quick replies.
+                            if (response.quick_replies && response.quick_replies.length > 0) {
+                                self.renderQuickReplies(response.quick_replies);
+                            }
+                        } else {
+                            self.handleError(response);
                         }
-                    } else {
-                        self.handleError(response);
-                    }
-                },
-                error: function (xhr) {
-                    self.hideTyping();
-
-                    if (xhr.status === 429) {
+                    },
+                    error: function (xhr) {
                         var body = xhr.responseJSON || {};
-                        if (body.code === 'SERVICE_LIMIT_REACHED') {
-                            self.showLimitReached();
+
+                        // Stale nonce: drop it for the rest of the page life
+                        // and retry once as a guest.
+                        if (withNonce && xhr.status === 403 && body.code === 'rest_cookie_invalid_nonce') {
+                            trcl_ajax.nonce = '';
+                            send(false);
                             return;
                         }
-                    }
 
-                    self.addMessage('assistant', self.str('error_message'));
-                },
-                complete: function () {
-                    self.isLoading = false;
-                    $('#trcl-chat-send').prop('disabled', false);
+                        self.hideTyping();
 
-                    // Keep focus on input for mobile continuity.
-                    if (!self.isMobile) {
-                        $('#trcl-chat-input').focus();
+                        if (xhr.status === 429) {
+                            if (body.code === 'SERVICE_LIMIT_REACHED') {
+                                self.showLimitReached();
+                                return;
+                            }
+                        }
+
+                        self.addMessage('assistant', self.str('error_message'));
+                    },
+                    complete: function (xhr) {
+                        // A nonce retry is still in flight — leave the UI locked.
+                        if (withNonce && xhr.status === 403 && (xhr.responseJSON || {}).code === 'rest_cookie_invalid_nonce') {
+                            return;
+                        }
+
+                        self.isLoading = false;
+                        $('#trcl-chat-send').prop('disabled', false);
+
+                        // Keep focus on input for mobile continuity.
+                        if (!self.isMobile) {
+                            $('#trcl-chat-input').focus();
+                        }
                     }
-                }
-            });
+                });
+            };
+
+            send(true);
         },
 
         /**
@@ -528,19 +601,22 @@
          * @param {Array} products Product data.
          */
         renderProductCards: function (products) {
+            var self = this;
             var $container = $('<div class="trcl-product-cards"></div>');
 
             products.forEach(function (product) {
+                // price_html is WooCommerce's own markup (get_price_html());
+                // every other value is escaped for its context.
                 var $card = $(
                     '<div class="trcl-product-card">' +
-                        (product.image ? '<img class="trcl-product-card-image" src="' + product.image + '" alt="" />' : '') +
+                        (product.image ? '<img class="trcl-product-card-image" src="' + self.escapeAttr(product.image) + '" alt="" />' : '') +
                         '<div class="trcl-product-card-body">' +
-                            '<p class="trcl-product-card-name">' + $('<span>').text(product.name).html() + '</p>' +
-                            '<span class="trcl-product-card-price">' + (product.price_html || product.price) + '</span>' +
+                            '<p class="trcl-product-card-name">' + self.escapeHtml(product.name) + '</p>' +
+                            '<span class="trcl-product-card-price">' + (product.price_html || self.escapeHtml(product.price)) + '</span>' +
                         '</div>' +
                         (product.add_to_cart ?
-                            '<button class="trcl-product-card-action" data-product-id="' + product.id + '">Add to Cart</button>' :
-                            '<a href="' + product.url + '" class="trcl-product-card-action" target="_blank">View</a>') +
+                            '<button class="trcl-product-card-action" data-product-id="' + parseInt(product.id, 10) + '">Add to Cart</button>' :
+                            '<a href="' + self.escapeAttr(product.url) + '" class="trcl-product-card-action" target="_blank">View</a>') +
                     '</div>'
                 );
                 $container.append($card);
@@ -851,6 +927,125 @@
          */
         str: function (key) {
             return (trcl_ajax.strings && trcl_ajax.strings[key]) || key;
+        },
+
+        /**
+         * Consent gate (v2.4 PRV-01 D11, decision D2).
+         *
+         * The gate renders only when the merchant configured a privacy
+         * notice (privacy.consent_key non-empty). Acceptance persists
+         * CLIENT-SIDE only, in localStorage under a key versioned by
+         * the notice content — the server never learns that a visitor
+         * merely saw or accepted the notice (no PII created).
+         *
+         * When localStorage is unavailable (private mode, quota) we
+         * fail OPEN: blocking chat forever on a storage quirk punishes
+         * the visitor, and the notice link remains visible either way.
+         */
+        hasConsent: function () {
+            var key = trcl_ajax.privacy && trcl_ajax.privacy.consent_key;
+            if (!key) {
+                return true;
+            }
+            try {
+                return window.localStorage.getItem(key) === '1';
+            } catch (e) {
+                return true;
+            }
+        },
+
+        /** True while the gate must block sending. */
+        needsConsent: function () {
+            return !!(trcl_ajax.privacy &&
+                trcl_ajax.privacy.show === '1' &&
+                trcl_ajax.privacy.consent_key &&
+                !this.hasConsent());
+        },
+
+        /**
+         * Disable the input and render the consent card at the top of
+         * the messages area. Called once from init().
+         */
+        applyConsentGate: function () {
+            if (!this.needsConsent()) {
+                return;
+            }
+
+            $('#trcl-chat-input')
+                .prop('disabled', true)
+                .attr('placeholder', this.str('consent_blocked'));
+            $('#trcl-chat-send').prop('disabled', true);
+
+            var card = '' +
+                '<div class="trcl-consent-gate" id="trcl-consent-gate">' +
+                    '<p>' +
+                        this.escapeHtml(trcl_ajax.privacy.text) + ' ' +
+                        '<a href="' + this.escapeAttr(trcl_ajax.privacy.url) + '" target="_blank" rel="noopener">' +
+                            this.escapeHtml(trcl_ajax.privacy.link_label || 'Privacy Policy') +
+                        '</a>' +
+                    '</p>' +
+                    '<button type="button" id="trcl-consent-accept" class="trcl-consent-accept">' +
+                        this.escapeHtml(this.str('i_understand')) +
+                    '</button>' +
+                '</div>';
+
+            $('#trcl-chat-messages').append(card);
+        },
+
+        /** Persist acceptance and unlock the chat. */
+        grantConsent: function () {
+            var key = trcl_ajax.privacy && trcl_ajax.privacy.consent_key;
+            try {
+                if (key) {
+                    window.localStorage.setItem(key, '1');
+                }
+            } catch (e) {
+                // Storage unavailable — the gate stays open for this
+                // page view (fail-open, see hasConsent).
+            }
+
+            $('#trcl-consent-gate').remove();
+            $('#trcl-chat-input')
+                .prop('disabled', false)
+                .attr('placeholder', this.str('type_message'));
+            $('#trcl-chat-send').prop('disabled', false);
+        },
+
+        /**
+         * Request My Data (v2.4): create a native WP personal-data
+         * export request via the public REST endpoint. The response is
+         * deliberately generic server-side (anti-enumeration); we just
+         * relay it.
+         */
+        submitDataRequest: function () {
+            var self   = this;
+            var $email = $('#trcl-request-data-email');
+            var $send  = $('#trcl-request-data-send');
+            var email  = $.trim($email.val());
+
+            if (!email || email.indexOf('@') === -1) {
+                $email.trigger('focus');
+                return;
+            }
+
+            $send.prop('disabled', true);
+
+            $.ajax({
+                url: trcl_ajax.rest_url + 'privacy-request',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ email: email }),
+                success: function (response) {
+                    $('#trcl-request-data-form').text(
+                        (response && response.message) || self.str('request_sent')
+                    );
+                },
+                error: function () {
+                    $send.prop('disabled', false);
+                    $email.trigger('focus');
+                    window.alert(self.str('request_error'));
+                }
+            });
         },
 
         /**

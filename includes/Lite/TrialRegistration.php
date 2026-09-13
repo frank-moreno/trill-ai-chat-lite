@@ -8,10 +8,15 @@
  *   - OPT_TRIAL_REGISTER_RETRY      → set on transient failure (network,
  *                                     5xx). The admin_init hook retries
  *                                     on the next admin page load.
- *   - OPT_TRIAL_REGISTER_PERMA_FAIL → set on permanent failure (409, 400).
+ *   - OPT_TRIAL_REGISTER_PERMA_FAIL → set on permanent failure (400, or
+ *                                     409 whose rotation also failed).
  *                                     The admin_init hook does NOT retry
  *                                     — it would just keep hitting the
  *                                     same error and waste backend cycles.
+ *
+ * Since 2.3.0 a 409 already_registered first triggers a secret rotation
+ * (prove site control via SiteVerification, get a replacement secret) —
+ * the reinstall trap is only terminal when rotation fails too.
  *
  * Both flags are cleared on success. The Activator clears both BEFORE
  * a fresh register attempt, so deactivate+activate is the recovery path
@@ -59,7 +64,9 @@ class TrialRegistration {
      *   - HTTP register succeeds, secret persisted
      *       → returns true; clears both flags.
      *   - HTTP register returns 409 already_registered
-     *       → returns false; sets perma-fail; clears retry.
+     *       → attempts a secret rotation (2.3.0). Success → returns true,
+     *         clears both flags. Failure → returns false; sets perma-fail;
+     *         clears retry.
      *   - HTTP register returns 400 invalid_site_url
      *       → returns false; sets perma-fail; clears retry.
      *   - HTTP register fails (network / 5xx)
@@ -98,9 +105,37 @@ class TrialRegistration {
 
         $error_code = $result['error_code'] ?? 'UNKNOWN';
 
+        // 409 already_registered → typically a delete + reinstall that
+        // lost the secret. Since 2.3.0 this is recoverable: prove control
+        // of the site and rotate the secret (plan and usage survive).
+        // One attempt per activation cycle — if it fails we perma-fail
+        // exactly like before, and deactivate+activate retries.
+        if ( $error_code === 'ALREADY_REGISTERED' ) {
+            // Rotation CANNOT succeed inside the activation request:
+            // WordPress adds the plugin to active_plugins AFTER the
+            // activation hook runs, so the backend's verification fetch
+            // of /wp-json/trcl/v1/verify hits a site where the route
+            // does not exist yet (404). Defer via the retry flag — the
+            // redirect straight after activation fires admin_init with
+            // the plugin fully active, and rotation runs there.
+            if ( self::is_activation_request() ) {
+                trcl_log( 'TrialRegistration: deferring rotation until after activation', 'info' );
+                self::set_retry_flag();
+                self::clear_perma_fail_flag();
+                return false;
+            }
+            if ( self::attempt_rotation() ) {
+                return true;
+            }
+            trcl_log( 'TrialRegistration: rotation failed, permanent failure', 'warning' );
+            self::clear_retry_flag();
+            self::set_perma_fail_flag();
+            return false;
+        }
+
         // Permanent failures: stop retrying until a deactivate+activate
         // explicitly clears the perma-fail flag.
-        if ( in_array( $error_code, [ 'ALREADY_REGISTERED', 'INVALID_SITE_URL' ], true ) ) {
+        if ( $error_code === 'INVALID_SITE_URL' ) {
             trcl_log( 'TrialRegistration: permanent failure', 'warning', [
                 'error_code' => $error_code,
             ] );
@@ -116,6 +151,66 @@ class TrialRegistration {
         ] );
         self::set_retry_flag();
         self::clear_perma_fail_flag();
+        return false;
+    }
+
+    /**
+     * True iff we are inside a plugin-activation request.
+     *
+     * The generic `activate_plugin` action fires just before any
+     * plugin's activation hook runs, and only in that request — a
+     * cheap, reliable marker. Regular admin_init loads and the lazy
+     * chat fallback never see it fired.
+     *
+     * @since 2.3.0
+     */
+    private static function is_activation_request(): bool {
+        return \did_action( 'activate_plugin' ) > 0;
+    }
+
+    /**
+     * Attempt a secret rotation after a 409 already_registered (2.3.0).
+     *
+     * Flow (V1 challenge): stage a verify token on this site → call
+     * POST /v1/trial/rotate → the backend fetches our /verify endpoint
+     * and, if the served token matches, returns a replacement secret.
+     * The token is consumed after the response, success or not.
+     *
+     * @since 2.3.0
+     *
+     * @return bool True iff a rotated secret was obtained and stored.
+     */
+    private static function attempt_rotation(): bool {
+        $token = SiteVerification::issue_token();
+        if ( $token === '' ) {
+            return false;
+        }
+
+        trcl_log( 'TrialRegistration: attempting secret rotation', 'info' );
+
+        $client = new ProxyClient();
+        $result = $client->rotate( $token );
+
+        // Single use — never leave the token standing after the attempt.
+        SiteVerification::consume_token();
+
+        if ( ! empty( $result['success'] ) && ! empty( $result['secret'] ) ) {
+            if ( TrialSecretStore::set_secret( $result['secret'] ) ) {
+                trcl_log( 'TrialRegistration: rotated secret stored', 'info', [
+                    'site_id' => $result['site_id'] ?? '',
+                ] );
+                self::clear_retry_flag();
+                self::clear_perma_fail_flag();
+                return true;
+            }
+            trcl_log( 'TrialRegistration: set_secret failed after rotation', 'error' );
+            return false;
+        }
+
+        trcl_log( 'TrialRegistration: rotation rejected', 'warning', [
+            'error_code'  => $result['error_code'] ?? 'UNKNOWN',
+            'http_status' => $result['http_status'] ?? null,
+        ] );
         return false;
     }
 

@@ -1,0 +1,653 @@
+diff -ruN '--exclude=*.min.js' a/assets/js/chat-widget.js plugin/assets/js/chat-widget.js
+--- a/assets/js/chat-widget.js	2026-09-13 13:18:07.302599258 +0000
++++ b/assets/js/chat-widget.js	2026-09-13 13:47:59.684617801 +0000
+@@ -452,71 +452,98 @@
+             $('#trcl-quick-replies').empty();
+ 
+             // Send API request.
+-            $.ajax({
+-                url: trcl_ajax.rest_url + 'message',
+-                type: 'POST',
+-                contentType: 'application/json',
+-                data: JSON.stringify({
+-                    message: message,
+-                    session_id: this.sessionId || '',
+-                    context: {
+-                        page_url: window.location.href,
+-                        page_title: document.title
+-                    }
+-                }),
+-                beforeSend: function (xhr) {
+-                    xhr.setRequestHeader('X-WP-Nonce', trcl_ajax.nonce);
+-                },
+-                success: function (response) {
+-                    self.hideTyping();
+-
+-                    if (response.success) {
+-                        // Store session ID.
+-                        if (response.session_id) {
+-                            self.sessionId = response.session_id;
+-                            self.saveSession();
+-                        }
+-
+-                        // Add AI response.
+-                        var content = response.message ? response.message.content : response.response;
+-                        self.addMessage('assistant', content);
+-
+-                        // Show product cards.
+-                        if (response.products && response.products.length > 0) {
+-                            self.renderProductCards(response.products);
+-                        }
+-
+-                        // Show quick replies.
+-                        if (response.quick_replies && response.quick_replies.length > 0) {
+-                            self.renderQuickReplies(response.quick_replies);
++            //
++            // The X-WP-Nonce header is only sent when the page localised a
++            // nonce (logged-in users). Guests never send one: a nonce baked
++            // into page-cached HTML expires and core would answer 403 to
++            // every visitor. If a logged-in nonce has gone stale (session
++            // expired with the tab open) we retry once without it, so the
++            // request degrades to a guest request instead of an error.
++            var send = function (withNonce) {
++                $.ajax({
++                    url: trcl_ajax.rest_url + 'message',
++                    type: 'POST',
++                    contentType: 'application/json',
++                    data: JSON.stringify({
++                        message: message,
++                        session_id: self.sessionId || '',
++                        context: {
++                            page_url: window.location.href,
++                            page_title: document.title
+                         }
+-                    } else {
+-                        self.handleError(response);
+-                    }
+-                },
+-                error: function (xhr) {
+-                    self.hideTyping();
+-
+-                    if (xhr.status === 429) {
++                    }),
++                    beforeSend: function (xhr) {
++                        if (withNonce && trcl_ajax.nonce) {
++                            xhr.setRequestHeader('X-WP-Nonce', trcl_ajax.nonce);
++                        }
++                    },
++                    success: function (response) {
++                        self.hideTyping();
++
++                        if (response.success) {
++                            // Store session ID.
++                            if (response.session_id) {
++                                self.sessionId = response.session_id;
++                                self.saveSession();
++                            }
++
++                            // Add AI response.
++                            var content = response.message ? response.message.content : response.response;
++                            self.addMessage('assistant', content);
++
++                            // Show product cards.
++                            if (response.products && response.products.length > 0) {
++                                self.renderProductCards(response.products);
++                            }
++
++                            // Show quick replies.
++                            if (response.quick_replies && response.quick_replies.length > 0) {
++                                self.renderQuickReplies(response.quick_replies);
++                            }
++                        } else {
++                            self.handleError(response);
++                        }
++                    },
++                    error: function (xhr) {
+                         var body = xhr.responseJSON || {};
+-                        if (body.code === 'SERVICE_LIMIT_REACHED') {
+-                            self.showLimitReached();
++
++                        // Stale nonce: drop it for the rest of the page life
++                        // and retry once as a guest.
++                        if (withNonce && xhr.status === 403 && body.code === 'rest_cookie_invalid_nonce') {
++                            trcl_ajax.nonce = '';
++                            send(false);
+                             return;
+                         }
+-                    }
+ 
+-                    self.addMessage('assistant', self.str('error_message'));
+-                },
+-                complete: function () {
+-                    self.isLoading = false;
+-                    $('#trcl-chat-send').prop('disabled', false);
+-
+-                    // Keep focus on input for mobile continuity.
+-                    if (!self.isMobile) {
+-                        $('#trcl-chat-input').focus();
++                        self.hideTyping();
++
++                        if (xhr.status === 429) {
++                            if (body.code === 'SERVICE_LIMIT_REACHED') {
++                                self.showLimitReached();
++                                return;
++                            }
++                        }
++
++                        self.addMessage('assistant', self.str('error_message'));
++                    },
++                    complete: function (xhr) {
++                        // A nonce retry is still in flight — leave the UI locked.
++                        if (withNonce && xhr.status === 403 && (xhr.responseJSON || {}).code === 'rest_cookie_invalid_nonce') {
++                            return;
++                        }
++
++                        self.isLoading = false;
++                        $('#trcl-chat-send').prop('disabled', false);
++
++                        // Keep focus on input for mobile continuity.
++                        if (!self.isMobile) {
++                            $('#trcl-chat-input').focus();
++                        }
+                     }
+-                }
+-            });
++                });
++            };
++
++            send(true);
+         },
+ 
+         /**
+@@ -574,19 +601,22 @@
+          * @param {Array} products Product data.
+          */
+         renderProductCards: function (products) {
++            var self = this;
+             var $container = $('<div class="trcl-product-cards"></div>');
+ 
+             products.forEach(function (product) {
++                // price_html is WooCommerce's own markup (get_price_html());
++                // every other value is escaped for its context.
+                 var $card = $(
+                     '<div class="trcl-product-card">' +
+-                        (product.image ? '<img class="trcl-product-card-image" src="' + product.image + '" alt="" />' : '') +
++                        (product.image ? '<img class="trcl-product-card-image" src="' + self.escapeAttr(product.image) + '" alt="" />' : '') +
+                         '<div class="trcl-product-card-body">' +
+-                            '<p class="trcl-product-card-name">' + $('<span>').text(product.name).html() + '</p>' +
+-                            '<span class="trcl-product-card-price">' + (product.price_html || product.price) + '</span>' +
++                            '<p class="trcl-product-card-name">' + self.escapeHtml(product.name) + '</p>' +
++                            '<span class="trcl-product-card-price">' + (product.price_html || self.escapeHtml(product.price)) + '</span>' +
+                         '</div>' +
+                         (product.add_to_cart ?
+-                            '<button class="trcl-product-card-action" data-product-id="' + product.id + '">Add to Cart</button>' :
+-                            '<a href="' + product.url + '" class="trcl-product-card-action" target="_blank">View</a>') +
++                            '<button class="trcl-product-card-action" data-product-id="' + parseInt(product.id, 10) + '">Add to Cart</button>' :
++                            '<a href="' + self.escapeAttr(product.url) + '" class="trcl-product-card-action" target="_blank">View</a>') +
+                     '</div>'
+                 );
+                 $container.append($card);
+diff -ruN '--exclude=*.min.js' a/includes/AI/RestController.php plugin/includes/AI/RestController.php
+--- a/includes/AI/RestController.php	2026-09-13 13:18:02.054598946 +0000
++++ b/includes/AI/RestController.php	2026-09-13 13:49:35.848755469 +0000
+@@ -173,7 +173,7 @@
+         );
+ 
+         // GET /wp-json/trcl/v1/conversation/{session_id}
+-        // Semi-public: validates session ownership via cookie/fingerprint.
++        // Semi-public: the session UUID is the bearer (see check_conversation_permissions).
+         \register_rest_route(
+             self::API_NAMESPACE,
+             '/conversation/(?P<session_id>[\w-]+)',
+@@ -193,7 +193,7 @@
+         );
+ 
+         // POST /wp-json/trcl/v1/feedback
+-        // Semi-public: validates that message_id belongs to an active session.
++        // Semi-public: requires the session UUID; message_id must belong to it.
+         \register_rest_route(
+             self::API_NAMESPACE,
+             '/feedback',
+@@ -304,7 +304,7 @@
+             $product_results = $is_product_msg ? $this->search->search( $message ) : [];
+ 
+             trcl_log( 'Product search result', 'debug', [
+-                'message'        => $message,
++                'message_len'    => mb_strlen( $message ),
+                 'is_product_msg' => $is_product_msg,
+                 'products_found' => count( $product_results ),
+                 'product_names'  => array_column( $product_results, 'name' ),
+@@ -321,7 +321,7 @@
+             }
+ 
+             trcl_log( 'Content search result', 'debug', [
+-                'message'         => $message,
++                'message_len'     => mb_strlen( $message ),
+                 'content_found'   => count( $content_results ),
+                 'content_titles'  => array_column( $content_results, 'title' ),
+             ] );
+@@ -667,6 +667,18 @@
+             $message_id = absint( $request->get_param( 'message_id' ) );
+             $rating     = absint( $request->get_param( 'rating' ) );
+             $comment    = \sanitize_textarea_field( $request->get_param( 'comment' ) ?? '' );
++            $session_id = \sanitize_text_field( $request->get_param( 'session_id' ) ?? '' );
++
++            // The session UUID is the caller's proof of ownership (same
++            // posture as GET /conversation). Only messages of that
++            // conversation can be rated (2.4.2).
++            if ( ! $this->db->message_belongs_to_session( $message_id, $session_id ) ) {
++                return $this->formatter->format_error(
++                    __( 'Message not found.', 'trill-ai-chat-lite' ),
++                    'NOT_FOUND',
++                    404
++                );
++            }
+ 
+             $saved = $this->db->save_feedback( $message_id, $rating, $comment );
+ 
+@@ -726,9 +738,9 @@
+     /**
+      * Permission callback for GET /conversation/{session_id}.
+      *
+-     * Semi-public — validates that the requester owns the session by
+-     * checking the session_id exists and was created recently.
+-     * The session_id itself acts as a bearer token (UUID is unguessable).
++     * Semi-public — the session_id itself acts as the bearer token (a
++     * v4 UUID from wp_generate_uuid4(), not enumerable). There is no
++     * cookie or fingerprint check beyond that.
+      *
+      * @param \WP_REST_Request $request Request object.
+      * @return true|\WP_Error
+@@ -868,6 +880,13 @@
+      */
+     private function get_feedback_args(): array {
+         return [
++            'session_id' => [
++                'required'          => true,
++                'type'              => 'string',
++                'description'       => 'Session UUID the message belongs to',
++                'sanitize_callback' => 'sanitize_text_field',
++                'validate_callback' => [ $this, 'validate_uuid' ],
++            ],
+             'message_id' => [
+                 'required'          => true,
+                 'type'              => 'integer',
+@@ -1102,23 +1121,31 @@
+     /**
+      * Get client IP address.
+      *
+-     * @return string
++     * Reads REMOTE_ADDR only. X-Forwarded-For / Client-IP are written by
++     * the client, so trusting them lets anyone reset the per-IP rate
++     * limit with a fresh header per request (2.4.2). Sites behind a
++     * trusted reverse proxy or CDN resolve the real address through the
++     * `trcl_client_ip` filter.
++     *
++     * @return string Validated IP, or '0.0.0.0' when none is available.
+      */
+     private function get_client_ip(): string {
+-        $ip_keys = [ 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' ];
+-
+-        foreach ( $ip_keys as $key ) {
+-            if ( ! empty( $_SERVER[ $key ] ) ) {
+-                $ip = \sanitize_text_field( \wp_unslash( $_SERVER[ $key ] ) );
+-                if ( strpos( $ip, ',' ) !== false ) {
+-                    $ip = trim( explode( ',', $ip )[0] );
+-                }
+-                if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+-                    return $ip;
+-                }
+-            }
+-        }
++        $ip = isset( $_SERVER['REMOTE_ADDR'] )
++            ? \sanitize_text_field( \wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
++            : '';
++
++        /**
++         * Filter the client IP used for REST rate limiting.
++         *
++         * Only trust proxy headers here when REMOTE_ADDR is a proxy you
++         * control (e.g. read CF-Connecting-IP behind Cloudflare).
++         *
++         * @since 2.4.2
++         *
++         * @param string $ip REMOTE_ADDR as received.
++         */
++        $ip = (string) \apply_filters( 'trcl_client_ip', $ip );
+ 
+-        return '0.0.0.0';
++        return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '0.0.0.0';
+     }
+ }
+diff -ruN '--exclude=*.min.js' a/includes/Abilities/AbilityRegistrar.php plugin/includes/Abilities/AbilityRegistrar.php
+--- a/includes/Abilities/AbilityRegistrar.php	2026-09-13 13:17:58.706598747 +0000
++++ b/includes/Abilities/AbilityRegistrar.php	2026-09-13 13:49:31.615285997 +0000
+@@ -177,11 +177,13 @@
+                     ],
+                     'requires_plugin' => 'woocommerce',
+                 ],
+-                // NOTE: WP 7.0.0 (current) does not accept `show_in_rest`
+-                // — the documented property appears to land in 7.1. Until
+-                // then the ability is only reachable via wp_get_ability()
+-                // / $ability->execute() from PHP, which is fine for the
+-                // plugin's own consumers. When 7.1 ships we can re-add it.
++                // NOTE: exposure is opt-in. Since WP 7.1 `meta.public`
++                // (default false) is the unified flag and `meta.show_in_rest`
++                // stays authoritative; with neither set the ability is only
++                // reachable via wp_get_ability() / $ability->execute() from
++                // PHP, which is fine for the plugin's own consumers. If this
++                // is ever exposed, keep get-conversation-summary out: its
++                // permission check is the session UUID alone.
+             ]
+         );
+     }
+diff -ruN '--exclude=*.min.js' a/includes/Content/ContentIndexer.php plugin/includes/Content/ContentIndexer.php
+--- a/includes/Content/ContentIndexer.php	2026-09-13 13:17:50.242598244 +0000
++++ b/includes/Content/ContentIndexer.php	2026-09-13 13:48:08.454706324 +0000
+@@ -148,8 +148,10 @@
+ 
+         // Only published posts are indexed; everything else (draft, pending,
+         // private, trash, auto-draft) gets its chunks cleaned out so the
+-        // index can't leak unpublished content into the chat.
+-        if ( $post->post_status !== 'publish' ) {
++        // index can't leak unpublished content into the chat. Password-
++        // protected posts are 'publish' too but their content is gated, so
++        // they are excluded the same way (2.4.2).
++        if ( $post->post_status !== 'publish' || '' !== (string) $post->post_password ) {
+             $this->delete_for_post( $post_id );
+             return false;
+         }
+@@ -288,6 +290,7 @@
+                 $query = new \WP_Query( [
+                     'post_type'              => $post_types,
+                     'post_status'            => 'publish',
++                    'has_password'           => false,
+                     'posts_per_page'         => 50,
+                     'paged'                  => $paged,
+                     'fields'                 => 'ids',
+diff -ruN '--exclude=*.min.js' a/includes/Content/ContentSearch.php plugin/includes/Content/ContentSearch.php
+--- a/includes/Content/ContentSearch.php	2026-09-13 13:17:56.706598628 +0000
++++ b/includes/Content/ContentSearch.php	2026-09-13 13:48:36.501562778 +0000
+@@ -209,8 +209,8 @@
+             }
+ 
+             trcl_log( 'Content search', 'debug', [
+-                'query'    => $normalised,
+-                'count'    => count( $out ),
++                'query_len' => mb_strlen( $normalised ),
++                'count'     => count( $out ),
+                 'titles'   => array_column( $out, 'title' ),
+             ] );
+ 
+@@ -218,8 +218,8 @@
+ 
+         } catch ( \Throwable $e ) {
+             trcl_log( 'Content search failed', 'warning', [
+-                'error' => $e->getMessage(),
+-                'query' => $normalised,
++                'error'     => $e->getMessage(),
++                'query_len' => mb_strlen( $normalised ),
+             ] );
+             return [];
+         }
+diff -ruN '--exclude=*.min.js' a/includes/Database/DbManager.php plugin/includes/Database/DbManager.php
+--- a/includes/Database/DbManager.php	2026-09-13 13:17:42.022597755 +0000
++++ b/includes/Database/DbManager.php	2026-09-13 13:47:05.646702590 +0000
+@@ -391,6 +391,37 @@
+     }
+ 
+     /**
++     * Check that a message belongs to the given conversation.
++     *
++     * Ownership gate for POST /feedback: the session UUID acts as the
++     * bearer, so a caller can only rate messages of its own conversation.
++     *
++     * @since 2.4.2
++     *
++     * @param int    $message_id Message ID.
++     * @param string $session_id Session ID (UUID).
++     * @return bool True when the message exists in that conversation.
++     */
++    public function message_belongs_to_session( int $message_id, string $session_id ): bool {
++        if ( $message_id <= 0 ) {
++            return false;
++        }
++
++        $conversation_id = $this->get_conversation_id( $session_id );
++        if ( ! $conversation_id ) {
++            return false;
++        }
++
++        $table = $this->messages_table;
++
++        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $table is built from $wpdb->prefix, not user input.
++        $sql = $this->wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE id = %d AND conversation_id = %d", $message_id, $conversation_id );
++
++        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Custom table; $sql is prepared above.
++        return (int) $this->wpdb->get_var( $sql ) > 0;
++    }
++
++    /**
+      * Save feedback.
+      *
+      * @param int    $message_id Message ID.
+diff -ruN '--exclude=*.min.js' a/includes/Frontend/Frontend.php plugin/includes/Frontend/Frontend.php
+--- a/includes/Frontend/Frontend.php	2026-09-13 13:17:43.726597856 +0000
++++ b/includes/Frontend/Frontend.php	2026-09-13 13:47:11.878702961 +0000
+@@ -210,7 +210,12 @@
+         $localize_data = [
+             'ajax_url'        => \admin_url( 'admin-ajax.php' ),
+             'rest_url'        => \rest_url( 'trcl/v1/' ),
+-            'nonce'           => \wp_create_nonce( 'wp_rest' ),
++            // Only logged-in users get a REST nonce: it is what lets
++            // get_current_user_id() resolve in the chat request (order
++            // lookup). Guests must not send one — a nonce baked into a
++            // page-cached HTML expires after 12–24 h and core then answers
++            // 403 (rest_cookie_invalid_nonce) to every visitor (2.4.2).
++            'nonce'           => \is_user_logged_in() ? \wp_create_nonce( 'wp_rest' ) : '',
+             'enabled'         => \get_option( 'trcl_chat_enabled', '1' ),
+             'widget_position' => \get_option( 'trcl_widget_position', 'bottom-right' ),
+             'widget_color'    => \get_option( 'trcl_widget_color', '#10B981' ),
+diff -ruN '--exclude=*.min.js' a/includes/Search/ProductSearch.php plugin/includes/Search/ProductSearch.php
+--- a/includes/Search/ProductSearch.php	2026-09-13 13:17:58.778598751 +0000
++++ b/includes/Search/ProductSearch.php	2026-09-13 13:48:52.064974327 +0000
+@@ -66,6 +66,7 @@
+             foreach ( $variants as $variant ) {
+                 $products = \wc_get_products( [
+                     'status' => 'publish',
++                    'visibility' => 'visible',
+                     'limit'  => 5,
+                     's'      => $variant,
+                 ] );
+@@ -143,6 +144,7 @@
+         try {
+             $products = \wc_get_products( [
+                 'status'   => 'publish',
++                'visibility' => 'visible',
+                 'limit'    => $limit,
+                 'featured' => true,
+             ] );
+@@ -155,6 +157,7 @@
+ 
+                 $recent = \wc_get_products( [
+                     'status'  => 'publish',
++                    'visibility' => 'visible',
+                     'limit'   => $limit,
+                     'orderby' => 'date',
+                     'order'   => 'DESC',
+@@ -287,6 +290,7 @@
+             $cat_slugs = \wp_list_pluck( $cat_terms, 'slug' );
+             $products  = \wc_get_products( [
+                 'status'   => 'publish',
++                'visibility' => 'visible',
+                 'limit'    => $limit,
+                 'category' => $cat_slugs,
+             ] );
+@@ -304,6 +308,7 @@
+                 $tag_slugs = \wp_list_pluck( $tag_terms, 'slug' );
+                 $products  = \wc_get_products( [
+                     'status' => 'publish',
++                    'visibility' => 'visible',
+                     'limit'  => $limit,
+                     'tag'    => $tag_slugs,
+                 ] );
+@@ -320,6 +325,7 @@
+                 foreach ( $word_variants as $wv ) {
+                     $products = \wc_get_products( [
+                         'status' => 'publish',
++                        'visibility' => 'visible',
+                         'limit'  => $limit,
+                         's'      => $wv,
+                     ] );
+diff -ruN '--exclude=*.min.js' a/includes/functions.php plugin/includes/functions.php
+--- a/includes/functions.php	2026-09-13 13:17:40.614597671 +0000
++++ b/includes/functions.php	2026-09-13 13:48:27.991279959 +0000
+@@ -24,14 +24,23 @@
+ /**
+  * Log debug information.
+  *
+- * Only logs when WP_DEBUG is enabled.
++ * Thin wrapper over TrillChatLite\Utils\Logger since 2.4.2, so there is a
++ * single logging path: nothing is written unless WP_DEBUG and WP_DEBUG_LOG
++ * are both on, and entries below TRCL_LOG_LEVEL (default 'info') are
++ * dropped. Never pass visitor-authored content (messages, emails) in
++ * $message or $context — log lengths, counts and ids instead.
+  *
+  * @param mixed  $message Message to log.
+  * @param string $level   Log level (info, warning, error, debug).
+  * @param array  $context Optional context data.
+  */
+ function trcl_log( $message, string $level = 'info', array $context = [] ): void {
+-    if ( ! WP_DEBUG ) {
++    if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
++        return;
++    }
++
++    // uninstall.php loads this file without the autoloader.
++    if ( ! class_exists( \TrillChatLite\Utils\Logger::class ) ) {
+         return;
+     }
+ 
+@@ -40,17 +49,24 @@
+         $message = print_r( $message, true );
+     }
+ 
+-    $prefix = '[Trill Chat Lite] ';
+-    $label  = strtoupper( $level === 'warning' || $level === 'error' || $level === 'debug' ? $level : 'INFO' );
+-    $entry  = $prefix . $label . ': ' . $message;
+-
+-    if ( ! empty( $context ) ) {
+-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r -- Intentional debug context
+-        $entry .= ' | ' . wp_json_encode( $context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
++    static $logger = null;
++    if ( null === $logger ) {
++        $logger = new \TrillChatLite\Utils\Logger( 'Plugin' );
+     }
+ 
+-    // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging
+-    error_log( $entry );
++    switch ( $level ) {
++        case 'debug':
++            $logger->debug( (string) $message, $context );
++            break;
++        case 'warning':
++            $logger->warning( (string) $message, $context );
++            break;
++        case 'error':
++            $logger->error( (string) $message, $context );
++            break;
++        default:
++            $logger->info( (string) $message, $context );
++    }
+ }
+ 
+ /**
+diff -ruN '--exclude=*.min.js' a/readme.txt plugin/readme.txt
+--- a/readme.txt	2026-09-13 13:18:06.062599184 +0000
++++ b/readme.txt	2026-09-13 13:49:21.070113568 +0000
+@@ -2,9 +2,9 @@
+ Contributors: trillai
+ Tags: woocommerce, ai chatbot, shopping assistant, product search, order tracking
+ Requires at least: 6.0
+-Tested up to: 7.0
++Tested up to: 7.1
+ Requires PHP: 8.0
+-Stable tag: 2.4.1
++Stable tag: 2.4.2
+ License: GPLv2 or later
+ License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ 
+@@ -243,6 +243,18 @@
+ 
+ == Changelog ==
+ 
++= 2.4.2 =
++**Security and reliability release. Safe update for all users — no settings change, no database update.**
++
++* **Fixed: chat stopped working for visitors on sites with page caching.** The widget sent a WordPress REST nonce on every request, including for guests. Once the cached page outlived the nonce (12–24 hours), WordPress rejected every guest message with a 403. Guests no longer send a nonce; logged-in users still do, and a stale one is retried once as a guest instead of failing.
++* **Security: per-IP rate limiting could be bypassed** by supplying a forged `X-Forwarded-For` or `Client-IP` header, allowing anyone to exhaust a store's monthly Trill Cloud allowance. The limiter now uses the connection address only. Sites behind a trusted proxy or CDN can resolve the real client address with the new `trcl_client_ip` filter.
++* **Security: password-protected pages and posts are no longer indexed** for the AI, so their content cannot surface in chat answers. Existing entries are removed on the next content re-index.
++* **Security: the feedback endpoint now requires the session UUID** and only accepts ratings for messages of that conversation.
++* **Privacy: debug logging never records visitor messages or search queries any more** (lengths and counts only). `trcl_log()` now honours `WP_DEBUG_LOG` and `TRCL_LOG_LEVEL` (default `info`), so `debug` entries are silent unless you opt in.
++* Products hidden from the catalogue (visibility "Hidden") are no longer recommended in chat.
++* Hardened product-card rendering in the widget (all attributes escaped) and the legacy paid-plugin conflict check (no fatal on the front end).
++* Housekeeping: tested up to WordPress 7.1 and WooCommerce 11.1.
++
+ = 2.4.1 =
+ * Housekeeping: WooCommerce is now declared as a formal plugin dependency (`Requires Plugins` header, WordPress 6.5+). The directory listing shows the requirement, and WordPress offers a one-click WooCommerce install instead of allowing activation without it. On WordPress 6.0–6.4 the existing runtime check continues to apply. No functional changes.
+ 
+@@ -396,6 +408,9 @@
+ 
+ == Upgrade Notice ==
+ 
++= 2.4.2 =
++Security and reliability fixes: rate-limit bypass closed, chat no longer breaks for guests on page-cached sites, password-protected content excluded from the AI index. Safe update for all users.
++
+ = 2.4.1 =
+ Declares WooCommerce as a formal plugin dependency (WordPress 6.5+). No functional changes — safe update for all users.
+ 
+diff -ruN '--exclude=*.min.js' a/trill-ai-chat-lite.php plugin/trill-ai-chat-lite.php
+--- a/trill-ai-chat-lite.php	2026-09-13 13:17:35.966597395 +0000
++++ b/trill-ai-chat-lite.php	2026-09-13 13:49:21.070728931 +0000
+@@ -2,7 +2,7 @@
+ /**
+  * Plugin Name: Trill AI Product Chat for WooCommerce
+  * Description: AI-powered customer service chat for WooCommerce stores. Let AI answer product questions, recommend items, and boost conversions — automatically.
+- * Version: 2.4.1
++ * Version: 2.4.2
+  * Requires at least: 6.0
+  * Requires PHP: 8.0
+  * Requires Plugins: woocommerce
+@@ -13,7 +13,7 @@
+  * Text Domain: trill-ai-chat-lite
+  * Domain Path: /languages
+  * WC requires at least: 8.0
+- * WC tested up to: 9.5
++ * WC tested up to: 11.1
+  *
+  * @package TrillChatLite
+  */
+@@ -25,7 +25,7 @@
+ // =========================================================================
+ // CONSTANTS
+ // =========================================================================
+-define( 'TRCL_VERSION', '2.4.1' );
++define( 'TRCL_VERSION', '2.4.2' );
+ define( 'TRCL_PLUGIN_FILE', __FILE__ );
+ define( 'TRCL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+ define( 'TRCL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+@@ -79,9 +79,12 @@
+ add_action( 'plugins_loaded', function () {
+ 
+     // =====================================================================
+-    // CONFLICT DETECTION: Deactivate if paid plugin is active
++    // CONFLICT DETECTION: Deactivate if the legacy paid plugin is active
+     // =====================================================================
+-    if ( defined( 'WCAI_VERSION' ) || defined( 'WCAI_TIER' ) ) {
++    // deactivate_plugins() lives in wp-admin/includes/plugin.php and is
++    // not loaded on the front end; without the guard this branch is a
++    // fatal on every public page while both plugins are active (2.4.2).
++    if ( ( defined( 'WCAI_VERSION' ) || defined( 'WCAI_TIER' ) ) && function_exists( 'deactivate_plugins' ) ) {
+         add_action( 'admin_notices', function () {
+             printf(
+                 '<div class="notice notice-warning is-dismissible"><p>%s <a href="%s">%s</a></p></div>',
